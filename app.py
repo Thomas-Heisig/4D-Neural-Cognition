@@ -5,8 +5,10 @@ import sys
 import os
 import json
 import logging
+from logging.handlers import RotatingFileHandler
 from datetime import datetime
 from threading import Lock
+from pathlib import Path
 import numpy as np
 
 from flask import Flask, render_template, request, jsonify, session
@@ -24,20 +26,38 @@ from simulation import Simulation
 from senses import feed_sense_input, create_digital_sense_input
 from storage import save_to_json, load_from_json, save_to_hdf5, load_from_hdf5
 
-# Configure logging
+# Configure logging with rotation to prevent unbounded log file growth
+# Each log file is limited to 10MB, with 5 backup files kept
+file_handler = RotatingFileHandler(
+    'logs/app.log',
+    maxBytes=10 * 1024 * 1024,  # 10MB
+    backupCount=5
+)
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(
+    logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+)
+
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.INFO)
+stream_handler.setFormatter(
+    logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+)
+
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('logs/app.log'),
-        logging.StreamHandler()
-    ]
+    handlers=[file_handler, stream_handler]
 )
 logger = logging.getLogger(__name__)
 
 # Flask app setup
+# Use environment variable for secret key for better security
+# Fallback to a default only for development/testing
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'neural-cognition-secret-key-4d'
+app.config['SECRET_KEY'] = os.environ.get(
+    'FLASK_SECRET_KEY',
+    'neural-cognition-secret-key-4d-CHANGE-IN-PRODUCTION'
+)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
@@ -47,6 +67,46 @@ current_simulation = None
 simulation_lock = Lock()
 is_training = False
 training_thread = None
+
+# Define allowed directories for file operations
+ALLOWED_SAVE_DIR = Path('saved_models')
+ALLOWED_CONFIG_DIR = Path('.')
+ALLOWED_SAVE_DIR.mkdir(exist_ok=True)
+
+
+def validate_filepath(filepath: str, allowed_dir: Path, allowed_extensions: list) -> Path:
+    """Validate and sanitize file paths to prevent path traversal attacks.
+    
+    Args:
+        filepath: User-provided file path
+        allowed_dir: Directory where files are allowed
+        allowed_extensions: List of allowed file extensions (e.g., ['.json', '.h5'])
+    
+    Returns:
+        Validated Path object
+        
+    Raises:
+        ValueError: If path is invalid or outside allowed directory
+    """
+    try:
+        # Convert to Path and resolve to absolute path
+        file_path = Path(filepath).resolve()
+        allowed_path = allowed_dir.resolve()
+        
+        # Check if file is within allowed directory
+        if not str(file_path).startswith(str(allowed_path)):
+            raise ValueError(f"Access denied: Path outside allowed directory")
+        
+        # Check file extension
+        if file_path.suffix not in allowed_extensions:
+            raise ValueError(
+                f"Invalid file extension: {file_path.suffix}. "
+                f"Allowed: {', '.join(allowed_extensions)}"
+            )
+        
+        return file_path
+    except Exception as e:
+        raise ValueError(f"Invalid file path: {str(e)}")
 
 
 class WebLogger(logging.Handler):
@@ -83,10 +143,18 @@ def init_model():
     
     try:
         config_path = request.json.get('config_path', 'brain_base_model.json')
-        logger.info(f"Initializing model from: {config_path}")
+        
+        # Validate config path
+        validated_path = validate_filepath(
+            config_path,
+            ALLOWED_CONFIG_DIR,
+            ['.json']
+        )
+        
+        logger.info(f"Initializing model from: {validated_path}")
         
         with simulation_lock:
-            current_model = BrainModel(config_path=config_path)
+            current_model = BrainModel(config_path=str(validated_path))
             current_simulation = Simulation(current_model, seed=42)
             
         logger.info(f"Model initialized: {current_model.lattice_shape}")
@@ -297,24 +365,59 @@ def feed_input():
     
     try:
         data = request.json
+        if not data:
+            return jsonify({'status': 'error', 'message': 'No data provided'}), 400
+        
         sense_type = data.get('sense_type', 'vision')
         input_data = data.get('input_data')
         
         if input_data is None:
             return jsonify({'status': 'error', 'message': 'No input data provided'}), 400
         
+        # Validate sense_type to prevent injection
+        valid_senses = current_model.get_senses().keys()
+        if sense_type not in valid_senses:
+            return jsonify({
+                'status': 'error',
+                'message': f"Invalid sense type: {sense_type}. Valid types: {', '.join(valid_senses)}"
+            }), 400
+        
         logger.info(f"Feeding {sense_type} input")
         
-        # Convert input based on type
+        # Convert input based on type with size limits to prevent memory exhaustion
         if sense_type == 'digital' and isinstance(input_data, str):
+            # Limit digital input to 10KB to prevent DoS
+            if len(input_data) > 10240:
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Digital input too large (max 10KB)'
+                }), 400
             input_array = create_digital_sense_input(input_data, target_shape=(20, 20))
         else:
+            # Validate input_data is list-like
+            if not isinstance(input_data, (list, tuple)):
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Input data must be a list or array'
+                }), 400
+            
+            # Limit array size to prevent memory exhaustion (max 1000x1000)
+            if len(input_data) > 1000 or (input_data and len(input_data[0]) > 1000):
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Input array too large (max 1000x1000)'
+                }), 400
+            
             input_array = np.array(input_data)
         
         with simulation_lock:
             feed_sense_input(current_model, sense_type, input_array)
         
         return jsonify({'status': 'success'})
+    except ValueError as e:
+        # Handle validation errors with clear messages
+        logger.warning(f"Invalid input: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 400
     except Exception as e:
         logger.error(f"Failed to feed input: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
@@ -376,22 +479,40 @@ def save_model():
     try:
         data = request.json
         format_type = data.get('format', 'json')
+        filename = data.get('filename', 'brain_state')
         
+        # Determine file extension and validate
         if format_type == 'json':
-            filepath = 'brain_state.json'
-            save_to_json(current_model, filepath)
+            filepath = f"{filename}.json"
+            allowed_ext = ['.json']
         elif format_type == 'hdf5':
-            filepath = 'brain_state.h5'
-            save_to_hdf5(current_model, filepath)
+            filepath = f"{filename}.h5"
+            allowed_ext = ['.h5']
         else:
             return jsonify({'status': 'error', 'message': 'Invalid format'}), 400
         
-        logger.info(f"Model saved to {filepath}")
+        # Validate file path to prevent directory traversal
+        validated_path = validate_filepath(
+            str(ALLOWED_SAVE_DIR / filepath),
+            ALLOWED_SAVE_DIR,
+            allowed_ext
+        )
+        
+        # Save model
+        if format_type == 'json':
+            save_to_json(current_model, str(validated_path))
+        else:
+            save_to_hdf5(current_model, str(validated_path))
+        
+        logger.info(f"Model saved to {validated_path}")
         
         return jsonify({
             'status': 'success',
-            'filepath': filepath
+            'filepath': str(validated_path)
         })
+    except ValueError as e:
+        logger.error(f"Invalid file path: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 400
     except Exception as e:
         logger.error(f"Failed to save model: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
@@ -404,17 +525,37 @@ def load_model():
     
     try:
         data = request.json
-        filepath = data.get('filepath', 'brain_state.json')
+        filepath = data.get('filepath', 'saved_models/brain_state.json')
         
-        logger.info(f"Loading model from {filepath}")
+        # Determine allowed extensions based on file extension
+        if filepath.endswith('.json'):
+            allowed_ext = ['.json']
+        elif filepath.endswith('.h5'):
+            allowed_ext = ['.h5']
+        else:
+            return jsonify({'status': 'error', 'message': 'Invalid file format'}), 400
+        
+        # Validate file path to prevent directory traversal
+        validated_path = validate_filepath(
+            filepath,
+            ALLOWED_SAVE_DIR,
+            allowed_ext
+        )
+        
+        # Check if file exists
+        if not validated_path.exists():
+            return jsonify({
+                'status': 'error',
+                'message': f'File not found: {validated_path.name}'
+            }), 404
+        
+        logger.info(f"Loading model from {validated_path}")
         
         with simulation_lock:
-            if filepath.endswith('.json'):
-                current_model = load_from_json(filepath)
-            elif filepath.endswith('.h5'):
-                current_model = load_from_hdf5(filepath)
+            if validated_path.suffix == '.json':
+                current_model = load_from_json(str(validated_path))
             else:
-                return jsonify({'status': 'error', 'message': 'Invalid file format'}), 400
+                current_model = load_from_hdf5(str(validated_path))
             
             current_simulation = Simulation(current_model, seed=42)
         
@@ -425,6 +566,9 @@ def load_model():
             'num_neurons': len(current_model.neurons),
             'num_synapses': len(current_model.synapses)
         })
+    except ValueError as e:
+        logger.error(f"Invalid file path: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 400
     except Exception as e:
         logger.error(f"Failed to load model: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
