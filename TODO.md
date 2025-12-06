@@ -114,23 +114,23 @@ This document tracks planned features, improvements, and tasks for the project. 
   - [x] Batch training capabilities
   - [x] Fallback learning (access DB when network untrained)
 
-- [ ] **Additional Benchmark Tasks**
-  - [ ] Sensorimotor control task (e.g., pendulum stabilization)
-  - [ ] Multi-modal integration task
-  - [ ] Continuous learning task
-  - [ ] Transfer learning task
+- [x] **Additional Benchmark Tasks** (Dec 2025)
+  - [x] Sensorimotor control task (pendulum stabilization)
+  - [x] Multi-modal integration task
+  - [x] Continuous learning task
+  - [x] Transfer learning task
 
-- [ ] **Evaluation Metrics Enhancement**
-  - [ ] Information theory metrics (entropy, mutual information)
-  - [ ] Network stability measures
-  - [ ] Learning curves over time
-  - [ ] Generalization performance
+- [x] **Evaluation Metrics Enhancement** (Dec 2025)
+  - [x] Information theory metrics (entropy, mutual information)
+  - [x] Network stability measures
+  - [x] Learning curves over time
+  - [x] Generalization performance
 
-- [ ] **Visualization for Evaluation**
-  - [ ] Performance comparison plots
-  - [ ] Learning curve visualization
-  - [ ] Confusion matrices for classification
-  - [ ] Activity pattern visualization during tasks
+- [x] **Visualization for Evaluation** (Dec 2025)
+  - [x] Performance comparison plots
+  - [x] Learning curve visualization
+  - [x] Confusion matrices for classification
+  - [x] Activity pattern visualization during tasks
 
 ---
 
@@ -138,16 +138,16 @@ This document tracks planned features, improvements, and tasks for the project. 
 
 ### Features - Core Simulation
 
-- [ ] **Inhibitory Neurons**
-  - Add GABAergic neuron type
-  - Implement inhibitory synapses
-  - Balance excitation/inhibition dynamics
+- [x] **Inhibitory Neurons** (Dec 2025)
+  - [x] Add GABAergic neuron type
+  - [x] Implement inhibitory synapses
+  - [x] Balance excitation/inhibition dynamics
 
-- [ ] **Multiple Neuron Types**
-  - Regular spiking neurons
-  - Fast spiking interneurons
-  - Bursting neurons
-  - Implement Izhikevich model as alternative to LIF
+- [x] **Multiple Neuron Types** (Dec 2025)
+  - [x] Regular spiking neurons
+  - [x] Fast spiking interneurons
+  - [x] Bursting neurons
+  - [x] Implement Izhikevich model as alternative to LIF
 
 - [ ] **Neuromodulation**
   - Dopamine system for reward learning
