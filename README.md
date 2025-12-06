@@ -9,7 +9,8 @@ Dieses Modell implementiert ein 4D-Hirnsystem, das biologische Prinzipien mit di
 - **Zell-Lebenszyklus**: Alterung, Tod und Reproduktion mit Vererbung mutierter Eigenschaften
 - **Hirnareale & Sinne**: Vision, Audition, Somatosensorik, Geschmack, Geruch, Vestibulär, Digital
 - **Hebbsche Plastizität**: "Cells that fire together, wire together" Lernregel
-- **Speicherung**: JSON für Konfiguration, HDF4 für effiziente Datenspeicherung
+- **Speicherung**: JSON für Konfiguration, HDF5 für effiziente Datenspeicherung (mit Kompression)
+- **Web-Frontend**: Modernes Browser-Interface mit Echtzeit-Visualisierung und Logging
 
 ## Installation
 
@@ -17,14 +18,29 @@ Dieses Modell implementiert ein 4D-Hirnsystem, das biologische Prinzipien mit di
 pip install -r requirements.txt
 ```
 
-Für HDF4-Unterstützung:
-```bash
-pip install pyhdf
-```
+
 
 ## Verwendung
 
-### Beispiel ausführen
+### Web-Frontend (empfohlen)
+
+Starten Sie die Web-Anwendung für eine benutzerfreundliche grafische Oberfläche:
+
+```bash
+python app.py
+```
+
+Öffnen Sie dann einen Browser und navigieren Sie zu `http://localhost:5000`.
+
+Das Frontend bietet:
+- 🎮 **Modell-Steuerung**: Initialisierung und Konfiguration
+- 🔥 **Heatmap-Visualisierung**: Echtzeit-Darstellung von Input-, Hidden- und Output-Layern
+- 💻 **Terminal**: Input/Output für sensorische Daten
+- 💬 **Chat-Interface**: Interaktive Befehle und Operationen
+- 📋 **Logging**: Vollständige Protokollierung aller Systemereignisse
+- ⚡ **Training**: Start/Stop-Kontrolle für Simulationsläufe
+
+### Kommandozeilen-Beispiel
 
 ```bash
 python example.py
@@ -67,17 +83,68 @@ for step in range(100):
 
 ```
 ├── brain_base_model.json  # Konfiguration des Basismodells
-├── example.py             # Beispielskript
+├── example.py             # Kommandozeilen-Beispielskript
+├── app.py                 # Flask Web-Anwendung
 ├── requirements.txt       # Python-Abhängigkeiten
+├── templates/
+│   └── index.html        # Web-Frontend HTML
+├── static/
+│   ├── css/
+│   │   └── style.css     # Modernes UI-Styling
+│   └── js/
+│       └── app.js        # Frontend JavaScript
 └── src/
     ├── __init__.py        # Package-Initialisierung
     ├── brain_model.py     # Neuron- und Synapse-Datenstrukturen
     ├── cell_lifecycle.py  # Zelltod und Vererbung
-    ├── hdf4_storage.py    # HDF4/JSON Speicherung
+    ├── storage.py         # HDF5/JSON Speicherung
     ├── plasticity.py      # Hebbsche Plastizitätsregeln
     ├── senses.py          # Sinneseingabe-Verarbeitung
     └── simulation.py      # Hauptsimulationsschleife
 ```
+
+## Web-Frontend Features
+
+Das moderne Web-Interface bietet folgende Funktionen:
+
+### 🎮 Modell-Steuerung
+- Initialisierung neuer Modelle
+- Konfiguration von Neuronen und Synapsen
+- Einstellung der Neuronendichte
+- Anzeige von Modell-Informationen
+
+### 🔥 Heatmap-Visualisierung
+- Echtzeit-Darstellung der neuronalen Aktivität
+- Separate Ansichten für Input-, Hidden- und Output-Layer
+- Farbcodierte Membranpotential-Darstellung
+
+### 💻 Input/Output Terminal
+- Eingabe sensorischer Daten (Vision, Audition, Digital, etc.)
+- Text-basierte Eingabe für Digital-Sense
+- Array-Eingabe für andere Sinnesmodalitäten
+- Echtzeit-Feedback zu Operationen
+
+### 💬 Chat & Operationen
+- Interaktive Befehle für Systemsteuerung
+- Verfügbare Befehle: `help`, `info`, `status`, `init`, `step`, `run`
+- Sofortige Rückmeldung zu allen Operationen
+
+### 📋 System Logging
+- Vollständige Protokollierung aller Ereignisse
+- Filterung nach Log-Level (INFO, WARNING, ERROR, SUCCESS)
+- WebSocket-basierte Echtzeit-Updates
+- Exportierbar für Analyse
+
+### ⚡ Training & Simulation
+- Einzelschritte oder Multi-Step-Training
+- Start/Stop-Kontrolle während des Trainings
+- Fortschrittsanzeige mit Live-Updates
+- Automatische Heatmap-Aktualisierung
+
+### 💾 Speichern & Laden
+- Export als JSON (lesbar) oder HDF5 (komprimiert)
+- Laden bestehender Modelle
+- Zustandserhaltung zwischen Sessions
 
 ## Konfiguration
 
@@ -89,3 +156,12 @@ Die `brain_base_model.json` enthält:
 - **plasticity**: Lernparameter (learning_rate, weight_bounds)
 - **senses**: Sinneskonfiguration mit Arealen und Eingabegrößen
 - **areas**: Koordinatenbereiche für jedes Hirnareal
+
+## Technologie-Stack
+
+- **Backend**: Flask (Python Web-Framework)
+- **Frontend**: Vanilla JavaScript mit Socket.IO
+- **Styling**: Modernes CSS mit Dark Theme
+- **Visualisierung**: HTML5 Canvas für Heatmaps
+- **Datenspeicherung**: HDF5 (statt veraltetem HDF4)
+- **Echtzeit-Kommunikation**: WebSocket (Flask-SocketIO)

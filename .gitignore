@@ -35,7 +35,19 @@ env/
 # Generated files
 brain_state.json
 brain_state.hdf
+brain_state.h5
 *.hdf
+*.h5
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+static/uploads/
+
+# Logs
+logs/
+*.log
 
 # OS
 .DS_Store

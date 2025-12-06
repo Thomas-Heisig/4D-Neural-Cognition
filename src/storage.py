@@ -1,7 +1,8 @@
-"""HDF4 storage for brain model persistence."""
+"""HDF5 storage for brain model persistence (upgraded from HDF4)."""
 
 import json
 import numpy as np
+import h5py
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -11,8 +12,8 @@ if TYPE_CHECKING:
         from brain_model import BrainModel
 
 
-def save_to_hdf4(model: "BrainModel", filepath: str) -> None:
-    """Save brain model to HDF4 file.
+def save_to_hdf5(model: "BrainModel", filepath: str) -> None:
+    """Save brain model to HDF5 file.
 
     Stores:
     - meta_json: JSON string with full configuration
@@ -21,22 +22,15 @@ def save_to_hdf4(model: "BrainModel", filepath: str) -> None:
 
     Args:
         model: The brain model to save.
-        filepath: Path to the HDF4 file to create.
+        filepath: Path to the HDF5 file to create.
     """
-    from pyhdf.SD import SD, SDC
-
-    # Create HDF4 file
-    hdf = SD(filepath, SDC.WRITE | SDC.CREATE)
-
-    try:
+    with h5py.File(filepath, 'w') as hdf:
         # 1) Save meta_json (configuration as JSON string)
         meta_dict = model.to_dict()
         meta_str = json.dumps(meta_dict, ensure_ascii=False)
-        meta_bytes = np.frombuffer(meta_str.encode("utf-8"), dtype=np.uint8)
-
-        meta_ds = hdf.create("meta_json", SDC.UINT8, (meta_bytes.shape[0],))
-        meta_ds[:] = meta_bytes
-        meta_ds.endaccess()
+        
+        # Store as string dataset
+        hdf.create_dataset('meta_json', data=meta_str, dtype=h5py.string_dtype())
 
         # 2) Save neurons as structured array
         # Columns: id, x, y, z, w, generation, parent_id, health, age, v_membrane
@@ -57,11 +51,7 @@ def save_to_hdf4(model: "BrainModel", filepath: str) -> None:
                     neuron.v_membrane,
                 ]
 
-            neurons_ds = hdf.create(
-                "neurons", SDC.FLOAT32, (n_neurons, 10)
-            )
-            neurons_ds[:] = neurons_data
-            neurons_ds.endaccess()
+            hdf.create_dataset('neurons', data=neurons_data, compression='gzip')
 
         # 3) Save synapses as structured array
         # Columns: pre_id, post_id, weight, delay, plasticity_tag
@@ -77,50 +67,34 @@ def save_to_hdf4(model: "BrainModel", filepath: str) -> None:
                     synapse.plasticity_tag,
                 ]
 
-            synapses_ds = hdf.create(
-                "synapses", SDC.FLOAT32, (n_synapses, 5)
-            )
-            synapses_ds[:] = synapses_data
-            synapses_ds.endaccess()
-
-    finally:
-        hdf.end()
+            hdf.create_dataset('synapses', data=synapses_data, compression='gzip')
 
 
-def load_from_hdf4(filepath: str) -> "BrainModel":
-    """Load brain model from HDF4 file.
+def load_from_hdf5(filepath: str) -> "BrainModel":
+    """Load brain model from HDF5 file.
 
     Args:
-        filepath: Path to the HDF4 file.
+        filepath: Path to the HDF5 file.
 
     Returns:
         Loaded BrainModel instance.
     """
-    from pyhdf.SD import SD, SDC
     try:
         from .brain_model import BrainModel, Neuron, Synapse
     except ImportError:
         from brain_model import BrainModel, Neuron, Synapse
 
-    hdf = SD(filepath, SDC.READ)
-
-    try:
+    with h5py.File(filepath, 'r') as hdf:
         # 1) Load meta_json
-        meta_ds = hdf.select("meta_json")
-        meta_bytes = meta_ds[:]
-        meta_ds.endaccess()
-
-        meta_str = bytes(meta_bytes).decode("utf-8")
+        meta_str = hdf['meta_json'][()].decode('utf-8')
         meta_dict = json.loads(meta_str)
 
         # Create model from the loaded data
         model = BrainModel.from_dict(meta_dict)
 
         # 2) Load neurons (if the array was stored, it updates existing data)
-        try:
-            neurons_ds = hdf.select("neurons")
-            neurons_data = neurons_ds[:]
-            neurons_ds.endaccess()
+        if 'neurons' in hdf:
+            neurons_data = hdf['neurons'][:]
 
             # Rebuild neurons from array data
             model.neurons.clear()
@@ -151,14 +125,10 @@ def load_from_hdf4(filepath: str) -> "BrainModel":
                     params=params,
                 )
                 model.neurons[neuron_id] = neuron
-        except Exception:
-            pass  # No neurons dataset
 
         # 3) Load synapses
-        try:
-            synapses_ds = hdf.select("synapses")
-            synapses_data = synapses_ds[:]
-            synapses_ds.endaccess()
+        if 'synapses' in hdf:
+            synapses_data = hdf['synapses'][:]
 
             # Rebuild synapses from array data
             model.synapses.clear()
@@ -171,13 +141,8 @@ def load_from_hdf4(filepath: str) -> "BrainModel":
                     plasticity_tag=float(row[4]),
                 )
                 model.synapses.append(synapse)
-        except Exception:
-            pass  # No synapses dataset
 
         return model
-
-    finally:
-        hdf.end()
 
 
 def save_to_json(model: "BrainModel", filepath: str) -> None:
