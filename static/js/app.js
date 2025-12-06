@@ -16,6 +16,7 @@ const elements = {
     saveJSON: document.getElementById('saveJSON'),
     saveHDF5: document.getElementById('saveHDF5'),
     loadModel: document.getElementById('loadModel'),
+    recoverCheckpoint: document.getElementById('recoverCheckpoint'),
     refreshHeatmap: document.getElementById('refreshHeatmap'),
     feedInput: document.getElementById('feedInput'),
     sendChat: document.getElementById('sendChat'),
@@ -374,6 +375,22 @@ async function loadModel() {
     }
 }
 
+async function recoverFromCheckpoint() {
+    try {
+        showInfo('Stelle vom letzten Checkpoint wieder her...');
+        
+        const result = await apiCall('/simulation/recover', 'POST');
+        
+        if (result.status === 'success') {
+            showSuccess(`Checkpoint wiederhergestellt: Schritt ${result.recovered_step}, ${result.num_neurons} Neuronen, ${result.num_synapses} Synapsen`);
+            await getModelInfo();
+            await refreshHeatmap();
+        }
+    } catch (error) {
+        // Error already handled
+    }
+}
+
 // Chat Functions
 function sendChatMessage() {
     const message = elements.chatInput.value.trim();
@@ -416,6 +433,7 @@ elements.stopSimulation.addEventListener('click', stopSimulation);
 elements.saveJSON.addEventListener('click', () => saveModel('json'));
 elements.saveHDF5.addEventListener('click', () => saveModel('hdf5'));
 elements.loadModel.addEventListener('click', loadModel);
+elements.recoverCheckpoint.addEventListener('click', recoverFromCheckpoint);
 elements.refreshHeatmap.addEventListener('click', refreshHeatmap);
 elements.feedInput.addEventListener('click', feedInput);
 elements.sendChat.addEventListener('click', sendChatMessage);

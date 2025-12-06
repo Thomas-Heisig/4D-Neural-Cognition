@@ -594,6 +594,40 @@ Load model from file.
 }
 ```
 
+#### `POST /api/simulation/recover`
+
+Recover simulation from the latest automatic checkpoint.
+
+**Request Body**: None required
+
+**Response**:
+```json
+{
+  "status": "success",
+  "recovered_step": 5000,
+  "num_neurons": 800,
+  "num_synapses": 640
+}
+```
+
+**Error Response**:
+```json
+{
+  "status": "error",
+  "message": "No checkpoint available for recovery"
+}
+```
+
+**Description**: This endpoint recovers the simulation state from the most recent automatic checkpoint. Checkpoints are saved every 1000 steps during long simulations. The system keeps the last 3 checkpoints for redundancy. This is particularly useful for:
+- Recovering from crashes or interruptions
+- Rolling back to a known good state
+- Continuing simulations after system restarts
+
+**Example Usage**:
+```bash
+curl -X POST http://localhost:5000/api/simulation/recover
+```
+
 ### WebSocket Events
 
 #### Server → Client
