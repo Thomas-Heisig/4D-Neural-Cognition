@@ -43,14 +43,41 @@ class BrainModel:
     """Main brain model class managing neurons and synapses."""
 
     def __init__(self, config_path: str = None, config: dict = None):
-        """Initialize brain model from config file or dict."""
+        """Initialize brain model from config file or dict.
+        
+        Args:
+            config_path: Path to JSON configuration file
+            config: Configuration dictionary
+            
+        Raises:
+            ValueError: If neither config_path nor config is provided
+            FileNotFoundError: If config_path does not exist
+            json.JSONDecodeError: If config file is not valid JSON
+            KeyError: If required configuration keys are missing
+        """
         if config is not None:
             self.config = config
         elif config_path is not None:
-            with open(config_path, "r", encoding="utf-8") as f:
-                self.config = json.load(f)
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    self.config = json.load(f)
+            except FileNotFoundError as e:
+                raise FileNotFoundError(f"Configuration file not found: {config_path}") from e
+            except json.JSONDecodeError as e:
+                raise json.JSONDecodeError(
+                    f"Invalid JSON in configuration file: {config_path}", 
+                    e.doc, 
+                    e.pos
+                ) from e
         else:
             raise ValueError("Either config_path or config must be provided")
+
+        # Validate required configuration keys
+        required_keys = ["lattice_shape", "neuron_model", "cell_lifecycle", 
+                        "plasticity", "senses", "areas"]
+        missing_keys = [key for key in required_keys if key not in self.config]
+        if missing_keys:
+            raise KeyError(f"Missing required configuration keys: {missing_keys}")
 
         self.lattice_shape = tuple(self.config["lattice_shape"])
         self.neurons: dict[int, Neuron] = {}
@@ -89,7 +116,35 @@ class BrainModel:
         health: float = 1.0,
         params: dict = None,
     ) -> Neuron:
-        """Add a new neuron to the model."""
+        """Add a new neuron to the model.
+        
+        Args:
+            x, y, z, w: 4D coordinates of the neuron
+            generation: Generation number for reproduction tracking
+            parent_id: ID of parent neuron if born through reproduction
+            health: Initial health value (0.0 to 1.0)
+            params: Optional neuron parameters
+            
+        Returns:
+            The created Neuron object
+            
+        Raises:
+            ValueError: If coordinates are out of bounds or health is invalid
+        """
+        # Validate coordinates
+        if not (0 <= x < self.lattice_shape[0]):
+            raise ValueError(f"x coordinate {x} out of bounds [0, {self.lattice_shape[0]})")
+        if not (0 <= y < self.lattice_shape[1]):
+            raise ValueError(f"y coordinate {y} out of bounds [0, {self.lattice_shape[1]})")
+        if not (0 <= z < self.lattice_shape[2]):
+            raise ValueError(f"z coordinate {z} out of bounds [0, {self.lattice_shape[2]})")
+        if not (0 <= w < self.lattice_shape[3]):
+            raise ValueError(f"w coordinate {w} out of bounds [0, {self.lattice_shape[3]})")
+        
+        # Validate health
+        if not (0.0 <= health <= 1.0):
+            raise ValueError(f"Health must be between 0.0 and 1.0, got {health}")
+        
         neuron = Neuron(
             id=self._next_neuron_id,
             x=x,

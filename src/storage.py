@@ -1,6 +1,7 @@
 """HDF5 storage for brain model persistence (upgraded from HDF4)."""
 
 import json
+import os
 import numpy as np
 import h5py
 from typing import TYPE_CHECKING
@@ -24,6 +25,11 @@ def save_to_hdf5(model: "BrainModel", filepath: str) -> None:
         model: The brain model to save.
         filepath: Path to the HDF5 file to create.
     """
+    # Ensure directory exists
+    directory = os.path.dirname(filepath)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+    
     with h5py.File(filepath, 'w') as hdf:
         # 1) Save meta_json (configuration as JSON string)
         meta_dict = model.to_dict()
@@ -152,6 +158,11 @@ def save_to_json(model: "BrainModel", filepath: str) -> None:
         model: The brain model to save.
         filepath: Path to the JSON file.
     """
+    # Ensure directory exists
+    directory = os.path.dirname(filepath)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+    
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(model.to_dict(), f, ensure_ascii=False, indent=2)
 

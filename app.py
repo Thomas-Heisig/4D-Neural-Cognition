@@ -13,6 +13,9 @@ from flask import Flask, render_template, request, jsonify, session
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 
+# Ensure logs directory exists BEFORE configuring logging
+os.makedirs('logs', exist_ok=True)
+
 # Add src directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
@@ -31,9 +34,6 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-
-# Ensure logs directory exists
-os.makedirs('logs', exist_ok=True)
 
 # Flask app setup
 app = Flask(__name__)
