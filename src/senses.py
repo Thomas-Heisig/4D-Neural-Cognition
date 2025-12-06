@@ -1,6 +1,7 @@
 """Sense input processing and brain area mapping."""
 
 import numpy as np
+import warnings
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -134,7 +135,6 @@ def feed_sense_input(
     # Provide helpful error message if dimensions don't match
     if input_matrix.shape[0] != expected_x_size or input_matrix.shape[1] != expected_y_size:
         # Log warning but allow partial mapping for flexibility
-        import warnings
         warnings.warn(
             f"Input dimension mismatch for sense '{sense_name}': "
             f"expected ({expected_x_size}, {expected_y_size}), "

@@ -264,18 +264,23 @@ class TestSimulation:
         """Test that old spike history is cleaned up."""
         neuron = simulation.model.add_neuron(1, 1, 1, 0)
         
-        # Record many old spikes
-        for i in range(200):
-            simulation.spike_history[neuron.id] = list(range(200))
-            simulation.model.current_step = i
-            
-        # Run a step which should clean up history
+        # Add many old spike times to history
+        simulation.spike_history[neuron.id] = list(range(200))
+        
+        # Advance time significantly
         simulation.model.current_step = 200
+        
+        # Run a step which should clean up old history
         simulation.step()
         
         # Old spikes should be removed (keeping only last 100 steps)
+        # Spikes from steps 0-99 should be removed, 100-200 should remain
         if neuron.id in simulation.spike_history:
             assert len(simulation.spike_history[neuron.id]) <= 100
+            # Verify old spikes are gone
+            if len(simulation.spike_history[neuron.id]) > 0:
+                oldest_spike = min(simulation.spike_history[neuron.id])
+                assert oldest_spike >= 100
             
     def test_run_multiple_steps(self, populated_model):
         """Test running multiple simulation steps."""
