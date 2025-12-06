@@ -3,6 +3,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Status: Active](https://img.shields.io/badge/Status-Active-success.svg)]()
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Documentation](https://img.shields.io/badge/docs-comprehensive-brightgreen.svg)](docs/INDEX.md)
 
 > *A revolutionary brain simulation system bridging biological neuroscience with digital computing through four-dimensional neural networks.*
 
@@ -62,21 +64,36 @@ python app.py
 
 ## 📚 Documentation
 
-### Core Documentation
+> **📑 Documentation Hub**: See [DOCUMENTATION.md](DOCUMENTATION.md) for complete overview  
+> **📖 Full Index**: See [docs/INDEX.md](docs/INDEX.md) for detailed navigation
+
+### 🚀 Getting Started
+- **[User Guide](docs/user-guide/)** - Complete user documentation
+  - **[Installation Guide](docs/user-guide/INSTALLATION.md)** - Detailed setup for all platforms
+  - **[Quick Start Tutorial](docs/tutorials/QUICK_START_EVALUATION.md)** - Get up and running in 5 minutes
+  - **[FAQ](docs/user-guide/FAQ.md)** - Frequently Asked Questions
+  - **[Glossary](docs/user-guide/GLOSSARY.md)** - Terminology and definitions
+
+### 📖 Core Documentation
 
 - **[VISION.md](VISION.md)** - Project vision, goals, and roadmap
 - **[TODO.md](TODO.md)** - Planned features and task tracking
 - **[ISSUES.md](ISSUES.md)** - Known issues and limitations
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
+
+### 🤝 Community
+
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute to the project
 - **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** - Community guidelines
+- **[SUPPORT.md](SUPPORT.md)** - How to get help
+- **[SECURITY.md](SECURITY.md)** - Security policy
 
-### Technical Documentation
+### 🔧 Technical Documentation
 
-- **[API Reference](docs/API.md)** - Complete API documentation
+- **[API Reference](docs/api/API.md)** - Complete API documentation
 - **[Architecture](docs/ARCHITECTURE.md)** - Technical architecture details
-- **[Installation Guide](docs/INSTALLATION.md)** - Detailed setup instructions
-- **[Tasks & Evaluation](docs/TASKS_AND_EVALUATION.md)** - Benchmark and evaluation framework guide
+- **[Tasks & Evaluation](docs/user-guide/TASKS_AND_EVALUATION.md)** - Benchmark framework guide
+- **[Developer Guide](docs/developer-guide/)** - Contributing and development
 
 ---
 
@@ -88,7 +105,7 @@ python app.py
 pip install -r requirements.txt
 ```
 
-For detailed platform-specific instructions, see [INSTALLATION.md](docs/INSTALLATION.md).
+For detailed platform-specific instructions, see [Installation Guide](docs/user-guide/INSTALLATION.md).
 
 ### Requirements
 
@@ -161,7 +178,7 @@ for step in range(100):
     print(f"Step {step}: {len(stats['spikes'])} spikes")
 ```
 
-For complete API documentation, see [API.md](docs/API.md).
+For complete API documentation, see [API Reference](docs/api/API.md).
 
 ## Features
 

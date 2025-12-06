@@ -143,5 +143,17 @@ For answers to common questions about this code of conduct, see the FAQ at
 
 ---
 
+## Related Resources
+
+For additional information and support:
+
+- **[SUPPORT.md](SUPPORT.md)** - How to get help and report issues
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute to the project
+- **[SECURITY.md](SECURITY.md)** - How to report security vulnerabilities
+- **[GitHub Discussions](https://github.com/Thomas-Heisig/4D-Neural-Cognition/discussions)** - Community discussions
+
+---
+
 *Adopted: December 2025*  
+*Last Updated: December 2025*  
 *Version: 2.1*

@@ -163,8 +163,11 @@ If a benchmark fails:
 
 ## See Also
 
-- [Tasks & Evaluation Documentation](../docs/TASKS_AND_EVALUATION.md)
-- [API Reference](../docs/API.md)
+- [Tasks & Evaluation Documentation](../docs/user-guide/TASKS_AND_EVALUATION.md)
+- [Quick Start Tutorial](../docs/tutorials/QUICK_START_EVALUATION.md)
+- [API Reference](../docs/api/API.md)
+- [User Guide](../docs/user-guide/)
+- [FAQ](../docs/user-guide/FAQ.md)
 - [Main README](../README.md)
 
 ---

@@ -2,6 +2,12 @@
 
 This document tracks known bugs, limitations, and technical debt in the project.
 
+> **📚 Related Documentation**: 
+> - [SECURITY.md](SECURITY.md) - Security vulnerabilities and reporting
+> - [SUPPORT.md](SUPPORT.md) - Getting help with issues
+> - [FAQ](docs/user-guide/FAQ.md) - Common problems and solutions
+> - [Troubleshooting](docs/user-guide/FAQ.md#troubleshooting) - Debug strategies
+
 ## Legend
 
 - 🐛 **Bug**: Incorrect behavior that needs fixing
@@ -272,13 +278,10 @@ This document tracks known bugs, limitations, and technical debt in the project.
 - **Effort**: Medium
 - **Plan**: Add to all public functions first
 
-#### No Architecture Documentation
-- **Location**: N/A
-- **Issue**: High-level design not documented
-- **Impact**: New contributors struggle to understand structure
-- **Priority**: Medium
-- **Effort**: Low
-- **Plan**: Create ARCHITECTURE.md
+#### Architecture Documentation (RESOLVED)
+- **Status**: ✅ Completed
+- **Solution**: Created comprehensive ARCHITECTURE.md with diagrams and detailed descriptions
+- **Related**: docs/ARCHITECTURE.md
 
 #### Outdated Comments
 - **Location**: Various
@@ -362,7 +365,12 @@ Use appropriate template when filing:
 
 ## Changelog
 
-### 2025-12-06
+### 2025-12-06 (Latest Update)
+- Updated documentation references to new structure
+- Verified all known issues are still relevant
+- Added cross-references to SECURITY.md and SUPPORT.md
+
+### 2025-12-06 (Initial)
 - Initial ISSUES.md created
 - Documented known bugs and limitations
 - Added security considerations
