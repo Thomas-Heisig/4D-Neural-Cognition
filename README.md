@@ -19,6 +19,9 @@ This project implements a 4D brain system that combines biological principles wi
 - **Cell Lifecycle**: Aging, death, and reproduction with inherited mutations
 - **Brain Areas & Senses**: Vision, Audition, Somatosensory, Taste, Smell, Vestibular, Digital
 - **Hebbian Plasticity**: "Cells that fire together, wire together" learning rule
+- **Tasks & Evaluation**: Comprehensive benchmark framework for measuring network performance
+- **Knowledge Database**: Pre-training and continued learning from stored knowledge
+- **Configuration Comparison**: Objectively compare different network configurations
 - **Efficient Storage**: JSON for configuration, HDF5 for efficient data persistence with compression
 - **Modern Web Interface**: Browser-based interface with real-time visualization and logging
 
@@ -73,6 +76,7 @@ python app.py
 - **[API Reference](docs/API.md)** - Complete API documentation
 - **[Architecture](docs/ARCHITECTURE.md)** - Technical architecture details
 - **[Installation Guide](docs/INSTALLATION.md)** - Detailed setup instructions
+- **[Tasks & Evaluation](docs/TASKS_AND_EVALUATION.md)** - Benchmark and evaluation framework guide
 
 ---
 
