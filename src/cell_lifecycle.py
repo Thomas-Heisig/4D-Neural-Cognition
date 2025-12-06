@@ -1,8 +1,9 @@
 """Cell lifecycle management - death and reproduction with inheritance."""
 
 import logging
-import numpy as np
 from typing import TYPE_CHECKING
+
+import numpy as np
 
 if TYPE_CHECKING:
     try:
@@ -131,15 +132,14 @@ def maybe_kill_and_reproduce(
             model.add_synapse(pre_id, post_id, weight, delay)
         else:
             lost_synapses += 1
-    
+
     # Log warning if synapses were lost (contributes to network disconnection)
     # Use lazy string formatting to avoid overhead when debug logging is disabled
     if lost_synapses > 0:
         logger.debug(
-            "Neuron reproduction: %d synapse(s) lost due to "
-            "missing endpoint neurons (gen %d)",
+            "Neuron reproduction: %d synapse(s) lost due to " "missing endpoint neurons (gen %d)",
             lost_synapses,
-            new_neuron.generation
+            new_neuron.generation,
         )
 
     return new_neuron

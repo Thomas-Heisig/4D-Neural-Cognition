@@ -1,8 +1,9 @@
 """Sense input processing and brain area mapping."""
 
-import numpy as np
 import warnings
 from typing import TYPE_CHECKING
+
+import numpy as np
 
 if TYPE_CHECKING:
     try:
@@ -70,33 +71,28 @@ def feed_sense_input(
         sense_name: Name of the sense (e.g., "vision", "digital").
         input_matrix: 2D numpy array of input values.
         z_layer: Which z-layer to project the input to (default: 0).
-        
+
     Raises:
-        ValueError: If sense_name is unknown, area not found, or input 
+        ValueError: If sense_name is unknown, area not found, or input
                    dimensions are invalid.
         TypeError: If input_matrix is not a numpy array.
     """
     # Validate input type
     if not isinstance(input_matrix, np.ndarray):
-        raise TypeError(
-            f"input_matrix must be a numpy array, got {type(input_matrix).__name__}"
-        )
-    
+        raise TypeError(f"input_matrix must be a numpy array, got {type(input_matrix).__name__}")
+
     # Validate input is 2D
     if input_matrix.ndim != 2:
         raise ValueError(
-            f"input_matrix must be 2D, got shape {input_matrix.shape} "
-            f"with {input_matrix.ndim} dimensions"
+            f"input_matrix must be 2D, got shape {input_matrix.shape} " f"with {input_matrix.ndim} dimensions"
         )
-    
+
     senses = model.get_senses()
     areas = model.get_areas()
 
     if sense_name not in senses:
         available_senses = ", ".join(senses.keys())
-        raise ValueError(
-            f"Unknown sense: '{sense_name}'. Available senses: {available_senses}"
-        )
+        raise ValueError(f"Unknown sense: '{sense_name}'. Available senses: {available_senses}")
 
     sense = senses[sense_name]
     area_name = sense["areal"]
@@ -118,13 +114,12 @@ def feed_sense_input(
     # Calculate expected input dimensions based on area size
     expected_x_size = x_range[1] - x_range[0] + 1
     expected_y_size = y_range[1] - y_range[0] + 1
-    
+
     # Validate z_layer parameter
     z_depth = z_range[1] - z_range[0] + 1
     if z_layer < 0 or z_layer >= z_depth:
         raise ValueError(
-            f"z_layer {z_layer} out of range for sense '{sense_name}'. "
-            f"Valid range: [0, {z_depth - 1}]"
+            f"z_layer {z_layer} out of range for sense '{sense_name}'. " f"Valid range: [0, {z_depth - 1}]"
         )
 
     # Use fixed z and w coordinates for 2D input projection
@@ -139,7 +134,7 @@ def feed_sense_input(
             f"Input dimension mismatch for sense '{sense_name}': "
             f"expected ({expected_x_size}, {expected_y_size}), "
             f"got {input_matrix.shape}. Will map overlapping region only.",
-            UserWarning
+            UserWarning,
         )
 
     # Create coordinate to neuron ID mapping for efficient lookup

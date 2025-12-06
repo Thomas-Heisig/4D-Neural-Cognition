@@ -2,10 +2,10 @@
 
 from .brain_model import BrainModel, Neuron
 from .cell_lifecycle import maybe_kill_and_reproduce, mutate_params, mutate_weight
-from .plasticity import hebbian_update, apply_weight_decay
-from .senses import feed_sense_input, coord_to_id, id_to_coord
-from .storage import save_to_hdf5, load_from_hdf5, save_to_json, load_from_json
+from .plasticity import apply_weight_decay, hebbian_update
+from .senses import coord_to_id, feed_sense_input, id_to_coord
 from .simulation import Simulation
+from .storage import load_from_hdf5, load_from_json, save_to_hdf5, save_to_json
 
 __all__ = [
     "BrainModel",

@@ -1,16 +1,17 @@
 """Main simulation loop for 4D Neural Cognition."""
 
-import numpy as np
 from typing import Callable
+
+import numpy as np
 
 try:
     from .brain_model import BrainModel
     from .cell_lifecycle import maybe_kill_and_reproduce, update_health_and_age
-    from .plasticity import hebbian_update, apply_weight_decay
+    from .plasticity import apply_weight_decay, hebbian_update
 except ImportError:
     from brain_model import BrainModel
     from cell_lifecycle import maybe_kill_and_reproduce, update_health_and_age
-    from plasticity import hebbian_update, apply_weight_decay
+    from plasticity import apply_weight_decay, hebbian_update
 
 
 class Simulation:
@@ -53,28 +54,23 @@ class Simulation:
         Args:
             area_names: List of area names to initialize. If None, all areas.
             density: Fraction of positions to fill with neurons (0-1).
-            
+
         Raises:
-            ValueError: If density is not in valid range [0, 1] or if 
+            ValueError: If density is not in valid range [0, 1] or if
                        specified area names don't exist.
         """
         # Validate density parameter
         if not 0.0 <= density <= 1.0:
-            raise ValueError(
-                f"Density must be between 0 and 1, got {density}"
-            )
-        
+            raise ValueError(f"Density must be between 0 and 1, got {density}")
+
         areas = self.model.get_areas()
-        
+
         # Validate area names if specified
         if area_names is not None:
             available_areas = {a["name"] for a in areas}
             invalid_areas = set(area_names) - available_areas
             if invalid_areas:
-                raise ValueError(
-                    f"Unknown area names: {invalid_areas}. "
-                    f"Available areas: {available_areas}"
-                )
+                raise ValueError(f"Unknown area names: {invalid_areas}. " f"Available areas: {available_areas}")
             areas = [a for a in areas if a["name"] in area_names]
 
         # Create neurons in each specified area
@@ -105,27 +101,22 @@ class Simulation:
         consider using a more scalable initialization method.
 
         Args:
-            connection_probability: Probability of connection between any two 
+            connection_probability: Probability of connection between any two
                                    neurons (0-1). Default: 0.01.
             weight_mean: Mean initial synaptic weight. Default: 0.1.
             weight_std: Standard deviation of initial weights. Default: 0.05.
-            
+
         Raises:
-            ValueError: If connection_probability is not in [0, 1] or if 
+            ValueError: If connection_probability is not in [0, 1] or if
                        weight_std is negative.
         """
         # Validate parameters
         if not 0.0 <= connection_probability <= 1.0:
-            raise ValueError(
-                f"connection_probability must be between 0 and 1, "
-                f"got {connection_probability}"
-            )
-        
+            raise ValueError(f"connection_probability must be between 0 and 1, " f"got {connection_probability}")
+
         if weight_std < 0:
-            raise ValueError(
-                f"weight_std must be non-negative, got {weight_std}"
-            )
-        
+            raise ValueError(f"weight_std must be non-negative, got {weight_std}")
+
         neuron_ids = list(self.model.neurons.keys())
 
         # Generate random connections between all pairs of neurons
@@ -203,7 +194,7 @@ class Simulation:
         # while being driven by input current
         dv = (-(neuron.v_membrane - v_rest) + total_input) / tau_m * dt
         neuron.v_membrane += dv
-        
+
         # Check for NaN/Inf and reset to safe value if needed
         # This prevents numerical instability from propagating
         if np.isnan(neuron.v_membrane) or np.isinf(neuron.v_membrane):
@@ -304,11 +295,7 @@ class Simulation:
         max_history = 100  # Keep last 100 time steps
         current_step = self.model.current_step
         for neuron_id in list(self.spike_history.keys()):
-            self.spike_history[neuron_id] = [
-                t
-                for t in self.spike_history[neuron_id]
-                if current_step - t < max_history
-            ]
+            self.spike_history[neuron_id] = [t for t in self.spike_history[neuron_id] if current_step - t < max_history]
             # Remove empty histories to free memory
             if not self.spike_history[neuron_id]:
                 del self.spike_history[neuron_id]
