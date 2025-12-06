@@ -71,7 +71,13 @@ training_thread = None
 # Define allowed directories for file operations
 ALLOWED_SAVE_DIR = Path('saved_models')
 ALLOWED_CONFIG_DIR = Path('.')
+CHECKPOINT_DIR = Path('checkpoints')
 ALLOWED_SAVE_DIR.mkdir(exist_ok=True)
+CHECKPOINT_DIR.mkdir(exist_ok=True)
+
+# Checkpoint configuration
+CHECKPOINT_INTERVAL = 1000  # Save checkpoint every N steps
+last_checkpoint_step = 0
 
 
 def validate_filepath(filepath: str, allowed_dir: Path, allowed_extensions: list) -> Path:
@@ -128,6 +134,119 @@ class WebLogger(logging.Handler):
 web_handler = WebLogger()
 web_handler.setLevel(logging.INFO)
 logger.addHandler(web_handler)
+
+
+def validate_simulation_state(simulation: 'Simulation', model: 'BrainModel') -> tuple[bool, str]:
+    """Validate simulation state before running operations.
+    
+    Args:
+        simulation: The simulation object to validate
+        model: The brain model to validate
+        
+    Returns:
+        Tuple of (is_valid, error_message). If valid, error_message is empty.
+    """
+    if simulation is None:
+        return False, "No simulation initialized"
+    
+    if model is None:
+        return False, "No model initialized"
+    
+    # Check for minimum neuron count
+    if len(model.neurons) == 0:
+        return False, "Model has no neurons. Initialize neurons first."
+    
+    # Check for valid neuron states (no NaN/Inf values)
+    for neuron in list(model.neurons.values())[:10]:  # Sample first 10
+        if np.isnan(neuron.v_membrane) or np.isinf(neuron.v_membrane):
+            return False, f"Invalid neuron state detected (NaN/Inf in membrane potential)"
+        if np.isnan(neuron.health) or np.isinf(neuron.health):
+            return False, f"Invalid neuron state detected (NaN/Inf in health)"
+    
+    # Check for excessive dead synapses (all weights near zero)
+    if len(model.synapses) > 0:
+        non_zero_weights = sum(1 for s in model.synapses if abs(s.weight) > 0.001)
+        if non_zero_weights / len(model.synapses) < 0.01:  # Less than 1% active
+            logger.warning("Most synapses have near-zero weights")
+    
+    return True, ""
+
+
+def save_checkpoint(model: 'BrainModel', step: int) -> str:
+    """Save an automatic checkpoint of the model state.
+    
+    Args:
+        model: The brain model to checkpoint
+        step: Current simulation step
+        
+    Returns:
+        Path to saved checkpoint file
+    """
+    try:
+        checkpoint_name = f"checkpoint_step_{step}.h5"
+        checkpoint_path = CHECKPOINT_DIR / checkpoint_name
+        
+        save_to_hdf5(model, str(checkpoint_path))
+        logger.info(f"Checkpoint saved: {checkpoint_path}")
+        
+        # Keep only last 3 checkpoints to save disk space
+        cleanup_old_checkpoints(keep_count=3)
+        
+        return str(checkpoint_path)
+    except Exception as e:
+        logger.error(f"Failed to save checkpoint: {str(e)}")
+        return ""
+
+
+def cleanup_old_checkpoints(keep_count: int = 3):
+    """Remove old checkpoints, keeping only the most recent ones.
+    
+    Args:
+        keep_count: Number of recent checkpoints to keep
+    """
+    try:
+        checkpoints = sorted(
+            CHECKPOINT_DIR.glob("checkpoint_step_*.h5"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True
+        )
+        
+        # Remove old checkpoints
+        for checkpoint in checkpoints[keep_count:]:
+            checkpoint.unlink()
+            logger.info(f"Removed old checkpoint: {checkpoint.name}")
+    except Exception as e:
+        logger.error(f"Failed to cleanup checkpoints: {str(e)}")
+
+
+def load_latest_checkpoint() -> tuple['BrainModel', int]:
+    """Load the most recent checkpoint.
+    
+    Returns:
+        Tuple of (model, step) or (None, 0) if no checkpoint found
+    """
+    try:
+        checkpoints = sorted(
+            CHECKPOINT_DIR.glob("checkpoint_step_*.h5"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True
+        )
+        
+        if not checkpoints:
+            logger.info("No checkpoints found")
+            return None, 0
+        
+        latest = checkpoints[0]
+        # Extract step number from filename
+        step = int(latest.stem.split('_')[-1])
+        
+        model = load_from_hdf5(str(latest))
+        logger.info(f"Loaded checkpoint from step {step}")
+        
+        return model, step
+    except Exception as e:
+        logger.error(f"Failed to load checkpoint: {str(e)}")
+        return None, 0
 
 
 @app.route('/')
@@ -266,6 +385,11 @@ def simulation_step():
     if current_simulation is None:
         return jsonify({'status': 'error', 'message': 'No simulation initialized'}), 400
     
+    # Validate simulation state before running
+    is_valid, error_msg = validate_simulation_state(current_simulation, current_model)
+    if not is_valid:
+        return jsonify({'status': 'error', 'message': error_msg}), 400
+    
     try:
         with simulation_lock:
             stats = current_simulation.step()
@@ -292,6 +416,11 @@ def run_simulation():
     if current_simulation is None:
         return jsonify({'status': 'error', 'message': 'No simulation initialized'}), 400
     
+    # Validate simulation state before running
+    is_valid, error_msg = validate_simulation_state(current_simulation, current_model)
+    if not is_valid:
+        return jsonify({'status': 'error', 'message': error_msg}), 400
+    
     # Check if training is already running to prevent concurrent runs
     with simulation_lock:
         if is_training:
@@ -302,14 +431,26 @@ def run_simulation():
         data = request.json
         n_steps = data.get('steps', 100)
         
+        # Validate n_steps to prevent resource exhaustion
+        if not isinstance(n_steps, int) or n_steps <= 0:
+            raise ValueError("Steps must be a positive integer")
+        if n_steps > 100000:
+            raise ValueError("Steps cannot exceed 100000 to prevent memory exhaustion")
+        
         logger.info(f"Running simulation for {n_steps} steps")
         
         results = {
             'total_spikes': 0,
             'total_deaths': 0,
             'total_births': 0,
-            'steps': []
+            'final_neurons': 0,
+            'final_synapses': 0
         }
+        
+        # Memory leak fix: Only keep last 100 step details instead of all
+        # For very long simulations, we don't need every intermediate step
+        max_history_steps = 100
+        recent_steps = []
         
         for step in range(n_steps):
             # Check training flag under lock to avoid race conditions
@@ -318,10 +459,17 @@ def run_simulation():
                     logger.info("Training stopped by user")
                     break
                 stats = current_simulation.step()
+                current_step = current_model.current_step
                 
             results['total_spikes'] += len(stats['spikes'])
             results['total_deaths'] += stats['deaths']
             results['total_births'] += stats['births']
+            
+            # Automatic checkpoint at regular intervals for recovery
+            if current_step % CHECKPOINT_INTERVAL == 0:
+                checkpoint_path = save_checkpoint(current_model, current_step)
+                if checkpoint_path:
+                    logger.info(f"Auto-checkpoint saved at step {current_step}")
             
             if (step + 1) % 10 == 0:
                 step_info = {
@@ -330,11 +478,20 @@ def run_simulation():
                     'neurons': len(current_model.neurons),
                     'synapses': len(current_model.synapses)
                 }
-                results['steps'].append(step_info)
+                
+                # Only keep recent history to prevent memory leak
+                recent_steps.append(step_info)
+                if len(recent_steps) > max_history_steps:
+                    recent_steps.pop(0)
                 
                 # Send progress via SocketIO
                 socketio.emit('training_progress', step_info)
                 logger.info(f"Step {step + 1}/{n_steps}: {len(stats['spikes'])} spikes")
+        
+        # Add final state to results
+        results['final_neurons'] = len(current_model.neurons)
+        results['final_synapses'] = len(current_model.synapses)
+        results['recent_steps'] = recent_steps
         
         with simulation_lock:
             is_training = False
@@ -344,6 +501,11 @@ def run_simulation():
             'status': 'success',
             'results': results
         })
+    except ValueError as e:
+        with simulation_lock:
+            is_training = False
+        logger.error(f"Invalid simulation parameters: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 400
     except Exception as e:
         with simulation_lock:
             is_training = False
@@ -361,6 +523,37 @@ def stop_simulation():
     logger.info("Training stopped")
     
     return jsonify({'status': 'success'})
+
+
+@app.route('/api/simulation/recover', methods=['POST'])
+def recover_from_checkpoint():
+    """Recover simulation from the latest checkpoint."""
+    global current_model, current_simulation
+    
+    try:
+        model, step = load_latest_checkpoint()
+        
+        if model is None:
+            return jsonify({
+                'status': 'error',
+                'message': 'No checkpoint available for recovery'
+            }), 404
+        
+        with simulation_lock:
+            current_model = model
+            current_simulation = Simulation(current_model, seed=42)
+        
+        logger.info(f"Successfully recovered from checkpoint at step {step}")
+        
+        return jsonify({
+            'status': 'success',
+            'recovered_step': step,
+            'num_neurons': len(current_model.neurons),
+            'num_synapses': len(current_model.synapses)
+        })
+    except Exception as e:
+        logger.error(f"Failed to recover from checkpoint: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
 @app.route('/api/input/feed', methods=['POST'])

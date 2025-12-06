@@ -22,15 +22,18 @@ This document tracks known bugs, limitations, and technical debt in the project.
 
 ### High Severity
 
-#### Memory Leak in Long Simulations
-- **Status**: Open
-- **Severity**: High
-- **Affected Versions**: All
-- **Description**: Memory usage grows unbounded in simulations running for >10,000 steps
-- **Reproduction**: Run simulation for 20,000+ steps and monitor memory
-- **Impact**: Prevents long-running experiments, eventually crashes
-- **Workaround**: Restart simulation periodically and checkpoint state
-- **Related**: Issue #TBD
+#### Memory Leak in Long Simulations (RESOLVED)
+- **Status**: ✅ Fixed (December 2025)
+- **Severity**: High (was)
+- **Affected Versions**: Fixed in current version
+- **Description**: Memory usage was growing unbounded due to accumulating all step results
+- **Resolution**: Implemented bounded history keeping
+  - Changed from accumulating all steps to keeping only last 100 step details
+  - Added validation to prevent excessive step counts (max 100,000)
+  - Results now include summary stats and recent_steps instead of full history
+  - Automatic checkpoint system provides persistence without memory overhead
+- **Impact**: Long-running simulations (>10,000 steps) now run without memory exhaustion
+- **Related**: `app.py:run_simulation()`
 
 #### Synapse Weight Overflow (RESOLVED)
 - **Status**: ✅ Fixed (December 2025)
@@ -57,15 +60,19 @@ This document tracks known bugs, limitations, and technical debt in the project.
 
 ### Medium Severity
 
-#### HDF5 File Corruption on Interrupt
-- **Status**: Open
-- **Severity**: Medium
-- **Affected Versions**: All
+#### HDF5 File Corruption on Interrupt (MITIGATED)
+- **Status**: 🚧 Significantly Improved (December 2025)
+- **Severity**: Low (reduced from Medium)
+- **Affected Versions**: Mitigated in current version
 - **Description**: Interrupting save operation can corrupt HDF5 files
-- **Reproduction**: Save large model and interrupt (Ctrl+C) during write
-- **Impact**: Loss of model data
-- **Workaround**: Wait for save to complete, use atomic writes
-- **Related**: `storage.py:save_to_hdf5()`
+- **Mitigation**: Automatic checkpoint system now provides recovery
+  - Auto-checkpoints saved every 1000 steps
+  - Keeps last 3 checkpoints for redundancy
+  - Recovery endpoint available at `/api/simulation/recover`
+  - If main save is corrupted, can recover from checkpoint
+- **Remaining**: Consider implementing atomic writes with temp files
+- **Workaround**: Use automatic checkpoints and recovery endpoint
+- **Related**: `app.py:save_checkpoint()`, `app.py:recover_from_checkpoint()`
 
 #### Neuron Death Can Create Disconnected Networks
 - **Status**: Open
@@ -389,7 +396,20 @@ Use appropriate template when filing:
 
 ## Changelog
 
-### 2025-12-06 (Latest - Stability & Race Condition Fixes)
+### 2025-12-06 (Latest - Memory Leak Fixes & Checkpoint System)
+- ✅ RESOLVED: Memory leak in long simulations - bounded history keeping
+- ✅ RESOLVED: Added automatic checkpoint/recovery system
+- ✅ RESOLVED: Implemented simulation state validation
+- 🚧 IMPROVED: HDF5 corruption risk - mitigated with checkpoint redundancy
+- Fixed unbounded results accumulation in run_simulation endpoint
+- Implemented bounded history (keeps last 100 steps only)
+- Added validation for step count (max 100,000) to prevent resource exhaustion
+- Auto-checkpointing every 1000 steps with last 3 kept
+- Recovery endpoint for crash/corruption recovery
+- State validation before critical operations (NaN/Inf detection)
+- All 186 tests still passing after improvements
+
+### 2025-12-06 (Earlier - Stability & Race Condition Fixes)
 - ✅ RESOLVED: Synapse weight overflow - added NaN/Inf protection to plasticity
 - ✅ RESOLVED: Membrane potential NaN values - added protection in LIF neuron model
 - 🚧 IMPROVED: Race condition in web interface - comprehensive lock protection

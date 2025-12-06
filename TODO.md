@@ -16,10 +16,22 @@ This document tracks planned features, improvements, and tasks for the project. 
 
 ### Performance & Stability
 
-- [ ] Fix memory leaks in long-running simulations
-- [ ] Add comprehensive error handling for edge cases
-- [ ] Implement simulation state validation
-- [ ] Add automatic checkpoint/recovery for long simulations
+- [x] Fix memory leaks in long-running simulations (Dec 2025)
+  - [x] Fixed unbounded accumulation in simulation results
+  - [x] Implemented bounded history keeping (last 100 steps)
+  - [x] Added validation to prevent excessive step counts
+- [x] Add comprehensive error handling for edge cases (Dec 2025)
+  - [x] Enhanced validation for simulation parameters
+  - [x] Improved error messages with specific feedback
+  - [x] Added state validation before critical operations
+- [x] Implement simulation state validation (Dec 2025)
+  - [x] Validate neuron states (NaN/Inf detection)
+  - [x] Check minimum neuron count
+  - [x] Warn about dead synapses
+- [x] Add automatic checkpoint/recovery for long simulations (Dec 2025)
+  - [x] Implemented auto-checkpointing every 1000 steps
+  - [x] Created checkpoint cleanup (keeps last 3)
+  - [x] Added recovery endpoint for crash recovery
 - [ ] Optimize neuron update loop (currently O(n²) for synapses)
 
 ### Testing
