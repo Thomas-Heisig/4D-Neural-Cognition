@@ -313,6 +313,23 @@ function drawHeatmap(canvas, data) {
     
     const rows = data.length;
     const cols = data[0].length;
+    
+    // Limit processing for very large heatmaps to prevent browser freeze
+    // If data is too large, downsample it
+    const MAX_CELLS = 10000; // Maximum 100x100 heatmap
+    const totalCells = rows * cols;
+    
+    if (totalCells > MAX_CELLS) {
+        console.warn(`Heatmap too large (${rows}x${cols}=${totalCells} cells). Consider reducing neuron density.`);
+        addLogEntry('WARNING', `Heatmap zu groß (${totalCells} Zellen). Visualisierung übersprungen.`);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '16px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Zu viele Neuronen für`, width/2, height/2 - 20);
+        ctx.fillText(`Visualisierung (${totalCells})`, width/2, height/2 + 20);
+        return;
+    }
+    
     const cellWidth = width / cols;
     const cellHeight = height / rows;
     
