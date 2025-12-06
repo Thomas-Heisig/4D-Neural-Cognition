@@ -24,12 +24,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated Documentation Index (docs/INDEX.md) with new structure
   - Added documentation status badges to README
 
+- **Security Improvements** (December 2025)
+  - Added log rotation with RotatingFileHandler (10MB max, 5 backups)
+  - Implemented file path validation to prevent directory traversal attacks
+  - Added input validation with size limits and type checking
+  - Created saved_models/ directory for organized file storage
+
 ### Changed
 - **Documentation Updates**
   - Updated README.md with improved structure and new documentation links
   - Updated all cross-references to point to new documentation locations
   - Enhanced navigation and discoverability across all docs
   - Improved consistency in formatting and terminology
+
+- **Security Updates** (December 2025)
+  - Flask secret key now uses environment variable (FLASK_SECRET_KEY)
+  - Web API endpoints now validate all user inputs
+  - Improved error messages with specific validation feedback
 
 ### Deprecated
 - None
@@ -40,9 +51,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixed broken documentation links
 - Corrected outdated file paths in documentation
+- Fixed log file unbounded growth issue
+- Fixed file path injection vulnerability
+- Fixed missing input validation in API endpoints
 
 ### Security
 - Added comprehensive security policy (SECURITY.md)
+- Implemented environment variable for Flask secret key
+- Added path traversal protection with validate_filepath()
+- Added input validation and sanitization for API endpoints
+- Implemented size limits to prevent DoS attacks
 
 ## [1.0.0] - 2025-12-06
 

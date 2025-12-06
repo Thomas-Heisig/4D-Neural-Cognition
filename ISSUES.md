@@ -94,14 +94,12 @@ This document tracks known bugs, limitations, and technical debt in the project.
 
 ### Low Severity
 
-#### Log File Size Grows Unbounded
-- **Status**: Open
+#### Log File Size Grows Unbounded (RESOLVED)
+- **Status**: ✅ Fixed (December 2025)
 - **Severity**: Low
-- **Affected Versions**: All
-- **Description**: No log rotation, files can grow very large
-- **Reproduction**: Run for extended period with verbose logging
-- **Impact**: Disk space consumption
-- **Workaround**: Manually delete or rotate logs
+- **Affected Versions**: Fixed in current version
+- **Description**: Implemented log rotation with RotatingFileHandler (10MB max, 5 backups)
+- **Resolution**: Added automatic log rotation to prevent unbounded growth
 - **Related**: `app.py:logging configuration`
 
 #### Progress Indicator Inaccurate
@@ -307,29 +305,34 @@ This document tracks known bugs, limitations, and technical debt in the project.
 
 ## 🔒 Security Considerations
 
-### Flask Secret Key
+### Flask Secret Key (RESOLVED)
 - **Location**: `app.py`
-- **Issue**: Hardcoded secret key
-- **Severity**: Medium
-- **Impact**: Session hijacking possible
-- **Mitigation**: Change key, use environment variable
-- **Status**: Needs fix
+- **Status**: ✅ Fixed (December 2025)
+- **Severity**: Medium (was)
+- **Resolution**: Now uses environment variable FLASK_SECRET_KEY with clear warning for production
+- **Impact**: Production deployments can use secure, unique keys
 
-### No Input Validation
+### No Input Validation (IMPROVED)
 - **Location**: Web API endpoints
-- **Issue**: User inputs not validated
-- **Severity**: Medium
-- **Impact**: Possible injection attacks, crashes
-- **Mitigation**: Add validation, sanitization
-- **Status**: Needs fix
+- **Status**: 🚧 Partially Fixed (December 2025)
+- **Severity**: Medium (reduced to Low)
+- **Improvements Made**:
+  - Added input type validation for sensory data
+  - Implemented size limits to prevent memory exhaustion (10KB for digital, 1000x1000 for arrays)
+  - Added sense type validation against allowed values
+  - Improved error messages with specific feedback
+- **Remaining**: Additional validation for other endpoints if needed
 
-### File Path Injection
-- **Location**: `storage.py` load functions
-- **Issue**: User-provided paths not validated
-- **Severity**: Low
-- **Impact**: Could read arbitrary files
-- **Mitigation**: Validate and sanitize paths
-- **Status**: Needs fix
+### File Path Injection (RESOLVED)
+- **Location**: Web API endpoints (app.py)
+- **Status**: ✅ Fixed (December 2025)
+- **Severity**: Low (was)
+- **Resolution**: Implemented validate_filepath() function with:
+  - Directory traversal prevention
+  - Whitelist of allowed directories (saved_models/, config files)
+  - File extension validation
+  - Path normalization and sanitization
+- **Impact**: Cannot access files outside designated directories
 
 ### No Rate Limiting
 - **Location**: Web API
@@ -377,7 +380,16 @@ Use appropriate template when filing:
 
 ## Changelog
 
-### 2025-12-06 (December Update - Testing & Documentation)
+### 2025-12-06 (December Update - Security & Logging)
+- ✅ RESOLVED: Log file size growth - added log rotation (10MB files, 5 backups)
+- ✅ RESOLVED: Flask secret key - now uses environment variable
+- ✅ RESOLVED: File path injection - implemented path validation and sanitization
+- 🚧 IMPROVED: Input validation - added type checking, size limits, and validation
+- Added validate_filepath() function to prevent directory traversal attacks
+- Improved error messages with specific validation feedback
+- Created saved_models/ directory for organized file storage
+
+### 2025-12-06 (Earlier - Testing & Documentation)
 - ✅ RESOLVED: Added comprehensive unit test suite (75 tests, 100% pass rate)
 - ✅ RESOLVED: Added docstrings to all public functions in core modules
 - ✅ RESOLVED: Added inline comments for complex algorithms
