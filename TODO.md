@@ -2,19 +2,35 @@
 
 This document tracks planned features, improvements, and tasks for the project. Items are organized by priority and category.
 
-## Legend
+Dieses Dokument verfolgt geplante Features, Verbesserungen und Aufgaben für das Projekt. Die Einträge sind nach Priorität und Kategorie organisiert.
 
-- 🔴 **Critical**: Must be done soon, blocking other work
-- 🟡 **High**: Important for next release
-- 🟢 **Medium**: Should be done eventually
-- 🔵 **Low**: Nice to have, not urgent
-- ✅ **Done**: Completed tasks (moved to archive periodically)
+## Legend / Legende
+
+- 🔴 **Critical / Kritisch**: Must be done soon, blocking other work / Muss bald erledigt werden, blockiert andere Arbeit
+- 🟡 **High / Hoch**: Important for next release / Wichtig für nächste Version
+- 🟢 **Medium / Mittel**: Should be done eventually / Sollte irgendwann erledigt werden
+- 🔵 **Low / Niedrig**: Nice to have, not urgent / Wünschenswert, nicht dringend
+- ✅ **Done / Erledigt**: Completed tasks / Abgeschlossene Aufgaben
 
 ---
 
-## 🔴 Critical Priority
+## 🔴 Critical Priority / Kritische Priorität
 
-### Performance & Stability
+### Neurogenesis Module / Neurogenese-Modul
+
+- [x] Create neurogenesis directory structure / Neurogenese-Verzeichnisstruktur erstellen
+  - [x] neuron.py with complete components / neuron.py mit vollständigen Komponenten
+  - [x] glia.py with cell types / glia.py mit Zelltypen
+  - [x] dna_bank.py for parameter management / dna_bank.py für Parameterverwaltung
+- [ ] Add unit tests for neurogenesis module / Unit-Tests für Neurogenese-Modul hinzufügen
+  - [ ] Test neuron components (soma, dendrites, axons) / Neuron-Komponenten testen
+  - [ ] Test glia cell types / Gliazelltypen testen
+  - [ ] Test DNA bank operations / DNA-Bank-Operationen testen
+- [ ] Integrate neurogenesis with existing simulation / Neurogenese in existierende Simulation integrieren
+  - [ ] Bridge between old and new neuron models / Brücke zwischen alten und neuen Neuronmodellen
+  - [ ] Add migration utilities / Migrationswerkzeuge hinzufügen
+
+### Performance & Stability / Leistung & Stabilität
 
 - [ ] Fix memory leaks in long-running simulations
 - [ ] Add comprehensive error handling for edge cases
@@ -22,33 +38,56 @@ This document tracks planned features, improvements, and tasks for the project. 
 - [ ] Add automatic checkpoint/recovery for long simulations
 - [ ] Optimize neuron update loop (currently O(n²) for synapses)
 
-### Testing
+### Testing / Testen
 
-- [ ] Create unit tests for core modules:
+- [ ] Create unit tests for core modules / Unit-Tests für Kernmodule erstellen:
   - [ ] brain_model.py
   - [ ] simulation.py
   - [ ] cell_lifecycle.py
   - [ ] plasticity.py
   - [ ] senses.py
   - [ ] storage.py
-- [ ] Add integration tests for full simulation runs
-- [ ] Add performance benchmarks
-- [ ] Set up continuous integration (CI/CD)
+  - [ ] neurogenesis module / Neurogenese-Modul
+- [ ] Add integration tests for full simulation runs / Integrationstests für vollständige Simulationsläufe
+- [ ] Add performance benchmarks / Leistungs-Benchmarks hinzufügen
+- [ ] Set up continuous integration (CI/CD) / Continuous Integration einrichten
 
-### Documentation
+### Documentation / Dokumentation
 
-- [x] Create VISION.md
-- [x] Create TODO.md (this file)
-- [x] Create ISSUES.md
-- [ ] Add docstrings to all public functions
-- [ ] Create API documentation
-- [ ] Add inline code comments for complex algorithms
+- [x] Create VISION.md / VISION.md erstellen
+- [x] Create TODO.md (this file) / TODO.md erstellen (diese Datei)
+- [x] Create ISSUES.md / ISSUES.md erstellen
+- [x] Create ROADMAP.md / ROADMAP.md erstellen
+- [x] Create DevelopmentSchema.md / Entwicklungsschema.md erstellen
+- [ ] Add docstrings to all public functions / Docstrings zu allen öffentlichen Funktionen hinzufügen
+- [ ] Create API documentation / API-Dokumentation erstellen
+- [ ] Add inline code comments for complex algorithms / Inline-Kommentare für komplexe Algorithmen hinzufügen
 
 ---
 
-## 🟡 High Priority
+## 🟡 High Priority / Hohe Priorität
 
-### Features - Core Simulation
+### Neurogenesis Integration / Neurogenese-Integration
+
+- [ ] **Glia Cell Integration / Gliazell-Integration**
+  - [ ] Integrate astrocytes into simulation loop / Astrozyten in Simulationsschleife integrieren
+  - [ ] Implement oligodendrocyte myelination / Oligodendrozyten-Myelinisierung implementieren
+  - [ ] Add microglia surveillance and cleanup / Mikroglia-Überwachung und Aufräumen hinzufügen
+  - [ ] Model glia-neuron interactions / Glia-Neuron-Interaktionen modellieren
+
+- [ ] **DNA Bank Evolution / DNA-Bank-Evolution**
+  - [ ] Implement fitness tracking / Fitness-Tracking implementieren
+  - [ ] Add mutation operators / Mutations-Operatoren hinzufügen
+  - [ ] Enable parameter inheritance / Parameter-Vererbung ermöglichen
+  - [ ] Create evolutionary selection mechanisms / Evolutionäre Selektionsmechanismen erstellen
+
+- [ ] **Data Persistence for Neurogenesis / Datenpersistenz für Neurogenese**
+  - [ ] HDF5 schema for neuron components / HDF5-Schema für Neuronkomponenten
+  - [ ] HDF5 schema for glia cells / HDF5-Schema für Gliazellen
+  - [ ] DNA bank serialization / DNA-Bank-Serialisierung
+  - [ ] Checkpoint/resume with neurogenesis / Checkpoint/Wiederaufnahme mit Neurogenese
+
+### Features - Core Simulation / Features - Kernsimulation
 
 - [ ] **Inhibitory Neurons**
   - Add GABAergic neuron type

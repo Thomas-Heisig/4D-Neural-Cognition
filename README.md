@@ -159,6 +159,81 @@ for step in range(100):
 
 For complete API documentation, see [API.md](docs/API.md).
 
+---
+
+## 🧬 Development Model / Entwicklungsmodell
+
+### Self-Organizing Neural Development
+
+The 4D Neural Cognition project implements a **neurogenesis-based development schema** inspired by biological brain development. This approach enables:
+
+- **Self-organization**: Networks that grow and adapt organically
+- **Glia cell support**: Astrocytes, oligodendrocytes, and microglia for network maintenance
+- **Evolutionary optimization**: Parameter inheritance with mutations for adaptive learning
+- **DNA Bank**: Centralized parameter repository for cell configuration sharing
+
+### Cell Bank Approach / Zellbank-Ansatz
+
+Our system uses a **DNA Bank** - a central repository of genetic parameters that cells can retrieve and inherit:
+
+**Key Components / Hauptkomponenten:**
+
+1. **Neuron Components / Neuronkomponenten**
+   - **Soma**: Cell body with ion channels and spike generation
+   - **Dendrites**: Input structures with local processing
+   - **Axons**: Output pathways with myelination support
+
+2. **Glia Cells / Gliazellen**
+   - **Astrocytes**: Neurotransmitter regulation and synaptic modulation
+   - **Oligodendrocytes**: Myelin production for faster signal transmission
+   - **Microglia**: Immune surveillance and network maintenance
+
+3. **DNA Bank / DNA-Bank**
+   - Parameter templates for different cell types
+   - Inheritance mechanisms with mutation
+   - Fitness tracking for evolutionary selection
+   - Persistent storage and parameter sharing
+
+**Usage Example / Verwendungsbeispiel:**
+
+```python
+from src.neurogenesis import NeuronBase, Astrocyte, DNABank, ParameterCategory
+
+# Initialize DNA bank / DNA-Bank initialisieren
+dna_bank = DNABank(seed=42)
+
+# Create neuron with parameters from DNA bank
+# Neuron mit Parametern aus DNA-Bank erstellen
+neuron_params = dna_bank.create_parameter_set(
+    category=ParameterCategory.NEURON_ELECTRICAL
+)
+
+neuron = NeuronBase(
+    neuron_id=0,
+    position_4d=(10, 20, 30, 0),
+    genetic_parameters=neuron_params.parameters
+)
+
+# Add supporting glia cell / Unterstützende Gliazelle hinzufügen
+astrocyte = Astrocyte(
+    cell_id=100,
+    position_4d=(10, 20, 30, 0)
+)
+astrocyte.associate_with_neuron(neuron.neuron_id)
+
+# Run simulation with neurogenesis / Simulation mit Neurogenese ausführen
+for step in range(1000):
+    spike = neuron.update(dt=0.1)
+    astrocyte.update(dt=0.1)
+```
+
+For detailed documentation, see:
+- [Development Schema](docs/DevelopmentSchema.md) (English)
+- [Entwicklungsschema](docs/Entwicklungsschema.md) (Deutsch)
+- [ROADMAP.md](ROADMAP.md) for development phases
+
+---
+
 ## Features
 
 - **4D Neuronengitter**: Neuronen in einem (x, y, z, w) Koordinatensystem
