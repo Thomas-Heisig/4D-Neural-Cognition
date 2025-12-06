@@ -107,23 +107,17 @@ def present_multimodal_stimulus(sim, stimulus, duration=30):
     feed_sense_input(
         sim.model,
         sense_name="vision",
-        input_matrix=stimulus['vision'],
-        
-    )
+        input_matrix=stimulus['vision'])
     
     feed_sense_input(
         sim.model,
         sense_name="audio",
-        input_matrix=stimulus['audio'],
-        
-    )
+        input_matrix=stimulus['audio'])
     
     feed_sense_input(
         sim.model,
         sense_name="digital",
-        input_matrix=stimulus['digital'],
-        
-    )
+        input_matrix=stimulus['digital'])
     
     # Let network process
     spike_counts = []
@@ -183,9 +177,7 @@ def test_cross_modal(sim, stimuli):
         feed_sense_input(
             sim.model,
             sense_name="vision",
-            input_matrix=full_stimulus['vision'],
-            
-        )
+            input_matrix=full_stimulus['vision'])
         
         vision_spikes = []
         for step in range(30):
@@ -203,9 +195,7 @@ def test_cross_modal(sim, stimuli):
         feed_sense_input(
             sim.model,
             sense_name="audio",
-            input_matrix=full_stimulus['audio'],
-            
-        )
+            input_matrix=full_stimulus['audio'])
         
         audio_spikes = []
         for step in range(30):
@@ -223,9 +213,7 @@ def test_cross_modal(sim, stimuli):
         feed_sense_input(
             sim.model,
             sense_name="digital",
-            input_matrix=full_stimulus['digital'],
-            
-        )
+            input_matrix=full_stimulus['digital'])
         
         digital_spikes = []
         for step in range(30):

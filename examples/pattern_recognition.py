@@ -76,9 +76,7 @@ def train_on_patterns(sim, patterns, epochs=5):
             feed_sense_input(
                 sim.model,
                 sense_name="vision",
-                input_matrix=pattern,
-                
-            )
+                input_matrix=pattern)
             
             # Let network process
             for step in range(30):
@@ -117,9 +115,7 @@ def test_recognition(sim, patterns):
         feed_sense_input(
             sim.model,
             sense_name="vision",
-            input_matrix=pattern,
-            
-        )
+            input_matrix=pattern)
         
         # Measure response
         spike_counts = []

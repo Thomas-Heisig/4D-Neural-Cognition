@@ -109,9 +109,7 @@ def present_sequence(sim, sequence, delay_between_frames=5):
         feed_sense_input(
             sim.model,
             sense_name="vision",
-            input_matrix=frame,
-            
-        )
+            input_matrix=frame)
         
         # Let network process
         for step in range(delay_between_frames):
