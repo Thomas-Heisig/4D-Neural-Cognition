@@ -61,55 +61,103 @@ def feed_sense_input(
     """Feed sensory input to neurons in the corresponding brain area.
 
     Maps input values from a 2D matrix to neurons in the area assigned
-    to the given sense.
+    to the given sense. Validates input dimensions and provides clear
+    error messages for mismatches.
 
     Args:
         model: The brain model.
         sense_name: Name of the sense (e.g., "vision", "digital").
         input_matrix: 2D numpy array of input values.
-        z_layer: Which z-layer to project the input to.
+        z_layer: Which z-layer to project the input to (default: 0).
+        
+    Raises:
+        ValueError: If sense_name is unknown, area not found, or input 
+                   dimensions are invalid.
+        TypeError: If input_matrix is not a numpy array.
     """
+    # Validate input type
+    if not isinstance(input_matrix, np.ndarray):
+        raise TypeError(
+            f"input_matrix must be a numpy array, got {type(input_matrix).__name__}"
+        )
+    
+    # Validate input is 2D
+    if input_matrix.ndim != 2:
+        raise ValueError(
+            f"input_matrix must be 2D, got shape {input_matrix.shape} "
+            f"with {input_matrix.ndim} dimensions"
+        )
+    
     senses = model.get_senses()
     areas = model.get_areas()
 
     if sense_name not in senses:
-        raise ValueError(f"Unknown sense: {sense_name}")
+        available_senses = ", ".join(senses.keys())
+        raise ValueError(
+            f"Unknown sense: '{sense_name}'. Available senses: {available_senses}"
+        )
 
     sense = senses[sense_name]
     area_name = sense["areal"]
     area = next((a for a in areas if a["name"] == area_name), None)
 
     if area is None:
-        raise ValueError(f"Area not found for sense: {sense_name}")
+        raise ValueError(
+            f"Area '{area_name}' not found for sense '{sense_name}'. "
+            f"Check configuration for missing area definition."
+        )
 
-    # Get coordinate ranges
+    # Get coordinate ranges for the sensory area
     ranges = area["coord_ranges"]
     x_range = ranges["x"]
     y_range = ranges["y"]
     z_range = ranges["z"]
     w_range = ranges["w"]
 
-    # Use fixed z and w
+    # Calculate expected input dimensions based on area size
+    expected_x_size = x_range[1] - x_range[0] + 1
+    expected_y_size = y_range[1] - y_range[0] + 1
+    
+    # Validate z_layer parameter
+    z_depth = z_range[1] - z_range[0] + 1
+    if z_layer < 0 or z_layer >= z_depth:
+        raise ValueError(
+            f"z_layer {z_layer} out of range for sense '{sense_name}'. "
+            f"Valid range: [0, {z_depth - 1}]"
+        )
+
+    # Use fixed z and w coordinates for 2D input projection
     z_fixed = z_range[0] + z_layer
     w_fixed = w_range[0]
 
-    # Ensure z is within range
-    if z_fixed > z_range[1]:
-        z_fixed = z_range[1]
+    # Validate input dimensions match area dimensions
+    # Provide helpful error message if dimensions don't match
+    if input_matrix.shape[0] != expected_x_size or input_matrix.shape[1] != expected_y_size:
+        # Log warning but allow partial mapping for flexibility
+        import warnings
+        warnings.warn(
+            f"Input dimension mismatch for sense '{sense_name}': "
+            f"expected ({expected_x_size}, {expected_y_size}), "
+            f"got {input_matrix.shape}. Will map overlapping region only.",
+            UserWarning
+        )
 
-    # Create coordinate to neuron ID mapping
+    # Create coordinate to neuron ID mapping for efficient lookup
     coord_map = model.coord_to_id_map()
 
-    # Map input to neurons
-    x_size = x_range[1] - x_range[0] + 1
-    y_size = y_range[1] - y_range[0] + 1
+    # Map input values to neurons in the sensory area
+    # Only map the overlapping region if sizes don't match
+    x_size = min(input_matrix.shape[0], expected_x_size)
+    y_size = min(input_matrix.shape[1], expected_y_size)
 
-    for ix in range(min(input_matrix.shape[0], x_size)):
-        for iy in range(min(input_matrix.shape[1], y_size)):
+    for ix in range(x_size):
+        for iy in range(y_size):
+            # Calculate absolute neuron coordinates
             x = x_range[0] + ix
             y = y_range[0] + iy
             coord = (x, y, z_fixed, w_fixed)
 
+            # Inject input current if neuron exists at this position
             if coord in coord_map:
                 neuron_id = coord_map[coord]
                 if neuron_id in model.neurons:
