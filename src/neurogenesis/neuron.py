@@ -9,7 +9,7 @@ Basisstruktur für Neuronen mit vollständigen Unter-Komponenten.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from enum import Enum
 import numpy as np
 
@@ -86,7 +86,9 @@ class Soma:
             True if spike threshold is reached, False otherwise
         """
         # Leaky integrate-and-fire dynamics
-        tau_m = self.capacitance / self.ion_channels['leak']
+        # Ensure leak conductance has minimum value to prevent division by zero
+        leak_conductance = max(self.ion_channels['leak'], 0.01)
+        tau_m = self.capacitance / leak_conductance
         dv = (-(self.membrane_potential - self.resting_potential) + current) / tau_m
         self.membrane_potential += dv * dt
         
@@ -250,7 +252,7 @@ class NeuronBase:
         genetic_parameters: Reference to DNA bank parameters
     """
     neuron_id: int
-    position_4d: tuple  # (x, y, z, w)
+    position_4d: Tuple[float, float, float, float]  # (x, y, z, w)
     neuron_type: NeuronType = NeuronType.EXCITATORY
     soma: Soma = field(default_factory=Soma)
     dendrites: List[Dendrite] = field(default_factory=list)

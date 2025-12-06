@@ -8,7 +8,7 @@ Basisklassen und Typen für Gliazellen: Astrozyten, Oligodendrozyten, Mikroglia.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Set
+from typing import List, Dict, Any, Set, Tuple
 from enum import Enum
 import numpy as np
 
@@ -56,7 +56,7 @@ class GliaCell:
         metabolic_rate: Rate of metabolic activity
     """
     cell_id: int
-    position_4d: tuple  # (x, y, z, w)
+    position_4d: Tuple[float, float, float, float]  # (x, y, z, w)
     glia_type: GliaType
     state: GliaState = GliaState.RESTING
     age: int = 0

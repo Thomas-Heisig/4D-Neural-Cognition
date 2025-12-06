@@ -73,7 +73,11 @@ class GeneticParameters:
                 # Apply Gaussian mutation
                 if rng.random() < self.mutation_rate:
                     mutation_factor = 1.0 + rng.normal(0, 0.1)
-                    mutated_params[key] = value * mutation_factor
+                    mutated_value = value * mutation_factor
+                    # Ensure positive values for parameters that must be positive
+                    if value > 0:
+                        mutated_value = abs(mutated_value)
+                    mutated_params[key] = mutated_value
                 else:
                     mutated_params[key] = value
             else:
@@ -129,6 +133,9 @@ class DNABank:
         default_templates: Template parameters for each category
         rng: Random number generator for mutations
     """
+    
+    # Class constants for configuration
+    DEFAULT_FITNESS_THRESHOLD = 0.5  # Threshold for pruning low-fitness parameters
     
     def __init__(self, seed: Optional[int] = None):
         """
@@ -333,7 +340,8 @@ class DNABank:
         category_params.sort(key=lambda p: p.fitness_score, reverse=True)
         return category_params[:top_n]
     
-    def prune_old_parameters(self, keep_generations: int = 5):
+    def prune_old_parameters(self, keep_generations: int = 5, 
+                            fitness_threshold: Optional[float] = None):
         """
         Remove old parameter sets to save memory.
         
@@ -341,9 +349,13 @@ class DNABank:
         
         Args:
             keep_generations: Number of recent generations to keep
+            fitness_threshold: Minimum fitness to keep (default: class constant)
         """
         if not self.parameters:
             return
+        
+        if fitness_threshold is None:
+            fitness_threshold = self.DEFAULT_FITNESS_THRESHOLD
         
         max_generation = max(p.generation for p in self.parameters.values())
         min_generation_to_keep = max_generation - keep_generations
@@ -351,7 +363,7 @@ class DNABank:
         # Keep parameters from recent generations or with high fitness
         to_remove = [
             pid for pid, p in self.parameters.items()
-            if p.generation < min_generation_to_keep and p.fitness_score < 0.5
+            if p.generation < min_generation_to_keep and p.fitness_score < fitness_threshold
         ]
         
         for pid in to_remove:
