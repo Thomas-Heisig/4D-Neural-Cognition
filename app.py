@@ -4,7 +4,6 @@
 from __future__ import annotations
 import sys
 import os
-import json
 import logging
 from logging.handlers import RotatingFileHandler
 from datetime import datetime
@@ -13,7 +12,7 @@ from pathlib import Path
 from typing import Tuple, Optional
 import numpy as np
 
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 

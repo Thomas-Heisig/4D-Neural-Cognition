@@ -1,5 +1,6 @@
 """Cell lifecycle management - death and reproduction with inheritance."""
 
+import logging
 import numpy as np
 from typing import TYPE_CHECKING
 
@@ -8,6 +9,8 @@ if TYPE_CHECKING:
         from .brain_model import BrainModel, Neuron
     except ImportError:
         from brain_model import BrainModel, Neuron
+
+logger = logging.getLogger(__name__)
 
 
 def mutate_params(params: dict, rng: np.random.Generator, std: float = 0.05) -> dict:
@@ -121,10 +124,23 @@ def maybe_kill_and_reproduce(
     model.remove_neuron(parent_id)
 
     # Add new synapses
+    lost_synapses = 0
     for pre_id, post_id, weight, delay in new_synapses_data:
         # Only add synapse if both endpoints exist
         if pre_id in model.neurons and post_id in model.neurons:
             model.add_synapse(pre_id, post_id, weight, delay)
+        else:
+            lost_synapses += 1
+    
+    # Log warning if synapses were lost (contributes to network disconnection)
+    # Use lazy string formatting to avoid overhead when debug logging is disabled
+    if lost_synapses > 0:
+        logger.debug(
+            "Neuron reproduction: %d synapse(s) lost due to "
+            "missing endpoint neurons (gen %d)",
+            lost_synapses,
+            new_neuron.generation
+        )
 
     return new_neuron
 

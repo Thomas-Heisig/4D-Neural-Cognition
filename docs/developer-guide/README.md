@@ -20,6 +20,7 @@ Welcome to the 4D Neural Cognition Developer Guide! This guide helps contributor
 9. **[Testing Guide](testing-guide.md)** - Writing and running tests
 10. **[Documentation Guide](documentation-guide.md)** - Writing documentation
 11. **[Git Workflow](git-workflow.md)** - Branch and commit practices
+12. **[CI/CD Setup](CI_CD_SETUP.md)** - Continuous integration and deployment guide
 
 ### Extension Guides
 12. **[Adding Neuron Models](adding-neuron-models.md)** - Implement new neuron types
@@ -28,9 +29,10 @@ Welcome to the 4D Neural Cognition Developer Guide! This guide helps contributor
 15. **[Adding Tasks](adding-tasks.md)** - Create benchmark tasks
 
 ### Advanced Topics
-16. **[Performance Optimization](performance-optimization.md)** - Profiling and optimization
-17. **[Debugging Techniques](debugging-techniques.md)** - Debug strategies
-18. **[Security Considerations](../../SECURITY.md)** - Security best practices
+17. **[Performance Optimization](performance-optimization.md)** - Profiling and optimization
+18. **[Debugging Techniques](debugging-techniques.md)** - Debug strategies
+19. **[Security Considerations](../../SECURITY.md)** - Security best practices
+20. **[CI/CD Setup](CI_CD_SETUP.md)** - Continuous integration setup guide
 
 ---
 

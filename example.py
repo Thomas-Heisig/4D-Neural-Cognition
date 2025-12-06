@@ -10,7 +10,6 @@ This script:
 
 import sys
 import os
-import json
 import numpy as np
 
 # Add src directory to path

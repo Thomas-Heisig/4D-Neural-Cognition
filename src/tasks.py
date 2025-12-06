@@ -21,6 +21,7 @@ class TaskResult:
     additional_metrics: Dict[str, float] = None
     
     def __post_init__(self):
+        """Initialize additional_metrics dict if not provided."""
         if self.additional_metrics is None:
             self.additional_metrics = {}
 
@@ -305,6 +306,14 @@ class PatternClassificationEnvironment(Environment):
         noise_level: float = 0.1,
         seed: int = None
     ):
+        """Initialize pattern classification environment.
+        
+        Args:
+            num_classes: Number of pattern classes to classify.
+            pattern_size: Size of patterns as (height, width).
+            noise_level: Amount of noise to add to patterns (0.0 to 1.0).
+            seed: Random seed for reproducibility.
+        """
         super().__init__(seed)
         self.num_classes = num_classes
         self.pattern_size = pattern_size
@@ -523,6 +532,13 @@ class TemporalSequenceEnvironment(Environment):
         vocabulary_size: int = 8,
         seed: int = None
     ):
+        """Initialize temporal sequence environment.
+        
+        Args:
+            sequence_length: Length of sequences to generate.
+            vocabulary_size: Number of unique symbols in vocabulary.
+            seed: Random seed for reproducibility.
+        """
         super().__init__(seed)
         self.sequence_length = sequence_length
         self.vocabulary_size = vocabulary_size

@@ -92,15 +92,19 @@ This document tracks known bugs, limitations, and technical debt in the project.
 - **Resolution**: Added comprehensive input validation with helpful error messages
 - **Related**: `senses.py:feed_sense_input()`
 
-#### Web Frontend Freezes with Large Models
-- **Status**: Open
-- **Severity**: Medium
-- **Affected Versions**: All
-- **Description**: Heatmap visualization freezes browser with >10,000 neurons
+#### Web Frontend Freezes with Large Models (MITIGATED)
+- **Status**: 🚧 Mitigated (December 2025)
+- **Severity**: Low (reduced from Medium)
+- **Affected Versions**: Mitigated in current version
+- **Description**: Heatmap visualization could freeze browser with >10,000 neurons
+- **Mitigation**: Added safeguard to prevent rendering heatmaps with >10,000 cells
+  - Displays warning message instead of attempting to render
+  - Logs warning to help users understand the limitation
+  - Prevents browser freeze by skipping visualization
 - **Reproduction**: Initialize model with high density (>0.5), view heatmap
-- **Impact**: UI becomes unresponsive
-- **Workaround**: Use lower density or disable visualization
-- **Related**: `static/js/app.js:updateHeatmap()`
+- **Impact**: Heatmap shows warning message instead of data for very large models
+- **Workaround**: Use lower density (<0.3) for visualization
+- **Related**: `static/js/app.js:drawHeatmap()`
 
 ### Low Severity
 
@@ -396,7 +400,16 @@ Use appropriate template when filing:
 
 ## Changelog
 
-### 2025-12-06 (Latest - Memory Leak Fixes & Checkpoint System)
+### 2025-12-06 (Latest - Code Quality & Frontend Improvements)
+- 🚧 MITIGATED: Web frontend freezes with large models - added heatmap size check
+- Added safeguard to prevent rendering heatmaps >10,000 cells
+- Display warning message instead of freezing browser
+- Removed unused imports from app.py, example.py, brain_model.py
+- Added missing docstrings to tasks.py
+- Added logging to cell_lifecycle.py to track synapse loss during reproduction
+- All 186 tests still passing
+
+### 2025-12-06 (Earlier - Memory Leak Fixes & Checkpoint System)
 - ✅ RESOLVED: Memory leak in long simulations - bounded history keeping
 - ✅ RESOLVED: Added automatic checkpoint/recovery system
 - ✅ RESOLVED: Implemented simulation state validation
