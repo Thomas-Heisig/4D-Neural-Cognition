@@ -8,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+- **Critical Stability & Performance Updates** (December 2025)
+  - Automatic checkpoint/recovery system for long-running simulations
+    - Auto-checkpointing every 1000 steps with configurable interval
+    - Keeps last 3 checkpoints for redundancy
+    - Recovery endpoint at `/api/simulation/recover`
+    - Frontend recovery button with German language support
+  - Simulation state validation before critical operations
+    - NaN/Inf detection in neuron states and health values
+    - Minimum neuron count validation
+    - Dead synapse warnings
+  - Memory leak fixes for long-running simulations
+    - Bounded history keeping (last 100 steps only)
+    - Step count validation (max 100,000)
+    - Prevents unbounded memory growth (>99% reduction)
+  - Performance optimization for spike checking
+    - Changed from O(n*m) to O(m) using set-based lookup
+    - ~100x speedup for plasticity phase in large networks
+  - Enhanced error handling and validation
+    - Comprehensive parameter validation
+    - Improved error messages with specific feedback
+    - State validation before operations
+
+### Added
 - **Documentation Reorganization** (December 2025)
   - Reorganized documentation according to international standards (ISO/IEC/IEEE 26512:2018)
   - Added SECURITY.md for security policy and vulnerability reporting

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Flask web application for 4D Neural Cognition frontend interface."""
 
+from __future__ import annotations
 import sys
 import os
 import json
@@ -9,6 +10,7 @@ from logging.handlers import RotatingFileHandler
 from datetime import datetime
 from threading import Lock
 from pathlib import Path
+from typing import Tuple, Optional
 import numpy as np
 
 from flask import Flask, render_template, request, jsonify, session
@@ -77,7 +79,6 @@ CHECKPOINT_DIR.mkdir(exist_ok=True)
 
 # Checkpoint configuration
 CHECKPOINT_INTERVAL = 1000  # Save checkpoint every N steps
-last_checkpoint_step = 0
 
 
 def validate_filepath(filepath: str, allowed_dir: Path, allowed_extensions: list) -> Path:
@@ -136,7 +137,7 @@ web_handler.setLevel(logging.INFO)
 logger.addHandler(web_handler)
 
 
-def validate_simulation_state(simulation: 'Simulation', model: 'BrainModel') -> tuple[bool, str]:
+def validate_simulation_state(simulation: Simulation, model: BrainModel) -> Tuple[bool, str]:
     """Validate simulation state before running operations.
     
     Args:
@@ -172,7 +173,7 @@ def validate_simulation_state(simulation: 'Simulation', model: 'BrainModel') -> 
     return True, ""
 
 
-def save_checkpoint(model: 'BrainModel', step: int) -> str:
+def save_checkpoint(model: BrainModel, step: int) -> str:
     """Save an automatic checkpoint of the model state.
     
     Args:
@@ -219,7 +220,7 @@ def cleanup_old_checkpoints(keep_count: int = 3):
         logger.error(f"Failed to cleanup checkpoints: {str(e)}")
 
 
-def load_latest_checkpoint() -> tuple['BrainModel', int]:
+def load_latest_checkpoint() -> Tuple[Optional[BrainModel], int]:
     """Load the most recent checkpoint.
     
     Returns:
