@@ -64,7 +64,8 @@ python app.py
 
 ## 📚 Documentation
 
-> **📑 Complete Documentation Index**: See [docs/INDEX.md](docs/INDEX.md) for full navigation
+> **📑 Documentation Hub**: See [DOCUMENTATION.md](DOCUMENTATION.md) for complete overview  
+> **📖 Full Index**: See [docs/INDEX.md](docs/INDEX.md) for detailed navigation
 
 ### 🚀 Getting Started
 - **[User Guide](docs/user-guide/)** - Complete user documentation
