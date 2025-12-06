@@ -128,6 +128,7 @@ class Astrocyte(GliaCell):
         synapses_modulated: Set of synapse IDs this astrocyte modulates
         calcium_level: Internal calcium concentration
     """
+    glia_type: GliaType = field(default=GliaType.ASTROCYTE, init=False)
     coverage_radius: float = 50.0  # micrometers
     neurotransmitter_uptake: float = 0.8  # relative rate
     ion_buffering_capacity: float = 100.0  # arbitrary units
@@ -137,7 +138,7 @@ class Astrocyte(GliaCell):
     
     def __post_init__(self):
         """Initialize astrocyte-specific properties."""
-        self.glia_type = GliaType.ASTROCYTE
+        super().__post_init__() if hasattr(super(), '__post_init__') else None
         if not self.metadata:
             self.metadata = {
                 'glutamate_transporters': 1.0,
@@ -235,6 +236,7 @@ class Oligodendrocyte(GliaCell):
         axons_myelinated: Set of axon IDs currently myelinated
         myelin_maintenance_cost: Metabolic cost of maintaining myelin
     """
+    glia_type: GliaType = field(default=GliaType.OLIGODENDROCYTE, init=False)
     max_axons_myelinated: int = 40  # One oligodendrocyte can myelinate many axons
     myelination_rate: float = 0.1  # relative rate of myelin formation
     myelin_thickness: float = 0.5  # micrometers
@@ -243,7 +245,7 @@ class Oligodendrocyte(GliaCell):
     
     def __post_init__(self):
         """Initialize oligodendrocyte-specific properties."""
-        self.glia_type = GliaType.OLIGODENDROCYTE
+        super().__post_init__() if hasattr(super(), '__post_init__') else None
         if not self.metadata:
             self.metadata = {
                 'myelin_basic_protein': 1.0,
@@ -324,6 +326,7 @@ class Microglia(GliaCell):
         cytokine_production: Rate of inflammatory cytokine production
         monitored_cells: Set of cell IDs being monitored
     """
+    glia_type: GliaType = field(default=GliaType.MICROGLIA, init=False)
     surveillance_radius: float = 70.0  # micrometers
     phagocytic_capacity: float = 1.0
     activation_threshold: float = 0.5
@@ -332,7 +335,7 @@ class Microglia(GliaCell):
     
     def __post_init__(self):
         """Initialize microglia-specific properties."""
-        self.glia_type = GliaType.MICROGLIA
+        super().__post_init__() if hasattr(super(), '__post_init__') else None
         if not self.metadata:
             self.metadata = {
                 'ramification_index': 1.0,  # How branched the processes are

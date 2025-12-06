@@ -11,21 +11,26 @@ Hauptmodule / Main Modules:
 - dna_bank: Central DNA/parameter bank for cell configuration
 """
 
-from .neuron import NeuronBase, Dendrite, Axon, Soma
-from .glia import GliaCell, Astrocyte, Oligodendrocyte, Microglia
-from .dna_bank import DNABank, GeneticParameters
+from .neuron import NeuronBase, Dendrite, Axon, Soma, NeuronType, CompartmentType
+from .glia import GliaCell, Astrocyte, Oligodendrocyte, Microglia, GliaType, GliaState
+from .dna_bank import DNABank, GeneticParameters, ParameterCategory
 
 __all__ = [
     'NeuronBase',
     'Dendrite',
     'Axon',
     'Soma',
+    'NeuronType',
+    'CompartmentType',
     'GliaCell',
     'Astrocyte',
     'Oligodendrocyte',
     'Microglia',
+    'GliaType',
+    'GliaState',
     'DNABank',
     'GeneticParameters',
+    'ParameterCategory',
 ]
 
 __version__ = '0.1.0'
