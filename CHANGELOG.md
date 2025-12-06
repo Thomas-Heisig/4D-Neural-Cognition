@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Code Quality & Maintenance Updates** (December 2025)
+  - Added logging to cell_lifecycle.py for tracking synapse loss during reproduction
+  - Added missing docstrings to tasks.py methods
+  - Added heatmap size safeguard to prevent browser freeze with large models
+
+### Changed
+
+- **Code Quality Improvements** (December 2025)
+  - Removed unused imports from app.py (json, session), example.py (json), brain_model.py (Any)
+  - Improved frontend heatmap handling with 10,000 cell limit
+  - Display warning message for too-large heatmaps instead of freezing
+
+### Added
+
 - **Critical Stability & Performance Updates** (December 2025)
   - Automatic checkpoint/recovery system for long-running simulations
     - Auto-checkpointing every 1000 steps with configurable interval
