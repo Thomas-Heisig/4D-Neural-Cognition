@@ -398,9 +398,14 @@ source venv/bin/activate
 
 #### Windows: Long path errors
 
+**⚠️ Warning**: This requires administrator privileges and modifies system-wide settings.
+
 ```powershell
-# Enable long paths
+# Enable long paths (requires Administrator PowerShell)
+# This has security implications - only enable if needed
 reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1
+
+# Alternative: Use shorter paths or WSL2
 ```
 
 #### Linux: Display issues with web interface
@@ -434,13 +439,24 @@ pip install sphinx sphinx-rtd-theme
 ### Git Hooks
 
 ```bash
-# Set up pre-commit hooks
+# Set up pre-commit hooks with error handling
 cat > .git/hooks/pre-commit << 'EOF'
 #!/bin/bash
-black src/ tests/
-flake8 src/ tests/
+set -e  # Exit on error
+
+echo "Running code formatting..."
+black src/ tests/ || exit 1
+
+echo "Running style checks..."
+flake8 src/ tests/ || exit 1
+
+echo "Pre-commit checks passed!"
+exit 0
 EOF
 chmod +x .git/hooks/pre-commit
+
+# Test the hook
+.git/hooks/pre-commit
 ```
 
 ### Running Tests
@@ -507,8 +523,15 @@ python app.py &
 # Should see web interface
 
 # 5. Run basic test
-python -c "from src.brain_model import BrainModel; m = BrainModel(config_path='brain_base_model.json'); print('OK')"
-# Should print: OK
+python -c "
+try:
+    from src.brain_model import BrainModel
+    m = BrainModel(config_path='brain_base_model.json')
+    print('✓ Installation verified successfully!')
+except Exception as e:
+    print(f'✗ Verification failed: {e}')
+    exit(1)
+"
 ```
 
 ### Verify Web Interface

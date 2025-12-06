@@ -67,8 +67,9 @@ which have a negative impact on community health.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-[INSERT CONTACT EMAIL HERE].
+reported to the community leaders responsible for enforcement via:
+- GitHub Issues (for public concerns): https://github.com/Thomas-Heisig/4D-Neural-Cognition/issues
+- Email (for private concerns): Please contact the project maintainer through GitHub profile
 
 All complaints will be reviewed and investigated promptly and fairly.
 
