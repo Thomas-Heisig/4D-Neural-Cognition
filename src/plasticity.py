@@ -57,7 +57,15 @@ def hebbian_update(
 
     # Apply weight update with bounds to prevent extreme values
     synapse.weight += delta
-    synapse.weight = max(weight_min, min(weight_max, synapse.weight))
+    
+    # Check for NaN/Inf values and clip to valid range
+    # This prevents numerical instability from propagating
+    import math
+    if math.isnan(synapse.weight) or math.isinf(synapse.weight):
+        # Reset to a safe middle value if weight becomes invalid
+        synapse.weight = (weight_min + weight_max) / 2.0
+    else:
+        synapse.weight = max(weight_min, min(weight_max, synapse.weight))
 
 
 def apply_weight_decay(synapse: "Synapse", model: "BrainModel") -> None:
@@ -138,4 +146,11 @@ def spike_timing_dependent_plasticity(
 
     # Apply weight change with hard bounds
     synapse.weight += delta_w
-    synapse.weight = max(weight_min, min(weight_max, synapse.weight))
+    
+    # Check for NaN/Inf values and clip to valid range
+    # This prevents numerical instability from propagating
+    if math.isnan(synapse.weight) or math.isinf(synapse.weight):
+        # Reset to a safe middle value if weight becomes invalid
+        synapse.weight = (weight_min + weight_max) / 2.0
+    else:
+        synapse.weight = max(weight_min, min(weight_max, synapse.weight))

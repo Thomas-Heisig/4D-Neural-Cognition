@@ -292,12 +292,17 @@ def run_simulation():
     if current_simulation is None:
         return jsonify({'status': 'error', 'message': 'No simulation initialized'}), 400
     
+    # Check if training is already running to prevent concurrent runs
+    with simulation_lock:
+        if is_training:
+            return jsonify({'status': 'error', 'message': 'Simulation already running'}), 400
+        is_training = True
+    
     try:
         data = request.json
         n_steps = data.get('steps', 100)
         
         logger.info(f"Running simulation for {n_steps} steps")
-        is_training = True
         
         results = {
             'total_spikes': 0,
@@ -307,11 +312,11 @@ def run_simulation():
         }
         
         for step in range(n_steps):
-            if not is_training:
-                logger.info("Training stopped by user")
-                break
-                
+            # Check training flag under lock to avoid race conditions
             with simulation_lock:
+                if not is_training:
+                    logger.info("Training stopped by user")
+                    break
                 stats = current_simulation.step()
                 
             results['total_spikes'] += len(stats['spikes'])
@@ -331,7 +336,8 @@ def run_simulation():
                 socketio.emit('training_progress', step_info)
                 logger.info(f"Step {step + 1}/{n_steps}: {len(stats['spikes'])} spikes")
         
-        is_training = False
+        with simulation_lock:
+            is_training = False
         logger.info(f"Simulation complete: {results['total_spikes']} total spikes")
         
         return jsonify({
@@ -339,7 +345,8 @@ def run_simulation():
             'results': results
         })
     except Exception as e:
-        is_training = False
+        with simulation_lock:
+            is_training = False
         logger.error(f"Failed to run simulation: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
@@ -349,7 +356,8 @@ def stop_simulation():
     """Stop ongoing simulation."""
     global is_training
     
-    is_training = False
+    with simulation_lock:
+        is_training = False
     logger.info("Training stopped")
     
     return jsonify({'status': 'success'})

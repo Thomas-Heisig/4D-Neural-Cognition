@@ -203,6 +203,11 @@ class Simulation:
         # while being driven by input current
         dv = (-(neuron.v_membrane - v_rest) + total_input) / tau_m * dt
         neuron.v_membrane += dv
+        
+        # Check for NaN/Inf and reset to safe value if needed
+        # This prevents numerical instability from propagating
+        if np.isnan(neuron.v_membrane) or np.isinf(neuron.v_membrane):
+            neuron.v_membrane = v_rest
 
         # Reset external input after processing (one-time input)
         neuron.external_input = 0.0

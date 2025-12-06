@@ -37,6 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added metrics tests (35 tests) for evaluation framework
   - 47% overall code coverage with high coverage in core modules
 
+- **Stability Improvements** (December 2025)
+  - Added NaN/Inf protection in plasticity functions (hebbian_update, STDP)
+  - Added NaN/Inf protection for membrane potential in LIF neuron model
+  - Implemented automatic recovery from invalid numerical values
+  - Enhanced thread safety in web interface with comprehensive locking
+  - Prevented concurrent simulation runs with state checking
+
 ### Changed
 - **Documentation Updates**
   - Updated README.md with improved structure and new documentation links
@@ -65,6 +72,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed log file unbounded growth issue
 - Fixed file path injection vulnerability
 - Fixed missing input validation in API endpoints
+- **Fixed synapse weight overflow** - NaN values from high learning rates (High priority bug)
+- **Fixed membrane potential NaN** - Invalid values causing simulation crashes (High priority bug)
+- **Improved race conditions** - Thread safety in web interface (High priority bug)
 
 ### Security
 - Added comprehensive security policy (SECURITY.md)
