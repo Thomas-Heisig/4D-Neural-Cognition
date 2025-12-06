@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4D Neural Cognition - Frontend Interface</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>🧠 4D Neural Cognition</h1>
+            <p>Modernes Interface für neuronale 4D-Simulation</p>
+        </header>
+
+        <!-- Main Grid Layout -->
+        <div class="grid-container">
+            <!-- Left Panel: Model Controls -->
+            <div class="panel controls-panel">
+                <h2>🎮 Steuerung</h2>
+                
+                <div class="control-group">
+                    <h3>Modell</h3>
+                    <button id="initModel" class="btn btn-primary">Modell Initialisieren</button>
+                    <button id="getInfo" class="btn btn-secondary">Info Anzeigen</button>
+                    <div id="modelInfo" class="info-box"></div>
+                </div>
+
+                <div class="control-group">
+                    <h3>Neuronen & Synapsen</h3>
+                    <label for="density">Neuronendichte:</label>
+                    <input type="range" id="density" min="0.01" max="0.5" step="0.01" value="0.1">
+                    <span id="densityValue">0.1</span>
+                    <button id="initNeurons" class="btn btn-primary">Neuronen Initialisieren</button>
+                    <button id="initSynapses" class="btn btn-primary">Synapsen Initialisieren</button>
+                </div>
+
+                <div class="control-group">
+                    <h3>⚡ Simulation</h3>
+                    <button id="runStep" class="btn btn-success">Einzelschritt</button>
+                    <label for="nSteps">Anzahl Schritte:</label>
+                    <input type="number" id="nSteps" value="100" min="1" max="10000">
+                    <button id="runSimulation" class="btn btn-success">Training Starten</button>
+                    <button id="stopSimulation" class="btn btn-danger">Training Stoppen</button>
+                </div>
+
+                <div class="control-group">
+                    <h3>💾 Speichern/Laden</h3>
+                    <div class="button-row">
+                        <button id="saveJSON" class="btn btn-secondary">Als JSON</button>
+                        <button id="saveHDF5" class="btn btn-secondary">Als HDF5</button>
+                    </div>
+                    <input type="text" id="loadPath" placeholder="brain_state.json" value="brain_state.json">
+                    <button id="loadModel" class="btn btn-secondary">Laden</button>
+                </div>
+            </div>
+
+            <!-- Center Panel: Heatmaps -->
+            <div class="panel heatmap-panel">
+                <h2>🔥 Heatmap Visualisierung</h2>
+                <div class="heatmap-container">
+                    <div class="heatmap-item">
+                        <h3>Input Layer (z=0)</h3>
+                        <canvas id="heatmapInput"></canvas>
+                    </div>
+                    <div class="heatmap-item">
+                        <h3>Hidden Layer (z=10)</h3>
+                        <canvas id="heatmapHidden"></canvas>
+                    </div>
+                    <div class="heatmap-item">
+                        <h3>Output Layer (z=19)</h3>
+                        <canvas id="heatmapOutput"></canvas>
+                    </div>
+                </div>
+                <button id="refreshHeatmap" class="btn btn-primary">Heatmap Aktualisieren</button>
+            </div>
+
+            <!-- Right Panel: Input/Output Terminal -->
+            <div class="panel terminal-panel">
+                <h2>💻 Input/Output Terminal</h2>
+                <div class="terminal">
+                    <div id="terminalOutput" class="terminal-output"></div>
+                </div>
+                
+                <div class="input-group">
+                    <h3>Sensorische Eingabe</h3>
+                    <select id="senseType">
+                        <option value="vision">Vision</option>
+                        <option value="audition">Audition</option>
+                        <option value="digital">Digital</option>
+                        <option value="somatosensory">Somatosensorisch</option>
+                    </select>
+                    <textarea id="inputData" placeholder="Eingabedaten (z.B. Text für Digital-Sense)"></textarea>
+                    <button id="feedInput" class="btn btn-success">Eingabe Senden</button>
+                </div>
+            </div>
+
+            <!-- Bottom Left: Chat Window -->
+            <div class="panel chat-panel">
+                <h2>💬 Chat & Operationen</h2>
+                <div id="chatMessages" class="chat-messages"></div>
+                <div class="chat-input-group">
+                    <input type="text" id="chatInput" placeholder="Befehl eingeben (z.B. 'help', 'info', 'status')...">
+                    <button id="sendChat" class="btn btn-primary">Senden</button>
+                </div>
+            </div>
+
+            <!-- Bottom Right: Logging -->
+            <div class="panel log-panel">
+                <h2>📋 System Logs</h2>
+                <div id="logOutput" class="log-output"></div>
+                <button id="clearLogs" class="btn btn-secondary">Logs Löschen</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

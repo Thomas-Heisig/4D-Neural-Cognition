@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 from brain_model import BrainModel
 from simulation import Simulation
 from senses import feed_sense_input, create_digital_sense_input
-from hdf4_storage import save_to_json, load_from_json
+from storage import save_to_json, load_from_json
 
 
 def main():
@@ -139,17 +139,17 @@ def main():
     save_to_json(model, json_path)
     print(f"   Saved to JSON: {json_path}")
 
-    # Try to save to HDF4 (if pyhdf is available)
+    # Try to save to HDF5 (if h5py is available)
     try:
-        from hdf4_storage import save_to_hdf4
+        from storage import save_to_hdf5
 
-        hdf_path = os.path.join(os.path.dirname(__file__), "brain_state.hdf")
-        save_to_hdf4(model, hdf_path)
-        print(f"   Saved to HDF4: {hdf_path}")
+        hdf_path = os.path.join(os.path.dirname(__file__), "brain_state.h5")
+        save_to_hdf5(model, hdf_path)
+        print(f"   Saved to HDF5: {hdf_path}")
     except ImportError:
-        print("   HDF4 save skipped (pyhdf not installed)")
+        print("   HDF5 save skipped (h5py not installed)")
     except Exception as e:
-        print(f"   HDF4 save failed: {e}")
+        print(f"   HDF5 save failed: {e}")
 
     # Verify JSON save/load
     print("\n8. Verifying JSON save/load...")
