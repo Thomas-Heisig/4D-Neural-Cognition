@@ -1,21 +1,53 @@
 # Documentation Index
 
-Welcome to the 4D Neural Cognition documentation! This index helps you find the information you need.
+Welcome to the 4D Neural Cognition documentation! This comprehensive index helps you navigate all project documentation.
 
 ## 📚 Getting Started
 
 New to the project? Start here:
 
 1. **[README.md](../README.md)** - Project overview, quick start, and basic usage
-2. **[INSTALLATION.md](INSTALLATION.md)** - Detailed installation instructions
-3. **[VISION.md](../VISION.md)** - Understand the project's goals and direction
-4. **Example Scripts** - Try `python example.py` or `python app.py`
+2. **[Installation Guide](user-guide/INSTALLATION.md)** - Detailed installation instructions
+3. **[Quick Start Tutorial](tutorials/QUICK_START_EVALUATION.md)** - Get up and running in 5 minutes
+4. **[VISION.md](../VISION.md)** - Understand the project's goals and direction
+5. **Example Scripts** - Try `python example.py` or `python app.py`
 
-## 📖 Core Documentation
+## 📖 Documentation Structure
+
+Our documentation is organized according to international standards (ISO/IEC/IEEE 26512:2018):
+
+### 👤 User Documentation
+**[User Guide](user-guide/)** - Complete guide for end users
+- **[Installation Guide](user-guide/INSTALLATION.md)** - Platform-specific installation
+- **[FAQ](user-guide/FAQ.md)** - Frequently Asked Questions
+- **[Glossary](user-guide/GLOSSARY.md)** - Terminology and definitions
+- **[Tasks & Evaluation](user-guide/TASKS_AND_EVALUATION.md)** - Benchmark framework
+
+### 👨‍💻 Developer Documentation
+**[Developer Guide](developer-guide/)** - Guide for contributors
+- **[Development Setup](developer-guide/README.md)** - Get started with development
+- **[Architecture](ARCHITECTURE.md)** - System design and components
+- **[Contributing Guidelines](../CONTRIBUTING.md)** - How to contribute
+- **[Code of Conduct](../CODE_OF_CONDUCT.md)** - Community standards
+
+### 🔧 API Documentation
+**[API Reference](api/)** - Technical API documentation
+- **[API.md](api/API.md)** - Complete API reference
+- Function signatures and parameters
+- Code examples and usage patterns
+- Return values and exceptions
+
+### 📖 Tutorials
+**[Tutorials](tutorials/)** - Step-by-step learning guides
+- **[Quick Start](tutorials/QUICK_START_EVALUATION.md)** - 5-minute start
+- Working examples and demonstrations
+- Best practices and patterns
+
+## 📂 Core Documentation
 
 ### Project Information
 
-- **[VISION.md](../VISION.md)** - Project vision, goals, roadmap, and philosophy
+- **[VISION.md](../VISION.md)** - Project vision, goals, and roadmap
   - What are we building and why?
   - Long-term and short-term goals
   - Current state and future plans
@@ -38,9 +70,24 @@ New to the project? Start here:
   - New features, bug fixes, breaking changes
   - Migration guides
 
-### Development & Community
+- **[IMPLEMENTATION_SUMMARY.md](../IMPLEMENTATION_SUMMARY.md)** - Tasks & Evaluation implementation
+  - Implementation details
+  - Technical decisions
+  - Testing results
 
-- **[CONTRIBUTING.md](../CONTRIBUTING.md)** - How to contribute to the project
+### Community & Support
+
+- **[SUPPORT.md](../SUPPORT.md)** - How to get help
+  - Community support channels
+  - Reporting bugs and requesting features
+  - Response times and expectations
+
+- **[SECURITY.md](../SECURITY.md)** - Security policy
+  - Reporting vulnerabilities
+  - Security best practices
+  - Supported versions
+
+- **[CONTRIBUTING.md](../CONTRIBUTING.md)** - How to contribute
   - Development setup
   - Coding standards
   - Commit guidelines
@@ -55,98 +102,117 @@ New to the project? Start here:
 
 - **[LICENSE](../LICENSE)** - MIT License terms
 
-## 🔧 Technical Documentation
+## 🔧 Technical Reference
 
 ### API & Usage
 
-- **[API.md](API.md)** - Complete API reference
-  - Brain Model API
-  - Simulation API
-  - Senses API
-  - Storage API
-  - Plasticity API
-  - Cell Lifecycle API
+- **[API Reference](api/API.md)** - Complete API documentation
+  - Brain Model API (Neuron, Synapse, BrainModel)
+  - Simulation API (Simulation, callbacks)
+  - Senses API (sensory input processing)
+  - Storage API (JSON/HDF5 persistence)
+  - Plasticity API (learning rules)
+  - Cell Lifecycle API (aging, death, reproduction)
+  - Tasks API (Environment, Task)
+  - Evaluation API (BenchmarkConfig, BenchmarkSuite)
+  - Knowledge Database API (KnowledgeDatabase, KnowledgeBasedTrainer)
   - Web API (REST & WebSocket)
   - Code examples for all functions
 
-### Architecture
+### Architecture & Design
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Technical architecture details
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Technical architecture
   - System design and components
   - Data flow diagrams
   - Design patterns used
-  - Storage architecture
-  - Web interface architecture
+  - Storage architecture (JSON/HDF5)
+  - Web interface architecture (Flask/Socket.IO)
   - Performance considerations
-  - Extension points
-
-### Installation
-
-- **[INSTALLATION.md](INSTALLATION.md)** - Detailed setup guide
-  - System requirements
-  - Platform-specific instructions (Linux, macOS, Windows)
-  - Troubleshooting common issues
-  - Development installation
-  - Docker installation (planned)
-  - Verification steps
+  - Extension points and plugins
+  - Future architecture plans
 
 ## 📂 Source Code Documentation
 
 ### Core Modules
 
-Located in `src/` directory:
+Located in `src/` directory (2,600+ lines):
 
-- **`brain_model.py`** - Core data structures
-  - `Neuron` class - Individual neuron representation
-  - `Synapse` class - Synaptic connections
+- **`brain_model.py`** (240 lines) - Core data structures
+  - `Neuron` class - Individual neuron (4D coordinates, LIF parameters, lifecycle)
+  - `Synapse` class - Synaptic connections (weight, delay, plasticity)
   - `BrainModel` class - Main container for neural network
 
-- **`simulation.py`** - Main simulation engine
+- **`simulation.py`** (246 lines) - Main simulation engine
   - `Simulation` class - Orchestrates simulation steps
-  - Neuron dynamics (LIF model)
+  - Neuron dynamics (Leaky Integrate-and-Fire model)
   - Spike detection and propagation
-  - Statistics collection
+  - Statistics collection and callbacks
 
-- **`cell_lifecycle.py`** - Neuron lifecycle management
+- **`cell_lifecycle.py`** (142 lines) - Neuron lifecycle management
   - Aging and health decay
   - Cell death conditions
   - Reproduction with mutations
-  - Generational tracking
+  - Generational tracking and evolution
 
-- **`plasticity.py`** - Learning algorithms
-  - Hebbian learning rule
-  - Weight decay
-  - Extensible for STDP, BCM, etc.
+- **`plasticity.py`** (107 lines) - Learning algorithms
+  - Hebbian learning rule ("fire together, wire together")
+  - Weight decay and clipping
+  - Extensible for STDP, BCM, and other rules
 
-- **`senses.py`** - Sensory input processing
+- **`senses.py`** (202 lines) - Sensory input processing
   - Input mapping to brain areas
-  - Multiple sensory modalities
-  - Digital sense for text/data
+  - Seven sensory modalities (vision, audition, etc.)
+  - Digital sense for abstract data/text
 
-- **`storage.py`** - Data persistence
-  - JSON format (human-readable)
-  - HDF5 format (efficient, compressed)
-  - Save/load functionality
+- **`storage.py`** (175 lines) - Data persistence
+  - JSON format (human-readable, small models)
+  - HDF5 format (efficient, compressed, large models)
+  - Save/load with full state preservation
+
+- **`tasks.py`** (549 lines) - Task & environment framework
+  - Environment and Task base classes
+  - PatternClassificationTask (vision patterns)
+  - TemporalSequenceTask (sequence learning)
+  - Standardized metrics (accuracy, reward, reaction time)
+
+- **`evaluation.py`** (399 lines) - Benchmark and comparison
+  - BenchmarkConfig (reproducible configurations)
+  - BenchmarkSuite (task collections)
+  - ConfigurationComparator (side-by-side comparison)
+  - Result tracking and JSON output
+
+- **`knowledge_db.py`** (530 lines) - Knowledge database system
+  - KnowledgeDatabase (SQLite storage)
+  - KnowledgeBasedTrainer (pre-training and fallback)
+  - Sample data population
+  - Batch training support
 
 ### Web Application
 
 - **`app.py`** - Flask web server
-  - REST API endpoints
-  - WebSocket event handlers
+  - REST API endpoints (initialize, step, train, save, load)
+  - WebSocket event handlers (real-time updates)
   - Session management
-  - Real-time updates
+  - Real-time statistics broadcasting
 
 - **`templates/index.html`** - Frontend HTML structure
-- **`static/js/app.js`** - Frontend JavaScript logic
+  - Control panel, heatmap viewer, terminal, chat, logger
+  
+- **`static/js/app.js`** - Frontend JavaScript
+  - Socket.IO client, heatmap rendering, UI interactions
+  
 - **`static/css/style.css`** - UI styling
+  - Dark theme, responsive layout
 
 ### Configuration
 
 - **`brain_base_model.json`** - Default model configuration
-  - Lattice dimensions
-  - Neuron model parameters
-  - Brain area definitions
-  - Sensory system configuration
+  - Lattice dimensions [x, y, z, w]
+  - Neuron model parameters (LIF: tau_m, v_rest, v_threshold, etc.)
+  - Brain area definitions (coordinates and purposes)
+  - Sensory system configuration (input mappings)
+  - Plasticity parameters (learning_rate, weight_bounds)
+  - Cell lifecycle parameters (max_age, health_decay, mutation_rate)
 
 ## 🎯 Usage Examples
 
