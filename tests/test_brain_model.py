@@ -55,7 +55,7 @@ class TestBrainModel:
     def test_init_with_config_dict(self, minimal_config):
         """Test initialization with config dictionary."""
         model = BrainModel(config=minimal_config)
-        assert model.lattice_shape == (10, 10, 5, 2)
+        assert model.lattice_shape == tuple(minimal_config["lattice_shape"])
         assert len(model.neurons) == 0
         assert len(model.synapses) == 0
         assert model.current_step == 0
@@ -67,7 +67,7 @@ class TestBrainModel:
             json.dump(minimal_config, f)
         
         model = BrainModel(config_path=str(config_path))
-        assert model.lattice_shape == (10, 10, 5, 2)
+        assert model.lattice_shape == tuple(minimal_config["lattice_shape"])
         
     def test_init_without_config_raises_error(self):
         """Test that initialization without config raises ValueError."""
