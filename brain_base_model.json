@@ -1,0 +1,145 @@
+{
+  "model_version": 1,
+  "dimensions": 4,
+  "lattice_shape": [20, 20, 20, 20],
+
+  "neuron_model": {
+    "type": "LIF",
+    "params_default": {
+      "tau_m": 20.0,
+      "v_rest": -65.0,
+      "v_reset": -70.0,
+      "v_threshold": -50.0,
+      "refractory_period": 5.0
+    }
+  },
+
+  "cell_lifecycle": {
+    "enable_death": true,
+    "enable_reproduction": true,
+    "max_age": 100000,
+    "health_decay_per_step": 0.0001,
+    "mutation_std_params": 0.05,
+    "mutation_std_weights": 0.02
+  },
+
+  "plasticity": {
+    "rule": "hebb_like",
+    "learning_rate": 0.001,
+    "weight_min": -1.0,
+    "weight_max": 1.0,
+    "weight_decay": 0.00001
+  },
+
+  "senses": {
+    "vision": {
+      "areal": "V1_like",
+      "w_index": 0,
+      "input_size": [20, 20]
+    },
+    "audition": {
+      "areal": "A1_like",
+      "w_index": 1,
+      "input_size": [20, 20]
+    },
+    "somatosensory": {
+      "areal": "S1_like",
+      "w_index": 2,
+      "input_size": [20, 20]
+    },
+    "taste": {
+      "areal": "Gustatory_like",
+      "w_index": 3,
+      "input_size": [10, 10]
+    },
+    "smell": {
+      "areal": "Olfactory_like",
+      "w_index": 4,
+      "input_size": [10, 10]
+    },
+    "vestibular": {
+      "areal": "Vestibular_like",
+      "w_index": 5,
+      "input_size": [5, 5]
+    },
+    "digital": {
+      "areal": "Digital_sensor",
+      "w_index": 6,
+      "input_description": "Beliebige digitale Datenströme (z.B. Binärvektoren).",
+      "input_size": [20, 20]
+    }
+  },
+
+  "areas": [
+    {
+      "name": "V1_like",
+      "sense": "vision",
+      "coord_ranges": {
+        "x": [0, 19],
+        "y": [0, 19],
+        "z": [0, 19],
+        "w": [0, 0]
+      }
+    },
+    {
+      "name": "A1_like",
+      "sense": "audition",
+      "coord_ranges": {
+        "x": [0, 19],
+        "y": [0, 19],
+        "z": [0, 19],
+        "w": [1, 1]
+      }
+    },
+    {
+      "name": "S1_like",
+      "sense": "somatosensory",
+      "coord_ranges": {
+        "x": [0, 19],
+        "y": [0, 19],
+        "z": [0, 19],
+        "w": [2, 2]
+      }
+    },
+    {
+      "name": "Gustatory_like",
+      "sense": "taste",
+      "coord_ranges": {
+        "x": [0, 9],
+        "y": [0, 9],
+        "z": [0, 19],
+        "w": [3, 3]
+      }
+    },
+    {
+      "name": "Olfactory_like",
+      "sense": "smell",
+      "coord_ranges": {
+        "x": [0, 9],
+        "y": [0, 9],
+        "z": [0, 19],
+        "w": [4, 4]
+      }
+    },
+    {
+      "name": "Vestibular_like",
+      "sense": "vestibular",
+      "coord_ranges": {
+        "x": [0, 4],
+        "y": [0, 4],
+        "z": [0, 19],
+        "w": [5, 5]
+      }
+    },
+    {
+      "name": "Digital_sensor",
+      "sense": "digital",
+      "coord_ranges": {
+        "x": [0, 19],
+        "y": [0, 19],
+        "z": [0, 19],
+        "w": [6, 6]
+      }
+    }
+  ]
+}
