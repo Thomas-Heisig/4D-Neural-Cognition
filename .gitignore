@@ -38,6 +38,8 @@ brain_state.hdf
 brain_state.h5
 *.hdf
 *.h5
+saved_models/
+checkpoints/
 
 # Benchmark and evaluation results
 benchmark_results/
