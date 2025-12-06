@@ -4,6 +4,60 @@ This directory contains example scripts demonstrating various features of the 4D
 
 ## Available Examples
 
+### pattern_recognition.py
+
+**Purpose**: Demonstrates training a network to recognize and distinguish visual patterns.
+
+**What it shows**:
+- Creating distinct visual patterns (lines, diagonals, checkerboards)
+- Training with Hebbian plasticity
+- Testing pattern recognition
+- Analyzing response differences
+
+**Usage**:
+```bash
+cd examples
+python3 pattern_recognition.py
+```
+
+**Key Concepts**: Pattern learning, visual processing, Hebbian learning, response analysis
+
+### multimodal_integration.py
+
+**Purpose**: Demonstrates multi-modal sensory integration across vision, audio, and digital (text) senses.
+
+**What it shows**:
+- Creating coordinated multi-modal stimuli
+- Training cross-modal associations
+- Testing cross-modal completion (one sense activates others)
+- Analyzing integration quality
+
+**Usage**:
+```bash
+cd examples
+python3 multimodal_integration.py
+```
+
+**Key Concepts**: Multi-sensory integration, cross-modal learning, sensory binding, 4D architecture benefits
+
+### temporal_learning.py
+
+**Purpose**: Demonstrates learning and prediction of temporal sequences.
+
+**What it shows**:
+- Creating temporal patterns over time
+- Training on sequential data
+- Testing sequence completion/prediction
+- Analyzing temporal memory
+
+**Usage**:
+```bash
+cd examples
+python3 temporal_learning.py
+```
+
+**Key Concepts**: Temporal processing, sequence learning, predictive coding, working memory
+
 ### simple_test.py
 
 **Purpose**: Basic integration tests to verify the Tasks & Evaluation framework works correctly.
