@@ -54,6 +54,12 @@ static/uploads/
 logs/
 *.log
 
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -25,15 +25,16 @@ This document tracks planned features, improvements, and tasks for the project. 
 ### Testing
 
 - [x] Create unit tests for core modules (Dec 2025):
-  - [x] brain_model.py (41 tests)
-  - [x] simulation.py (28 tests)
-  - [x] cell_lifecycle.py (15 tests)
-  - [ ] plasticity.py
-  - [ ] senses.py
-  - [ ] storage.py
+  - [x] brain_model.py (26 tests)
+  - [x] simulation.py (27 tests)
+  - [x] cell_lifecycle.py (22 tests)
+  - [x] plasticity.py (16 tests)
+  - [x] senses.py (18 tests)
+  - [x] storage.py (14 tests)
 - [x] Set up pytest framework with configuration (Dec 2025)
-- [ ] Add integration tests for full simulation runs
-- [ ] Add performance benchmarks
+- [x] Add integration tests for full simulation runs (12 tests)
+- [x] Add performance benchmarks (16 tests)
+- [x] Add metrics tests (35 tests)
 - [ ] Set up continuous integration (CI/CD)
 
 ### Documentation

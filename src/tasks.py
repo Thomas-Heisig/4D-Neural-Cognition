@@ -185,9 +185,19 @@ class PatternClassificationTask(Task):
         )
         
     def get_name(self) -> str:
+        """Get the name of the task.
+        
+        Returns:
+            str: Task name with number of classes
+        """
         return f"PatternClassification-{self.num_classes}class"
         
     def get_description(self) -> str:
+        """Get a human-readable description of the task.
+        
+        Returns:
+            str: Description including task parameters
+        """
         return (
             f"Classify visual patterns into {self.num_classes} classes. "
             f"Pattern size: {self.pattern_size}, noise: {self.noise_level}"
@@ -272,6 +282,11 @@ class PatternClassificationTask(Task):
         )
         
     def get_metrics(self) -> Dict[str, str]:
+        """Get descriptions of the metrics used in this task.
+        
+        Returns:
+            Dict[str, str]: Dictionary mapping metric names to descriptions
+        """
         return {
             'accuracy': 'Classification accuracy (0-1)',
             'reward': 'Average reward per episode',
@@ -399,9 +414,19 @@ class TemporalSequenceTask(Task):
         )
         
     def get_name(self) -> str:
+        """Get the name of the task.
+        
+        Returns:
+            str: Task name with sequence length and vocabulary size
+        """
         return f"TemporalSequence-L{self.sequence_length}-V{self.vocabulary_size}"
         
     def get_description(self) -> str:
+        """Get a human-readable description of the task.
+        
+        Returns:
+            str: Description including task parameters
+        """
         return (
             f"Learn and predict temporal sequences of length {self.sequence_length} "
             f"from vocabulary of {self.vocabulary_size} elements"
@@ -478,6 +503,11 @@ class TemporalSequenceTask(Task):
         )
         
     def get_metrics(self) -> Dict[str, str]:
+        """Get descriptions of the metrics used in this task.
+        
+        Returns:
+            Dict[str, str]: Dictionary mapping metric names to descriptions
+        """
         return {
             'accuracy': 'Sequence prediction accuracy (0-1)',
             'reward': 'Average reward per episode',
