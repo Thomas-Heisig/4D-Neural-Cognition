@@ -133,10 +133,13 @@ def maybe_kill_and_reproduce(
             lost_synapses += 1
     
     # Log warning if synapses were lost (contributes to network disconnection)
+    # Use lazy string formatting to avoid overhead when debug logging is disabled
     if lost_synapses > 0:
         logger.debug(
-            f"Neuron reproduction: {lost_synapses} synapse(s) lost due to "
-            f"missing endpoint neurons (gen {new_neuron.generation})"
+            "Neuron reproduction: %d synapse(s) lost due to "
+            "missing endpoint neurons (gen %d)",
+            lost_synapses,
+            new_neuron.generation
         )
 
     return new_neuron
