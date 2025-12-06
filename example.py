@@ -8,17 +8,18 @@ This script:
 4. Saves the model state to JSON and optionally HDF4
 """
 
-import sys
 import os
+import sys
+
 import numpy as np
 
 # Add src directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 from brain_model import BrainModel
+from senses import create_digital_sense_input, feed_sense_input
 from simulation import Simulation
-from senses import feed_sense_input, create_digital_sense_input
-from storage import save_to_json, load_from_json
+from storage import load_from_json, save_to_json
 
 
 def main():
@@ -28,9 +29,7 @@ def main():
     print("=" * 60)
 
     # Load configuration
-    config_path = os.path.join(
-        os.path.dirname(__file__), "brain_base_model.json"
-    )
+    config_path = os.path.join(os.path.dirname(__file__), "brain_base_model.json")
 
     print(f"\n1. Loading configuration from: {config_path}")
     model = BrainModel(config_path=config_path)
@@ -125,10 +124,7 @@ def main():
     print("\n6. Sample neuron states:")
     sample_neurons = list(model.neurons.values())[:3]
     for n in sample_neurons:
-        print(
-            f"   Neuron {n.id}: pos={n.position()}, "
-            f"gen={n.generation}, health={n.health:.4f}, age={n.age}"
-        )
+        print(f"   Neuron {n.id}: pos={n.position()}, " f"gen={n.generation}, health={n.health:.4f}, age={n.age}")
 
     # Save model state
     print("\n7. Saving model state...")

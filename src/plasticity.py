@@ -19,11 +19,11 @@ def hebbian_update(
 
     Implements the classic Hebbian learning principle:
     "Cells that fire together, wire together."
-    
+
     This creates a correlation-based learning rule where:
     - Correlated activity strengthens connections (Long-Term Potentiation)
     - Uncorrelated activity weakens connections (Long-Term Depression)
-    
+
     Learning rules:
     1. Both fire together → Strengthen (LTP): Δw = +η
     2. Pre fires, post doesn't → Weaken (LTD): Δw = -0.5η
@@ -57,10 +57,11 @@ def hebbian_update(
 
     # Apply weight update with bounds to prevent extreme values
     synapse.weight += delta
-    
+
     # Check for NaN/Inf values and clip to valid range
     # This prevents numerical instability from propagating
     import math
+
     if math.isnan(synapse.weight) or math.isinf(synapse.weight):
         # Reset to a safe middle value if weight becomes invalid
         synapse.weight = (weight_min + weight_max) / 2.0
@@ -99,12 +100,12 @@ def spike_timing_dependent_plasticity(
 
     STDP is a biologically realistic learning rule where the weight change
     depends on the precise timing between pre- and postsynaptic spikes.
-    
+
     Temporal learning rules:
     - Δt > 0 (pre before post): Potentiation - Δw = A+ * exp(-Δt/τ+)
     - Δt < 0 (post before pre): Depression - Δw = -A- * exp(Δt/τ-)
     - Δt = 0 (simultaneous): No change
-    
+
     The exponential decay creates a temporal learning window where
     closely-timed spikes have stronger effects than distant ones.
     This implements causality: pre→post strengthens, post→pre weakens.
@@ -146,7 +147,7 @@ def spike_timing_dependent_plasticity(
 
     # Apply weight change with hard bounds
     synapse.weight += delta_w
-    
+
     # Check for NaN/Inf values and clip to valid range
     # This prevents numerical instability from propagating
     if math.isnan(synapse.weight) or math.isinf(synapse.weight):

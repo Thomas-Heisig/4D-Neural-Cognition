@@ -43,11 +43,11 @@ class BrainModel:
 
     def __init__(self, config_path: str = None, config: dict = None):
         """Initialize brain model from config file or dict.
-        
+
         Args:
             config_path: Path to JSON configuration file
             config: Configuration dictionary
-            
+
         Raises:
             ValueError: If neither config_path nor config is provided
             FileNotFoundError: If config_path does not exist
@@ -63,17 +63,12 @@ class BrainModel:
             except FileNotFoundError as e:
                 raise FileNotFoundError(f"Configuration file not found: {config_path}") from e
             except json.JSONDecodeError as e:
-                raise json.JSONDecodeError(
-                    f"Invalid JSON in configuration file: {config_path}", 
-                    e.doc, 
-                    e.pos
-                ) from e
+                raise json.JSONDecodeError(f"Invalid JSON in configuration file: {config_path}", e.doc, e.pos) from e
         else:
             raise ValueError("Either config_path or config must be provided")
 
         # Validate required configuration keys
-        REQUIRED_CONFIG_KEYS = ["lattice_shape", "neuron_model", "cell_lifecycle", 
-                               "plasticity", "senses", "areas"]
+        REQUIRED_CONFIG_KEYS = ["lattice_shape", "neuron_model", "cell_lifecycle", "plasticity", "senses", "areas"]
         missing_keys = [key for key in REQUIRED_CONFIG_KEYS if key not in self.config]
         if missing_keys:
             raise KeyError(f"Missing required configuration keys: {missing_keys}")
@@ -117,7 +112,7 @@ class BrainModel:
         validate_coords: bool = True,
     ) -> Neuron:
         """Add a new neuron to the model.
-        
+
         Args:
             x, y, z, w: 4D coordinates of the neuron
             generation: Generation number for reproduction tracking
@@ -125,10 +120,10 @@ class BrainModel:
             health: Initial health value (0.0 to 1.0)
             params: Optional neuron parameters
             validate_coords: Whether to validate coordinates (default: True)
-            
+
         Returns:
             The created Neuron object
-            
+
         Raises:
             ValueError: If coordinates are out of bounds or health is invalid
         """
@@ -142,11 +137,11 @@ class BrainModel:
                 raise ValueError(f"z coordinate {z} out of bounds [0, {self.lattice_shape[2]})")
             if not (0 <= w < self.lattice_shape[3]):
                 raise ValueError(f"w coordinate {w} out of bounds [0, {self.lattice_shape[3]})")
-        
+
         # Always validate health
         if not (0.0 <= health <= 1.0):
             raise ValueError(f"Health must be between 0.0 and 1.0, got {health}")
-        
+
         neuron = Neuron(
             id=self._next_neuron_id,
             x=x,
@@ -168,11 +163,7 @@ class BrainModel:
         if neuron_id in self.neurons:
             del self.neurons[neuron_id]
             # Remove associated synapses
-            self.synapses = [
-                s
-                for s in self.synapses
-                if s.pre_id != neuron_id and s.post_id != neuron_id
-            ]
+            self.synapses = [s for s in self.synapses if s.pre_id != neuron_id and s.post_id != neuron_id]
 
     def add_synapse(
         self,
@@ -186,9 +177,7 @@ class BrainModel:
         self.synapses.append(synapse)
         return synapse
 
-    def get_synapses_for_neuron(
-        self, neuron_id: int, direction: str = "both"
-    ) -> list[Synapse]:
+    def get_synapses_for_neuron(self, neuron_id: int, direction: str = "both") -> list[Synapse]:
         """Get synapses connected to a neuron.
 
         Args:
@@ -209,9 +198,7 @@ class BrainModel:
 
     def get_area_neurons(self, area_name: str) -> list[Neuron]:
         """Get all neurons belonging to a specific brain area."""
-        area = next(
-            (a for a in self.get_areas() if a["name"] == area_name), None
-        )
+        area = next((a for a in self.get_areas() if a["name"] == area_name), None)
         if area is None:
             return []
 
