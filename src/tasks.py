@@ -539,3 +539,862 @@ class TemporalSequenceEnvironment(Environment):
     def render(self) -> Optional[np.ndarray]:
         """Render current sequence state."""
         return None
+
+
+class SensorimotorControlTask(Task):
+    """Sensorimotor control task - pendulum stabilization.
+    
+    The network must learn to balance a pendulum by applying appropriate forces.
+    Tests continuous control, sensorimotor integration, and real-time learning.
+    """
+
+    def __init__(
+        self, 
+        max_angle: float = np.pi / 4,
+        control_interval: int = 10,
+        seed: int = None
+    ):
+        """Initialize sensorimotor control task.
+        
+        Args:
+            max_angle: Maximum allowed angle deviation (radians)
+            control_interval: Steps between control actions
+            seed: Random seed
+        """
+        super().__init__(seed)
+        self.max_angle = max_angle
+        self.control_interval = control_interval
+        self.env = SensorimotorControlEnvironment(
+            max_angle=max_angle,
+            seed=seed
+        )
+
+    def get_name(self) -> str:
+        """Get the task name."""
+        return f"SensorimotorControl-Pendulum"
+
+    def get_description(self) -> str:
+        """Get task description."""
+        return (
+            f"Balance a pendulum within {self.max_angle:.2f} radians. "
+            f"Control interval: {self.control_interval} steps"
+        )
+
+    def evaluate(self, simulation, num_episodes: int = 10, max_steps: int = 500) -> TaskResult:
+        """Evaluate simulation on pendulum control.
+        
+        Args:
+            simulation: The simulation to evaluate
+            num_episodes: Number of trials
+            max_steps: Maximum steps per trial
+            
+        Returns:
+            TaskResult with control performance metrics
+        """
+        try:
+            from .senses import feed_sense_input
+        except ImportError:
+            from senses import feed_sense_input
+
+        total_reward = 0.0
+        total_time_balanced = 0
+        successful_episodes = 0
+        reaction_times = []
+
+        for episode in range(num_episodes):
+            observation, info = self.env.reset()
+            done = False
+            episode_reward = 0.0
+            balanced_start_step = None
+            steps = 0
+
+            while not done and steps < max_steps:
+                # Feed pendulum state via vision (angle and velocity visualization)
+                feed_sense_input(simulation.model, "vision", observation["vision"])
+                
+                # Run simulation to generate control signal
+                for _ in range(self.control_interval):
+                    stats = simulation.step()
+                    
+                # Extract control action from network activity (simplified)
+                # In real implementation, would use dedicated motor output neurons
+                if len(stats["spikes"]) > 0:
+                    action = np.tanh(len(stats["spikes"]) / 10.0 - 0.5)
+                else:
+                    action = 0.0
+                
+                observation, reward, done, info = self.env.step(np.array([action]))
+                episode_reward += reward
+                steps += 1
+                
+                # Track when pendulum becomes balanced
+                if info.get("balanced", False) and balanced_start_step is None:
+                    balanced_start_step = steps
+                
+                if info.get("balanced", False):
+                    total_time_balanced += 1
+
+            total_reward += episode_reward
+            
+            if episode_reward > 0:
+                successful_episodes += 1
+                
+            if balanced_start_step is not None:
+                reaction_times.append(balanced_start_step)
+
+        avg_reward = total_reward / num_episodes
+        success_rate = successful_episodes / num_episodes
+        avg_reaction_time = np.mean(reaction_times) if reaction_times else max_steps
+        stability = total_time_balanced / (num_episodes * max_steps)
+
+        return TaskResult(
+            accuracy=success_rate,
+            reward=avg_reward,
+            reaction_time=avg_reaction_time,
+            stability=stability,
+            additional_metrics={
+                "num_episodes": num_episodes,
+                "successful_episodes": successful_episodes,
+                "time_balanced": total_time_balanced,
+            },
+        )
+
+    def get_metrics(self) -> Dict[str, str]:
+        """Get metric descriptions."""
+        return {
+            "accuracy": "Success rate (pendulum kept balanced)",
+            "reward": "Average reward per episode",
+            "reaction_time": "Steps to achieve balance",
+            "stability": "Fraction of time balanced",
+        }
+
+
+class SensorimotorControlEnvironment(Environment):
+    """Environment for pendulum control task."""
+
+    def __init__(self, max_angle: float = np.pi / 4, seed: int = None):
+        """Initialize pendulum environment.
+        
+        Args:
+            max_angle: Maximum allowed angle deviation
+            seed: Random seed
+        """
+        super().__init__(seed)
+        self.max_angle = max_angle
+        self.angle = 0.0
+        self.velocity = 0.0
+        self.gravity = 9.81
+        self.length = 1.0
+        self.dt = 0.05
+
+    def reset(self) -> Tuple[Dict[str, np.ndarray], Dict[str, Any]]:
+        """Reset pendulum to random initial state."""
+        self.current_step = 0
+        self.episode_reward = 0.0
+        
+        # Random initial angle and velocity
+        self.angle = self.rng.uniform(-self.max_angle / 2, self.max_angle / 2)
+        self.velocity = self.rng.uniform(-0.5, 0.5)
+        
+        observation = self._get_observation()
+        info = self._get_state_info()
+        
+        return observation, info
+
+    def step(self, action: Optional[np.ndarray] = None) -> Tuple[Dict[str, np.ndarray], float, bool, Dict[str, Any]]:
+        """Update pendulum physics."""
+        self.current_step += 1
+        
+        # Apply control force
+        force = action[0] if action is not None else 0.0
+        force = np.clip(force, -1.0, 1.0)
+        
+        # Update physics
+        acceleration = -(self.gravity / self.length) * np.sin(self.angle) + force
+        self.velocity += acceleration * self.dt
+        self.velocity *= 0.99  # Damping
+        self.angle += self.velocity * self.dt
+        
+        # Check if balanced
+        balanced = abs(self.angle) < self.max_angle
+        
+        # Calculate reward
+        if balanced:
+            reward = 1.0 - abs(self.angle) / self.max_angle
+        else:
+            reward = -1.0
+            
+        self.episode_reward += reward
+        
+        done = not balanced or self.current_step > 1000
+        
+        observation = self._get_observation()
+        info = self._get_state_info()
+        info["balanced"] = balanced
+        
+        return observation, reward, done, info
+
+    def _get_observation(self) -> Dict[str, np.ndarray]:
+        """Create visual representation of pendulum state."""
+        # Create 20x20 visualization
+        vis = np.zeros((20, 20))
+        
+        # Draw pendulum angle (position indicator)
+        angle_pos = int(10 + 8 * np.sin(self.angle))
+        angle_pos = np.clip(angle_pos, 0, 19)
+        vis[10, angle_pos] = 1.0
+        
+        # Draw velocity indicator
+        vel_pos = int(10 + 8 * np.tanh(self.velocity))
+        vel_pos = np.clip(vel_pos, 0, 19)
+        vis[15, vel_pos] = 0.5
+        
+        return {"vision": vis}
+
+    def _get_state_info(self) -> Dict[str, Any]:
+        """Get current state information."""
+        info = self.get_info()
+        info["angle"] = self.angle
+        info["velocity"] = self.velocity
+        return info
+
+    def render(self) -> Optional[np.ndarray]:
+        """Render pendulum visualization."""
+        return self._get_observation()["vision"]
+
+
+class MultiModalIntegrationTask(Task):
+    """Multi-modal integration task.
+    
+    The network receives information from multiple sensory modalities
+    and must integrate them to make correct decisions.
+    Tests cross-modal processing and sensory fusion.
+    """
+
+    def __init__(
+        self, 
+        num_classes: int = 4,
+        modality_noise: float = 0.2,
+        seed: int = None
+    ):
+        """Initialize multi-modal integration task.
+        
+        Args:
+            num_classes: Number of classes to distinguish
+            modality_noise: Noise level for individual modalities
+            seed: Random seed
+        """
+        super().__init__(seed)
+        self.num_classes = num_classes
+        self.modality_noise = modality_noise
+        self.env = MultiModalIntegrationEnvironment(
+            num_classes=num_classes,
+            modality_noise=modality_noise,
+            seed=seed
+        )
+
+    def get_name(self) -> str:
+        """Get task name."""
+        return f"MultiModalIntegration-{self.num_classes}class"
+
+    def get_description(self) -> str:
+        """Get task description."""
+        return (
+            f"Integrate {self.num_classes} classes across vision and audio. "
+            f"Individual modality noise: {self.modality_noise}"
+        )
+
+    def evaluate(self, simulation, num_episodes: int = 20, max_steps: int = 100) -> TaskResult:
+        """Evaluate multi-modal integration.
+        
+        Args:
+            simulation: The simulation to evaluate
+            num_episodes: Number of trials
+            max_steps: Steps per trial
+            
+        Returns:
+            TaskResult with integration performance
+        """
+        try:
+            from .senses import feed_sense_input
+        except ImportError:
+            from senses import feed_sense_input
+
+        correct = 0
+        total_reward = 0.0
+        reaction_times = []
+
+        for episode in range(num_episodes):
+            observation, info = self.env.reset()
+            target_class = info["target_class"]
+
+            # Feed both modalities
+            feed_sense_input(simulation.model, "vision", observation["vision"])
+            feed_sense_input(simulation.model, "audio", observation["audio"])
+
+            first_response_step = None
+            predicted_class = None
+
+            for step in range(max_steps):
+                stats = simulation.step()
+
+                # Simplified prediction from network activity
+                if len(stats["spikes"]) > 0 and first_response_step is None:
+                    first_response_step = step
+                    # Placeholder: Use spike pattern for prediction
+                    predicted_class = self.rng.integers(0, self.num_classes)
+
+            if predicted_class == target_class:
+                correct += 1
+                reward = 1.0
+            else:
+                reward = 0.0
+
+            total_reward += reward
+
+            if first_response_step is not None:
+                reaction_times.append(first_response_step)
+
+        accuracy = correct / num_episodes
+        avg_reward = total_reward / num_episodes
+        avg_reaction_time = np.mean(reaction_times) if reaction_times else max_steps
+
+        return TaskResult(
+            accuracy=accuracy,
+            reward=avg_reward,
+            reaction_time=avg_reaction_time,
+            stability=1.0 - (np.std(reaction_times) / max_steps if reaction_times else 1.0),
+            additional_metrics={
+                "num_episodes": num_episodes,
+                "num_responses": len(reaction_times)
+            },
+        )
+
+    def get_metrics(self) -> Dict[str, str]:
+        """Get metric descriptions."""
+        return {
+            "accuracy": "Multi-modal classification accuracy",
+            "reward": "Average reward per episode",
+            "reaction_time": "Steps to decision",
+            "stability": "Response consistency",
+        }
+
+
+class MultiModalIntegrationEnvironment(Environment):
+    """Environment for multi-modal integration task."""
+
+    def __init__(
+        self,
+        num_classes: int = 4,
+        modality_noise: float = 0.2,
+        seed: int = None
+    ):
+        """Initialize multi-modal environment.
+        
+        Args:
+            num_classes: Number of classes
+            modality_noise: Noise level for modalities
+            seed: Random seed
+        """
+        super().__init__(seed)
+        self.num_classes = num_classes
+        self.modality_noise = modality_noise
+        self.current_class = None
+
+    def reset(self) -> Tuple[Dict[str, np.ndarray], Dict[str, Any]]:
+        """Reset with new multi-modal stimulus."""
+        self.current_step = 0
+        self.episode_reward = 0.0
+        
+        self.current_class = self.rng.integers(0, self.num_classes)
+        
+        # Create complementary patterns in vision and audio
+        vision_pattern = np.zeros((20, 20))
+        audio_pattern = np.zeros((20, 20))
+        
+        # Visual component
+        if self.current_class % 2 == 0:
+            vision_pattern[::2, :] = 1.0
+        else:
+            vision_pattern[:, ::2] = 1.0
+            
+        # Audio component
+        if self.current_class < self.num_classes // 2:
+            audio_pattern[:5, :] = 1.0
+        else:
+            audio_pattern[15:, :] = 1.0
+        
+        # Add noise
+        vision_pattern += self.rng.normal(0, self.modality_noise, vision_pattern.shape)
+        audio_pattern += self.rng.normal(0, self.modality_noise, audio_pattern.shape)
+        
+        vision_pattern = np.clip(vision_pattern, 0, 1)
+        audio_pattern = np.clip(audio_pattern, 0, 1)
+        
+        observation = {
+            "vision": vision_pattern,
+            "audio": audio_pattern
+        }
+        info = {"target_class": self.current_class}
+        
+        return observation, info
+
+    def step(self, action: Optional[np.ndarray] = None) -> Tuple[Dict[str, np.ndarray], float, bool, Dict[str, Any]]:
+        """Step environment (single-step task)."""
+        self.current_step += 1
+        done = True
+        reward = 0.0
+        
+        observation = {
+            "vision": np.zeros((20, 20)),
+            "audio": np.zeros((20, 20))
+        }
+        info = self.get_info()
+        info["target_class"] = self.current_class
+        
+        return observation, reward, done, info
+
+    def render(self) -> Optional[np.ndarray]:
+        """Render multi-modal stimulus."""
+        return None
+
+
+class ContinuousLearningTask(Task):
+    """Continuous learning task.
+    
+    The network faces a sequence of different sub-tasks and must
+    learn continuously without catastrophic forgetting.
+    Tests plasticity, memory retention, and adaptation.
+    """
+
+    def __init__(
+        self,
+        num_phases: int = 3,
+        steps_per_phase: int = 200,
+        seed: int = None
+    ):
+        """Initialize continuous learning task.
+        
+        Args:
+            num_phases: Number of learning phases
+            steps_per_phase: Steps in each phase
+            seed: Random seed
+        """
+        super().__init__(seed)
+        self.num_phases = num_phases
+        self.steps_per_phase = steps_per_phase
+        self.env = ContinuousLearningEnvironment(
+            num_phases=num_phases,
+            steps_per_phase=steps_per_phase,
+            seed=seed
+        )
+
+    def get_name(self) -> str:
+        """Get task name."""
+        return f"ContinuousLearning-{self.num_phases}phases"
+
+    def get_description(self) -> str:
+        """Get task description."""
+        return (
+            f"Learn {self.num_phases} sequential tasks without forgetting. "
+            f"Steps per phase: {self.steps_per_phase}"
+        )
+
+    def evaluate(self, simulation, num_episodes: int = 1, max_steps: int = 1000) -> TaskResult:
+        """Evaluate continuous learning capability.
+        
+        Args:
+            simulation: The simulation to evaluate
+            num_episodes: Number of full sequences
+            max_steps: Maximum total steps
+            
+        Returns:
+            TaskResult with learning metrics
+        """
+        try:
+            from .senses import feed_sense_input
+        except ImportError:
+            from senses import feed_sense_input
+
+        phase_accuracies = [[] for _ in range(self.num_phases)]
+        total_reward = 0.0
+
+        for episode in range(num_episodes):
+            observation, info = self.env.reset()
+            done = False
+            steps = 0
+
+            while not done and steps < max_steps:
+                current_phase = info["current_phase"]
+                
+                # Feed phase-specific input
+                feed_sense_input(simulation.model, "vision", observation["vision"])
+                
+                # Run simulation
+                for _ in range(10):
+                    simulation.step()
+                    steps += 1
+                
+                # Simplified evaluation: track phase performance
+                # Real implementation would evaluate on held-out test set
+                phase_correct = self.rng.random() < 0.6  # Placeholder
+                phase_accuracies[current_phase].append(1.0 if phase_correct else 0.0)
+                
+                observation, reward, done, info = self.env.step()
+                total_reward += reward
+
+        # Calculate metrics
+        avg_accuracies = [
+            np.mean(acc) if acc else 0.0 
+            for acc in phase_accuracies
+        ]
+        overall_accuracy = np.mean([a for a in avg_accuracies if a > 0]) if any(avg_accuracies) else 0.0
+        
+        # Measure forgetting (compare final phase to early phases)
+        forgetting = 0.0
+        if len(avg_accuracies) > 1:
+            forgetting = max(0, avg_accuracies[0] - avg_accuracies[-1])
+
+        avg_reward = total_reward / max(num_episodes, 1)
+
+        return TaskResult(
+            accuracy=overall_accuracy,
+            reward=avg_reward,
+            reaction_time=0.0,
+            stability=1.0 - forgetting,
+            additional_metrics={
+                "phase_accuracies": avg_accuracies,
+                "forgetting": forgetting,
+                "num_phases": self.num_phases,
+            },
+        )
+
+    def get_metrics(self) -> Dict[str, str]:
+        """Get metric descriptions."""
+        return {
+            "accuracy": "Average accuracy across all phases",
+            "reward": "Average reward",
+            "stability": "1 - forgetting (retention of early learning)",
+        }
+
+
+class ContinuousLearningEnvironment(Environment):
+    """Environment for continuous learning task."""
+
+    def __init__(
+        self,
+        num_phases: int = 3,
+        steps_per_phase: int = 200,
+        seed: int = None
+    ):
+        """Initialize continuous learning environment.
+        
+        Args:
+            num_phases: Number of learning phases
+            steps_per_phase: Steps per phase
+            seed: Random seed
+        """
+        super().__init__(seed)
+        self.num_phases = num_phases
+        self.steps_per_phase = steps_per_phase
+        self.current_phase = 0
+        self.phase_step = 0
+
+    def reset(self) -> Tuple[Dict[str, np.ndarray], Dict[str, Any]]:
+        """Reset to first phase."""
+        self.current_step = 0
+        self.episode_reward = 0.0
+        self.current_phase = 0
+        self.phase_step = 0
+        
+        observation = self._generate_phase_input(self.current_phase)
+        info = {
+            "current_phase": self.current_phase,
+            "phase_step": self.phase_step
+        }
+        
+        return observation, info
+
+    def step(self, action: Optional[np.ndarray] = None) -> Tuple[Dict[str, np.ndarray], float, bool, Dict[str, Any]]:
+        """Step through continuous learning phases."""
+        self.current_step += 1
+        self.phase_step += 1
+        
+        # Check if moving to next phase
+        if self.phase_step >= self.steps_per_phase:
+            self.current_phase += 1
+            self.phase_step = 0
+        
+        done = self.current_phase >= self.num_phases
+        reward = 0.0
+        
+        if not done:
+            observation = self._generate_phase_input(self.current_phase)
+        else:
+            observation = {"vision": np.zeros((20, 20))}
+        
+        info = self.get_info()
+        info["current_phase"] = self.current_phase
+        info["phase_step"] = self.phase_step
+        
+        return observation, reward, done, info
+
+    def _generate_phase_input(self, phase: int) -> Dict[str, np.ndarray]:
+        """Generate phase-specific input pattern."""
+        pattern = np.zeros((20, 20))
+        
+        # Different pattern for each phase
+        if phase == 0:
+            pattern[:, ::2] = 1.0  # Vertical stripes
+        elif phase == 1:
+            pattern[::2, :] = 1.0  # Horizontal stripes
+        else:
+            pattern[::3, ::3] = 1.0  # Grid pattern
+        
+        # Add some noise
+        pattern += self.rng.normal(0, 0.1, pattern.shape)
+        pattern = np.clip(pattern, 0, 1)
+        
+        return {"vision": pattern}
+
+    def render(self) -> Optional[np.ndarray]:
+        """Render current phase input."""
+        return self._generate_phase_input(self.current_phase)["vision"]
+
+
+class TransferLearningTask(Task):
+    """Transfer learning task.
+    
+    The network learns a source task and must transfer knowledge
+    to a related but different target task.
+    Tests generalization and knowledge transfer.
+    """
+
+    def __init__(
+        self,
+        source_classes: int = 4,
+        target_classes: int = 4,
+        similarity: float = 0.7,
+        seed: int = None
+    ):
+        """Initialize transfer learning task.
+        
+        Args:
+            source_classes: Number of source task classes
+            target_classes: Number of target task classes
+            similarity: Similarity between tasks (0-1)
+            seed: Random seed
+        """
+        super().__init__(seed)
+        self.source_classes = source_classes
+        self.target_classes = target_classes
+        self.similarity = similarity
+        self.env = TransferLearningEnvironment(
+            source_classes=source_classes,
+            target_classes=target_classes,
+            similarity=similarity,
+            seed=seed
+        )
+
+    def get_name(self) -> str:
+        """Get task name."""
+        return f"TransferLearning-S{self.source_classes}T{self.target_classes}"
+
+    def get_description(self) -> str:
+        """Get task description."""
+        return (
+            f"Transfer from {self.source_classes} source classes to "
+            f"{self.target_classes} target classes. Similarity: {self.similarity}"
+        )
+
+    def evaluate(self, simulation, num_episodes: int = 40, max_steps: int = 100) -> TaskResult:
+        """Evaluate transfer learning.
+        
+        First half of episodes are source task, second half are target task.
+        
+        Args:
+            simulation: The simulation to evaluate
+            num_episodes: Total episodes (split between source/target)
+            max_steps: Steps per episode
+            
+        Returns:
+            TaskResult with transfer performance
+        """
+        try:
+            from .senses import feed_sense_input
+        except ImportError:
+            from senses import feed_sense_input
+
+        source_episodes = num_episodes // 2
+        target_episodes = num_episodes - source_episodes
+        
+        source_correct = 0
+        target_correct = 0
+        total_reward = 0.0
+
+        # Source task phase
+        for episode in range(source_episodes):
+            observation, info = self.env.reset(target_task=False)
+            target_class = info["target_class"]
+
+            feed_sense_input(simulation.model, "vision", observation["vision"])
+
+            for _ in range(max_steps):
+                simulation.step()
+
+            # Placeholder prediction
+            predicted = self.rng.integers(0, self.source_classes)
+            if predicted == target_class:
+                source_correct += 1
+                total_reward += 1.0
+
+        # Target task phase (transfer)
+        for episode in range(target_episodes):
+            observation, info = self.env.reset(target_task=True)
+            target_class = info["target_class"]
+
+            feed_sense_input(simulation.model, "vision", observation["vision"])
+
+            for _ in range(max_steps):
+                simulation.step()
+
+            # Placeholder prediction
+            predicted = self.rng.integers(0, self.target_classes)
+            if predicted == target_class:
+                target_correct += 1
+                total_reward += 1.0
+
+        source_accuracy = source_correct / source_episodes if source_episodes > 0 else 0.0
+        target_accuracy = target_correct / target_episodes if target_episodes > 0 else 0.0
+        
+        # Transfer effectiveness: how much better than random
+        random_performance = 1.0 / self.target_classes
+        transfer_gain = max(0, target_accuracy - random_performance) / max(0.01, source_accuracy - random_performance)
+
+        avg_reward = total_reward / num_episodes
+
+        return TaskResult(
+            accuracy=target_accuracy,
+            reward=avg_reward,
+            reaction_time=0.0,
+            stability=transfer_gain,
+            additional_metrics={
+                "source_accuracy": source_accuracy,
+                "target_accuracy": target_accuracy,
+                "transfer_gain": transfer_gain,
+            },
+        )
+
+    def get_metrics(self) -> Dict[str, str]:
+        """Get metric descriptions."""
+        return {
+            "accuracy": "Target task accuracy",
+            "reward": "Average reward",
+            "stability": "Transfer effectiveness gain",
+        }
+
+
+class TransferLearningEnvironment(Environment):
+    """Environment for transfer learning task."""
+
+    def __init__(
+        self,
+        source_classes: int = 4,
+        target_classes: int = 4,
+        similarity: float = 0.7,
+        seed: int = None
+    ):
+        """Initialize transfer learning environment.
+        
+        Args:
+            source_classes: Number of source classes
+            target_classes: Number of target classes
+            similarity: Task similarity (0-1)
+            seed: Random seed
+        """
+        super().__init__(seed)
+        self.source_classes = source_classes
+        self.target_classes = target_classes
+        self.similarity = similarity
+        
+        # Generate base patterns
+        self.source_patterns = self._generate_patterns(source_classes)
+        self.target_patterns = self._generate_related_patterns(target_classes)
+        
+        self.current_class = None
+        self.is_target_task = False
+
+    def _generate_patterns(self, num_classes: int) -> np.ndarray:
+        """Generate base patterns for classes."""
+        patterns = np.zeros((num_classes, 20, 20))
+        
+        for i in range(num_classes):
+            if i % 4 == 0:
+                patterns[i, ::2, :] = 1.0
+            elif i % 4 == 1:
+                patterns[i, :, ::2] = 1.0
+            elif i % 4 == 2:
+                for j in range(min(20, 20)):
+                    patterns[i, j, j] = 1.0
+            else:
+                patterns[i, ::2, ::2] = 1.0
+                patterns[i, 1::2, 1::2] = 1.0
+        
+        return patterns
+
+    def _generate_related_patterns(self, num_classes: int) -> np.ndarray:
+        """Generate related patterns based on similarity."""
+        patterns = self._generate_patterns(num_classes).copy()
+        
+        # Add variation based on similarity
+        noise_level = 1.0 - self.similarity
+        noise = self.rng.normal(0, noise_level, patterns.shape)
+        patterns = np.clip(patterns + noise, 0, 1)
+        
+        return patterns
+
+    def reset(self, target_task: bool = False) -> Tuple[Dict[str, np.ndarray], Dict[str, Any]]:
+        """Reset with source or target task pattern.
+        
+        Args:
+            target_task: If True, use target task; otherwise source task
+        """
+        self.current_step = 0
+        self.episode_reward = 0.0
+        self.is_target_task = target_task
+        
+        if target_task:
+            self.current_class = self.rng.integers(0, self.target_classes)
+            pattern = self.target_patterns[self.current_class].copy()
+        else:
+            self.current_class = self.rng.integers(0, self.source_classes)
+            pattern = self.source_patterns[self.current_class].copy()
+        
+        # Add noise
+        pattern += self.rng.normal(0, 0.1, pattern.shape)
+        pattern = np.clip(pattern, 0, 1)
+        
+        observation = {"vision": pattern}
+        info = {
+            "target_class": self.current_class,
+            "is_target_task": target_task
+        }
+        
+        return observation, info
+
+    def step(self, action: Optional[np.ndarray] = None) -> Tuple[Dict[str, np.ndarray], float, bool, Dict[str, Any]]:
+        """Step environment (single-step task)."""
+        self.current_step += 1
+        done = True
+        reward = 0.0
+        
+        observation = {"vision": np.zeros((20, 20))}
+        info = self.get_info()
+        info["target_class"] = self.current_class
+        info["is_target_task"] = self.is_target_task
+        
+        return observation, reward, done, info
+
+    def render(self) -> Optional[np.ndarray]:
+        """Render current pattern."""
+        return None
