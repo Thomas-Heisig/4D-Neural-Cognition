@@ -333,5 +333,22 @@ jobs:
 
 ---
 
+## Branch Protection Rules
+
+To ensure code quality, configure branch protection rules in GitHub:
+
+1. Go to **Settings** → **Branches** → **Add rule**
+2. Branch name pattern: `main`
+3. Enable:
+   - ✅ Require pull request reviews before merging
+   - ✅ Require status checks to pass before merging
+   - ✅ Require branches to be up to date before merging
+   - ✅ Status checks: `test`, `lint`
+4. Click **Create** or **Save changes**
+
+This ensures all code is tested and reviewed before merging to main.
+
+---
+
 *Last Updated: December 2025*  
-*Status: Recommended setup, not yet implemented*
+*Status: ✅ Implemented - Workflows created and ready for use*
