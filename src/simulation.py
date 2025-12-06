@@ -265,9 +265,11 @@ class Simulation:
         # Phase 2: Synaptic plasticity - Update connection strengths
         # Hebbian rule: "Cells that fire together, wire together"
         # Weight decay prevents unbounded weight growth
+        # Optimization: Use set for O(1) lookup instead of O(n) list membership check
+        spike_set = set(spikes)
         for synapse in self.model.synapses:
-            pre_spiked = synapse.pre_id in spikes
-            post_spiked = synapse.post_id in spikes
+            pre_spiked = synapse.pre_id in spike_set
+            post_spiked = synapse.post_id in spike_set
             hebbian_update(synapse, pre_spiked, post_spiked, self.model)
             apply_weight_decay(synapse, self.model)
 

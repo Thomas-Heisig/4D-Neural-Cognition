@@ -32,7 +32,11 @@ This document tracks planned features, improvements, and tasks for the project. 
   - [x] Implemented auto-checkpointing every 1000 steps
   - [x] Created checkpoint cleanup (keeps last 3)
   - [x] Added recovery endpoint for crash recovery
-- [ ] Optimize neuron update loop (currently O(n²) for synapses)
+- [x] Optimize neuron update loop (Dec 2025)
+  - [x] Optimized spike checking from O(n*m) to O(m) using set lookup
+  - [x] Spike history already limited to 100 steps for memory efficiency
+  - [ ] Future: Consider sparse matrix representation for synapses
+  - [ ] Future: Implement time-indexed spike lookup for O(1) synaptic delay checking
 
 ### Testing
 
