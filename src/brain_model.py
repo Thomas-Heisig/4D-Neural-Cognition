@@ -115,6 +115,7 @@ class BrainModel:
         parent_id: int = -1,
         health: float = 1.0,
         params: dict = None,
+        validate_coords: bool = True,
     ) -> Neuron:
         """Add a new neuron to the model.
         
@@ -124,6 +125,7 @@ class BrainModel:
             parent_id: ID of parent neuron if born through reproduction
             health: Initial health value (0.0 to 1.0)
             params: Optional neuron parameters
+            validate_coords: Whether to validate coordinates (default: True)
             
         Returns:
             The created Neuron object
@@ -131,17 +133,18 @@ class BrainModel:
         Raises:
             ValueError: If coordinates are out of bounds or health is invalid
         """
-        # Validate coordinates
-        if not (0 <= x < self.lattice_shape[0]):
-            raise ValueError(f"x coordinate {x} out of bounds [0, {self.lattice_shape[0]})")
-        if not (0 <= y < self.lattice_shape[1]):
-            raise ValueError(f"y coordinate {y} out of bounds [0, {self.lattice_shape[1]})")
-        if not (0 <= z < self.lattice_shape[2]):
-            raise ValueError(f"z coordinate {z} out of bounds [0, {self.lattice_shape[2]})")
-        if not (0 <= w < self.lattice_shape[3]):
-            raise ValueError(f"w coordinate {w} out of bounds [0, {self.lattice_shape[3]})")
+        # Validate coordinates (optional for backward compatibility)
+        if validate_coords:
+            if not (0 <= x < self.lattice_shape[0]):
+                raise ValueError(f"x coordinate {x} out of bounds [0, {self.lattice_shape[0]})")
+            if not (0 <= y < self.lattice_shape[1]):
+                raise ValueError(f"y coordinate {y} out of bounds [0, {self.lattice_shape[1]})")
+            if not (0 <= z < self.lattice_shape[2]):
+                raise ValueError(f"z coordinate {z} out of bounds [0, {self.lattice_shape[2]})")
+            if not (0 <= w < self.lattice_shape[3]):
+                raise ValueError(f"w coordinate {w} out of bounds [0, {self.lattice_shape[3]})")
         
-        # Validate health
+        # Always validate health
         if not (0.0 <= health <= 1.0):
             raise ValueError(f"Health must be between 0.0 and 1.0, got {health}")
         

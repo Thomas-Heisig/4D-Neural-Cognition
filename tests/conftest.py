@@ -19,7 +19,7 @@ from simulation import Simulation
 def minimal_config():
     """Minimal valid brain model configuration for testing."""
     return {
-        "lattice_shape": [10, 10, 5, 2],
+        "lattice_shape": [10, 10, 10, 10],
         "neuron_model": {
             "type": "LIF",
             "params_default": {
