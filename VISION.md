@@ -68,6 +68,21 @@ To establish a new paradigm in computational neuroscience and artificial intelli
 - Vestibular sense (balance/orientation)
 - Digital sense (novel: for abstract data patterns)
 
+✅ **Tasks & Evaluation Framework** (New in December 2025)
+- Standard benchmark suite with multiple tasks
+- PatternClassificationTask for vision testing
+- TemporalSequenceTask for sequence learning
+- Comprehensive metrics (accuracy, reward, reaction time, stability)
+- Configuration comparison tools
+- Reproducible benchmark results with full provenance
+
+✅ **Knowledge Database System** (New in December 2025)
+- SQLite database for training examples
+- Pre-training from stored knowledge
+- Fallback learning when network is untrained
+- Sample data population utilities
+- Batch training capabilities
+
 ✅ **Data Management**
 - JSON configuration system
 - HDF5 storage for efficient data persistence
@@ -84,6 +99,16 @@ To establish a new paradigm in computational neuroscience and artificial intelli
 - Command-line example scripts
 - Programmatic API
 - Configuration system
+- Integration tests
+- Benchmark examples
+
+✅ **Comprehensive Documentation** (New in December 2025)
+- Reorganized according to international standards (ISO/IEC/IEEE 26512)
+- User Guide with FAQ and Glossary
+- Developer Guide for contributors
+- API Reference documentation
+- Security and Support policies
+- Tutorials and quick start guides
 
 ### What We're Working On
 

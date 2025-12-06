@@ -8,13 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Comprehensive project documentation (VISION.md, TODO.md, ISSUES.md)
-- Contributing guidelines (CONTRIBUTING.md)
-- Code of Conduct (CODE_OF_CONDUCT.md)
-- Changelog (this file)
+- **Documentation Reorganization** (December 2025)
+  - Reorganized documentation according to international standards (ISO/IEC/IEEE 26512:2018)
+  - Added SECURITY.md for security policy and vulnerability reporting
+  - Added SUPPORT.md for community support and help resources
+  - Created comprehensive FAQ with 50+ questions and answers
+  - Created GLOSSARY with 100+ term definitions
+  - Restructured docs/ folder with proper hierarchy:
+    - docs/user-guide/ for end-user documentation
+    - docs/developer-guide/ for contributor documentation
+    - docs/api/ for API reference
+    - docs/tutorials/ for learning guides
+  - Added User Guide index (docs/user-guide/README.md)
+  - Added Developer Guide index (docs/developer-guide/README.md)
+  - Updated Documentation Index (docs/INDEX.md) with new structure
+  - Added documentation status badges to README
 
 ### Changed
-- None
+- **Documentation Updates**
+  - Updated README.md with improved structure and new documentation links
+  - Updated all cross-references to point to new documentation locations
+  - Enhanced navigation and discoverability across all docs
+  - Improved consistency in formatting and terminology
 
 ### Deprecated
 - None
@@ -23,10 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - None
 
 ### Fixed
-- None
+- Fixed broken documentation links
+- Corrected outdated file paths in documentation
 
 ### Security
-- None
+- Added comprehensive security policy (SECURITY.md)
 
 ## [1.0.0] - 2025-12-06
 
