@@ -39,6 +39,11 @@ brain_state.h5
 *.hdf
 *.h5
 
+# Benchmark and evaluation results
+benchmark_results/
+knowledge.db
+*.db
+
 # Frontend
 frontend/node_modules/
 frontend/dist/

@@ -48,6 +48,55 @@ This document tracks planned features, improvements, and tasks for the project. 
 
 ## 🟡 High Priority
 
+### Tasks & Evaluation
+
+- [x] **Task API / Environment Layer**
+  - [x] Standard environment interface (step, reset, render)
+  - [x] Abstract base class for tasks
+  - [x] Reward/observation system
+  - [x] Info dictionary for task metadata
+
+- [x] **Standard Benchmark Suite**
+  - [x] Pattern classification task (Vision + Digital)
+  - [x] Temporal sequence task
+  - [x] Defined metrics (Accuracy, Reward, Reaction time, Stability)
+  - [x] Task result tracking
+
+- [x] **Configuration Comparison Tools**
+  - [x] BenchmarkConfig for reproducible configurations
+  - [x] Multiple configs through same tasks
+  - [x] Results comparison (tabular/graphical)
+  - [x] Seeds documentation for reproducibility
+
+- [x] **Knowledge Database System**
+  - [x] SQLite database for training data
+  - [x] Access API for pre-training knowledge
+  - [x] Integration with simulation
+  - [x] Batch training capabilities
+  - [x] Fallback learning (access DB when network untrained)
+
+- [ ] **Additional Benchmark Tasks**
+  - [ ] Sensorimotor control task (e.g., pendulum stabilization)
+  - [ ] Multi-modal integration task
+  - [ ] Continuous learning task
+  - [ ] Transfer learning task
+
+- [ ] **Evaluation Metrics Enhancement**
+  - [ ] Information theory metrics (entropy, mutual information)
+  - [ ] Network stability measures
+  - [ ] Learning curves over time
+  - [ ] Generalization performance
+
+- [ ] **Visualization for Evaluation**
+  - [ ] Performance comparison plots
+  - [ ] Learning curve visualization
+  - [ ] Confusion matrices for classification
+  - [ ] Activity pattern visualization during tasks
+
+---
+
+## 🟡 High Priority (Continued)
+
 ### Features - Core Simulation
 
 - [ ] **Inhibitory Neurons**
