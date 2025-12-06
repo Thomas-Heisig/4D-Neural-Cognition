@@ -320,7 +320,10 @@ class KnowledgeBasedTrainer:
         Returns:
             Training statistics
         """
-        from .senses import feed_sense_input
+        try:
+            from .senses import feed_sense_input
+        except ImportError:
+            from senses import feed_sense_input
         
         print(f"Pre-training on category: {category}")
         print(f"Loading {num_samples} samples from database...")
@@ -397,7 +400,10 @@ class KnowledgeBasedTrainer:
         Returns:
             Training statistics
         """
-        from .senses import feed_sense_input
+        try:
+            from .senses import feed_sense_input
+        except ImportError:
+            from senses import feed_sense_input
         
         # Feed current data
         feed_sense_input(self.simulation.model, data_type, current_data)

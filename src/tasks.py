@@ -204,7 +204,10 @@ class PatternClassificationTask(Task):
         Returns:
             TaskResult with accuracy and other metrics
         """
-        from .senses import feed_sense_input
+        try:
+            from .senses import feed_sense_input
+        except ImportError:
+            from senses import feed_sense_input
         
         correct = 0
         total_reward = 0.0
@@ -404,7 +407,10 @@ class TemporalSequenceTask(Task):
         Returns:
             TaskResult with prediction accuracy
         """
-        from .senses import feed_sense_input
+        try:
+            from .senses import feed_sense_input
+        except ImportError:
+            from senses import feed_sense_input
         
         correct_predictions = 0
         total_predictions = 0
