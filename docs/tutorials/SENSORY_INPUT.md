@@ -46,11 +46,11 @@ image[3:7, 3:7] = 1.0  # White square in center
 
 # Feed to visual area
 feed_sense_input(
-    model=sim.model,
-    sense_name="vision",
-    input_data=image,
+    model=sim.model
+    sense_name="vision"
+    input_data=image
     z_layer=0,        # Which z-layer to target
-    intensity=5.0     # Input strength
+         # Input strength
 )
 
 # Run simulation to process the input
@@ -106,10 +106,10 @@ pattern = ((x - center_x)**2 + (y - center_y)**2 <= radius**2).astype(float)
 gradient = np.linspace(0, 1, 100).reshape(10, 10)
 
 feed_sense_input(
-    model=sim.model,
-    sense_name="vision",
-    input_data=gradient,
-    intensity=5.0
+    model=sim.model
+    sense_name="vision"
+    input_data=gradient
+    
 )
 ```
 
@@ -128,10 +128,10 @@ img_array = np.array(img) / 255.0
 
 # Feed to network
 feed_sense_input(
-    model=sim.model,
-    sense_name="vision",
-    input_data=img_array,
-    intensity=3.0
+    model=sim.model
+    sense_name="vision"
+    input_data=img_array
+    
 )
 ```
 
@@ -151,10 +151,10 @@ for i, pattern in enumerate(patterns):
     
     # Feed pattern
     feed_sense_input(
-        model=sim.model,
-        sense_name="vision",
-        input_data=pattern,
-        intensity=5.0
+        model=sim.model
+        sense_name="vision"
+        input_data=pattern
+        
     )
     
     # Let network process
@@ -181,10 +181,10 @@ audio = np.zeros((20, 10))  # 20 frequencies, 10 time steps
 audio[10, :] = 1.0
 
 feed_sense_input(
-    model=sim.model,
-    sense_name="audio",
-    input_data=audio,
-    intensity=5.0
+    model=sim.model
+    sense_name="audio"
+    input_data=audio
+    
 )
 ```
 
@@ -198,10 +198,10 @@ for t in range(20):
     audio[freq, t] = 1.0
 
 feed_sense_input(
-    model=sim.model,
-    sense_name="audio",
-    input_data=audio,
-    intensity=5.0
+    model=sim.model
+    sense_name="audio"
+    input_data=audio
+    
 )
 ```
 
@@ -215,10 +215,10 @@ audio[8, :] = 0.7   # Third
 audio[12, :] = 0.5  # Fifth
 
 feed_sense_input(
-    model=sim.model,
-    sense_name="audio",
-    input_data=audio,
-    intensity=5.0
+    model=sim.model
+    sense_name="audio"
+    input_data=audio
+    
 )
 ```
 
@@ -234,8 +234,8 @@ duration = 1.0  # seconds
 
 # Create spectrogram
 frequencies, times, spectrogram = signal.spectrogram(
-    audio_signal,
-    fs=sample_rate,
+    audio_signal
+    fs=sample_rate
     nperseg=256
 )
 
@@ -244,10 +244,10 @@ spectrogram = spectrogram / np.max(spectrogram)
 spectrogram_resized = resize_array(spectrogram, (20, 20))
 
 feed_sense_input(
-    model=sim.model,
-    sense_name="audio",
-    input_data=spectrogram_resized,
-    intensity=4.0
+    model=sim.model
+    sense_name="audio"
+    input_data=spectrogram_resized
+    
 )
 ```
 
@@ -268,10 +268,10 @@ digital_input = create_digital_sense_input(text)
 
 # Feed to network
 feed_sense_input(
-    model=sim.model,
-    sense_name="digital",
-    input_data=digital_input,
-    intensity=5.0
+    model=sim.model
+    sense_name="digital"
+    input_data=digital_input
+    
 )
 ```
 
@@ -291,10 +291,10 @@ data_string = "123.456 789.012"
 digital_input = create_digital_sense_input(data_string)
 
 feed_sense_input(
-    model=sim.model,
-    sense_name="digital",
-    input_data=digital_input,
-    intensity=5.0
+    model=sim.model
+    sense_name="digital"
+    input_data=digital_input
+    
 )
 ```
 
@@ -313,10 +313,10 @@ for word in words:
     
     # Feed to network
     feed_sense_input(
-        model=sim.model,
-        sense_name="digital",
-        input_data=digital_input,
-        intensity=5.0
+        model=sim.model
+        sense_name="digital"
+        input_data=digital_input
+        
     )
     
     # Process
@@ -328,18 +328,18 @@ for word in words:
 ```python
 # Process mathematical expressions
 expressions = [
-    "1+1=2",
-    "2*3=6",
+    "1+1=2"
+    "2*3=6"
     "5-2=3"
 ]
 
 for expr in expressions:
     digital_input = create_digital_sense_input(expr)
     feed_sense_input(
-        model=sim.model,
-        sense_name="digital",
-        input_data=digital_input,
-        intensity=5.0
+        model=sim.model
+        sense_name="digital"
+        input_data=digital_input
+        
     )
     sim.run(steps=20)
 ```
@@ -357,10 +357,10 @@ touch_map = np.zeros((10, 10))
 touch_map[2:4, 5:7] = 1.0  # Stimulus at specific location
 
 feed_sense_input(
-    model=sim.model,
-    sense_name="touch",
-    input_data=touch_map,
-    intensity=4.0
+    model=sim.model
+    sense_name="touch"
+    input_data=touch_map
+    
 )
 ```
 
@@ -374,10 +374,10 @@ taste_input[0, 0] = 1.0  # Sweet
 taste_input[1, 0] = 0.5  # Bit of salty
 
 feed_sense_input(
-    model=sim.model,
-    sense_name="taste",
-    input_data=taste_input,
-    intensity=5.0
+    model=sim.model
+    sense_name="taste"
+    input_data=taste_input
+    
 )
 ```
 
@@ -390,10 +390,10 @@ smell_input = np.random.rand(10, 10) * 0.5  # Complex odor
 smell_input[5, 5] = 1.0  # Strong component
 
 feed_sense_input(
-    model=sim.model,
-    sense_name="smell",
-    input_data=smell_input,
-    intensity=4.0
+    model=sim.model
+    sense_name="smell"
+    input_data=smell_input
+    
 )
 ```
 
@@ -409,10 +409,10 @@ proprioception[2, :] = 0.5  # Left leg
 proprioception[3, :] = 0.5  # Right leg
 
 feed_sense_input(
-    model=sim.model,
-    sense_name="proprioception",
-    input_data=proprioception,
-    intensity=3.0
+    model=sim.model
+    sense_name="proprioception"
+    input_data=proprioception
+    
 )
 ```
 
@@ -430,8 +430,8 @@ visual = np.random.rand(10, 10)
 audio = np.random.rand(20, 10)
 
 # Feed both
-feed_sense_input(sim.model, "vision", visual, intensity=5.0)
-feed_sense_input(sim.model, "audio", audio, intensity=5.0)
+feed_sense_input(sim.model, "vision", visual)
+feed_sense_input(sim.model, "audio", audio)
 
 # Process
 sim.run(steps=50)
@@ -448,17 +448,17 @@ def timed_sequence(sim, inputs, steps_per_input=25):
     for sense_name, data in inputs:
         print(f"Feeding {sense_name}...")
         feed_sense_input(
-            model=sim.model,
-            sense_name=sense_name,
-            input_data=data,
-            intensity=5.0
+            model=sim.model
+            sense_name=sense_name
+            input_data=data
+            
         )
         sim.run(steps=steps_per_input)
 
 # Use it
 sequence = [
-    ("vision", np.eye(10)),
-    ("audio", np.ones((20, 10)) * 0.5),
+    ("vision", np.eye(10))
+    ("audio", np.ones((20, 10)) * 0.5)
     ("digital", create_digital_sense_input("test"))
 ]
 timed_sequence(sim, sequence)
@@ -475,10 +475,10 @@ def continuous_input(sim, duration=100):
         visual = np.random.rand(10, 10) * 0.5
         
         feed_sense_input(
-            sim.model,
-            "vision",
-            visual,
-            intensity=2.0
+            sim.model
+            "vision"
+            visual
+            
         )
         
         sim.step()
@@ -499,10 +499,10 @@ for intensity in np.linspace(1, 10, 10):
     print(f"Intensity: {intensity:.1f}")
     
     feed_sense_input(
-        sim.model,
-        "vision",
-        base_pattern,
-        intensity=intensity
+        sim.model
+        "vision"
+        base_pattern
+        intensity
     )
     
     sim.run(steps=10)
@@ -519,10 +519,10 @@ noisy_pattern = clean_pattern + np.random.normal(0, 0.1, clean_pattern.shape)
 noisy_pattern = np.clip(noisy_pattern, 0, 1)  # Keep in valid range
 
 feed_sense_input(
-    sim.model,
-    "vision",
-    noisy_pattern,
-    intensity=5.0
+    sim.model
+    "vision"
+    noisy_pattern
+    
 )
 ```
 
@@ -534,19 +534,19 @@ feed_sense_input(
 
 # First input
 feed_sense_input(
-    sim.model,
-    "vision",
-    np.ones((10, 10)) * 0.3,
-    intensity=2.0
+    sim.model
+    "vision"
+    np.ones((10, 10)) * 0.3
+    
 )
 sim.run(steps=10)
 
 # Second input (adds to existing)
 feed_sense_input(
-    sim.model,
-    "vision",
-    np.ones((10, 10)) * 0.3,
-    intensity=2.0
+    sim.model
+    "vision"
+    np.ones((10, 10)) * 0.3
+    
 )
 sim.run(steps=10)
 
@@ -573,7 +573,7 @@ def main():
     
     # Initialize multiple sensory areas
     sim.initialize_neurons(
-        areas=["V1_like", "A1_like", "Digital_sensor"],
+        areas=["V1_like", "A1_like", "Digital_sensor"]
         density=0.1
     )
     sim.initialize_random_synapses(connection_prob=0.1)
@@ -585,8 +585,8 @@ def main():
     visual = np.eye(10)
     audio = np.ones((20, 10)) * 0.5
     
-    feed_sense_input(sim.model, "vision", visual, intensity=5.0)
-    feed_sense_input(sim.model, "audio", audio, intensity=5.0)
+    feed_sense_input(sim.model, "vision", visual)
+    feed_sense_input(sim.model, "audio", audio)
     sim.run(steps=30)
     
     # Trial 2: Visual + Digital
@@ -594,8 +594,8 @@ def main():
     visual = np.ones((10, 10))
     digital = create_digital_sense_input("cat")
     
-    feed_sense_input(sim.model, "vision", visual, intensity=5.0)
-    feed_sense_input(sim.model, "digital", digital, intensity=5.0)
+    feed_sense_input(sim.model, "vision", visual)
+    feed_sense_input(sim.model, "digital", digital)
     sim.run(steps=30)
     
     # Trial 3: All three
@@ -604,9 +604,9 @@ def main():
     audio = np.random.rand(20, 10)
     digital = create_digital_sense_input("multimodal")
     
-    feed_sense_input(sim.model, "vision", visual, intensity=5.0)
-    feed_sense_input(sim.model, "audio", audio, intensity=5.0)
-    feed_sense_input(sim.model, "digital", digital, intensity=5.0)
+    feed_sense_input(sim.model, "vision", visual)
+    feed_sense_input(sim.model, "audio", audio)
+    feed_sense_input(sim.model, "digital", digital)
     sim.run(steps=30)
     
     print("\n=== Demo Complete ===")

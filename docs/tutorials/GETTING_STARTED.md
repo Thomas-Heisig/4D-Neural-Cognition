@@ -131,7 +131,7 @@ def main():
     # Step 3: Initialize some neurons
     print("\n3. Initializing neurons in V1_like area...")
     sim.initialize_neurons(
-        areas=["V1_like"],
+        areas=["V1_like"]
         density=0.05  # 5% of positions filled
     )
     print(f"   Created {len(sim.model.get_neurons())} neurons")
@@ -140,7 +140,7 @@ def main():
     print("\n4. Creating synaptic connections...")
     sim.initialize_random_synapses(
         connection_prob=0.1,  # 10% connection probability
-        weight_mean=0.5,
+        weight_mean=0.5
         weight_std=0.1
     )
     synapses = sim.model.get_synapses()
@@ -227,11 +227,11 @@ def main():
     # Feed the visual input
     print("\nFeeding visual input to V1_like area...")
     feed_sense_input(
-        sim.model,
-        sense_name="vision",
-        input_data=visual_input,
+        sim.model
+        sense_name="vision"
+        input_data=visual_input
         z_layer=0,  # Which z-layer to stimulate
-        intensity=5.0  # Strength of input
+          # Strength of input
     )
     
     # Run simulation
@@ -313,7 +313,7 @@ Navigate to: `http://localhost:5000`
 For vision:
 ```json
 {
-  "sense": "vision",
+  "sense": "vision"
   "data": [[1, 0, 1], [0, 1, 0], [1, 0, 1]]
 }
 ```
@@ -321,7 +321,7 @@ For vision:
 For digital/text:
 ```json
 {
-  "sense": "digital",
+  "sense": "digital"
   "text": "Hello neural network!"
 }
 ```

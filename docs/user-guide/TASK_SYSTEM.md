@@ -50,7 +50,7 @@ class MyEnvironment(Environment):
     def reset(self):
         """Reset to initial state."""
         observation = {
-            'vision': np.zeros((10, 10)),
+            'vision': np.zeros((10, 10))
             'digital': np.zeros((5, 5))
         }
         info = {'episode': 0}
@@ -135,7 +135,7 @@ class MyTask(Task):
             obs, reward, done, info = self.env.step()
         
         return TaskResult(
-            accuracy=1.0,
+            accuracy=1.0
             reward=self.env.episode_reward
         )
 ```
@@ -155,8 +155,8 @@ from simulation import Simulation
 
 # Create task
 task = PatternClassificationTask(
-    pattern_size=10,
-    num_patterns=5,
+    pattern_size=10
+    num_patterns=5
     seed=42
 )
 
@@ -183,8 +183,8 @@ from tasks import TemporalSequenceTask
 
 # Create task
 task = TemporalSequenceTask(
-    sequence_length=5,
-    num_sequences=3,
+    sequence_length=5
+    num_sequences=3
     seed=42
 )
 
@@ -203,7 +203,7 @@ from tasks import DigitalSenseTask
 
 # Create task with specific patterns
 task = DigitalSenseTask(
-    patterns=["hello", "world", "test"],
+    patterns=["hello", "world", "test"]
     seed=42
 )
 
@@ -302,10 +302,10 @@ class ReactionTask(Task):
             while not done:
                 # Feed observation
                 feed_sense_input(
-                    simulation.model,
-                    sense_name="vision",
-                    input_data=obs['vision'],
-                    intensity=5.0
+                    simulation.model
+                    sense_name="vision"
+                    input_data=obs['vision']
+                    
                 )
                 
                 # Run simulation
@@ -327,9 +327,9 @@ class ReactionTask(Task):
                 accuracies.append(0.0)
         
         return TaskResult(
-            accuracy=np.mean(accuracies),
-            reward=np.mean([1.0/rt for rt in reaction_times]) if reaction_times else 0.0,
-            reaction_time=np.mean(reaction_times) if reaction_times else float('inf'),
+            accuracy=np.mean(accuracies)
+            reward=np.mean([1.0/rt for rt in reaction_times]) if reaction_times else 0.0
+            reaction_time=np.mean(reaction_times) if reaction_times else float('inf')
             stability=1.0 - np.std(reaction_times)/np.mean(reaction_times) if reaction_times else 0.0
         )
 ```
@@ -388,7 +388,7 @@ from tasks import PatternClassificationTask, TemporalSequenceTask
 
 # Create multiple tasks
 tasks = {
-    'Pattern': PatternClassificationTask(seed=42),
+    'Pattern': PatternClassificationTask(seed=42)
     'Sequence': TemporalSequenceTask(seed=42)
 }
 
@@ -416,15 +416,15 @@ from evaluation import BenchmarkConfig
 # Define configurations
 configs = [
     BenchmarkConfig(
-        name="Low Density",
-        neuron_density=0.05,
-        synapse_prob=0.1,
+        name="Low Density"
+        neuron_density=0.05
+        synapse_prob=0.1
         learning_rate=0.01
-    ),
+    )
     BenchmarkConfig(
-        name="High Density",
-        neuron_density=0.15,
-        synapse_prob=0.15,
+        name="High Density"
+        neuron_density=0.15
+        synapse_prob=0.15
         learning_rate=0.01
     )
 ]
@@ -439,7 +439,7 @@ for config in configs:
     model = BrainModel(config_path="brain_base_model.json")
     sim = Simulation(model, seed=42)
     sim.initialize_neurons(
-        areas=["V1_like"],
+        areas=["V1_like"]
         density=config.neuron_density
     )
     sim.initialize_random_synapses(
@@ -487,7 +487,7 @@ def main():
     
     # Define tasks
     tasks = [
-        PatternClassificationTask(pattern_size=10, num_patterns=5, seed=42),
+        PatternClassificationTask(pattern_size=10, num_patterns=5, seed=42)
         TemporalSequenceTask(sequence_length=5, num_sequences=3, seed=42)
     ]
     
@@ -534,10 +534,10 @@ def train_on_task(sim, task, num_episodes=50):
             # Feed observation
             for sense_name, data in obs.items():
                 feed_sense_input(
-                    sim.model,
-                    sense_name=sense_name,
-                    input_data=data,
-                    intensity=5.0
+                    sim.model
+                    sense_name=sense_name
+                    input_data=data
+                    
                 )
             
             # Process

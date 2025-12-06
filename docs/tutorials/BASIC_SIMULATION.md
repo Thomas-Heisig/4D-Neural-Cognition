@@ -78,7 +78,7 @@ sim.initialize_neurons(
 ```python
 # Create neurons only in visual and audio areas
 sim.initialize_neurons(
-    areas=["V1_like", "A1_like"],
+    areas=["V1_like", "A1_like"]
     density=0.15  # 15% density
 )
 ```
@@ -91,7 +91,7 @@ sim.initialize_neurons(areas=["V1_like"], density=0.2)
 
 # Initialize other areas with lower density
 sim.initialize_neurons(
-    areas=["A1_like", "Digital_sensor"],
+    areas=["A1_like", "Digital_sensor"]
     density=0.05
 )
 ```
@@ -172,9 +172,9 @@ neuron_ids = list(neurons.keys())
 # Create specific connection
 if len(neuron_ids) >= 2:
     sim.model.add_synapse(
-        pre_id=neuron_ids[0],
-        post_id=neuron_ids[1],
-        weight=0.8,
+        pre_id=neuron_ids[0]
+        post_id=neuron_ids[1]
+        weight=0.8
         delay=1
     )
 ```
@@ -222,7 +222,7 @@ spiked = sim.step(external_input=external_input)
 ```python
 # Run many steps at once
 sim.run(
-    steps=1000,
+    steps=1000
     verbose=True  # Print progress
 )
 ```
@@ -342,7 +342,7 @@ Enable neuron death and reproduction:
 ```python
 # Enable cell lifecycle with specific parameters
 sim.run(
-    steps=1000,
+    steps=1000
     apply_cell_lifecycle=True
 )
 

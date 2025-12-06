@@ -74,11 +74,11 @@ post_active = synapse['post'] in recently_spiked
 
 # Apply learning
 new_weight = hebbian_update(
-    weight=synapse['weight'],
-    pre_active=pre_active,
-    post_active=post_active,
-    learning_rate=0.01,
-    w_min=0.0,
+    weight=synapse['weight']
+    pre_active=pre_active
+    post_active=post_active
+    learning_rate=0.01
+    w_min=0.0
     w_max=1.0
 )
 
@@ -129,7 +129,7 @@ from plasticity import weight_decay
 # Apply decay to all synapses
 for synapse in sim.model.get_synapses().values():
     synapse['weight'] = weight_decay(
-        weight=synapse['weight'],
+        weight=synapse['weight']
         decay_rate=0.001  # 0.1% decay per step
     )
 ```
@@ -173,17 +173,17 @@ def apply_learning(sim, learning_rate=0.01, decay_rate=0.001):
         
         # Apply Hebbian learning
         synapse['weight'] = hebbian_update(
-            weight=synapse['weight'],
-            pre_active=pre_active,
-            post_active=post_active,
-            learning_rate=learning_rate,
-            w_min=0.0,
+            weight=synapse['weight']
+            pre_active=pre_active
+            post_active=post_active
+            learning_rate=learning_rate
+            w_min=0.0
             w_max=1.0
         )
         
         # Apply decay
         synapse['weight'] = weight_decay(
-            weight=synapse['weight'],
+            weight=synapse['weight']
             decay_rate=decay_rate
         )
 
@@ -203,10 +203,10 @@ for step in range(1000):
 ```json
 {
   "plasticity": {
-    "learning_rate": 0.01,
-    "weight_decay": 0.001,
-    "w_min": 0.0,
-    "w_max": 1.0,
+    "learning_rate": 0.01
+    "weight_decay": 0.001
+    "w_min": 0.0
+    "w_max": 1.0
     "ltd_ratio": 0.5
   }
 }
@@ -258,9 +258,9 @@ def test_parameters(sim, lr, decay, steps=1000):
     weight_variance = np.var(final_weights)
     
     return {
-        'lr': lr,
-        'decay': decay,
-        'weight_change': weight_change,
+        'lr': lr
+        'decay': decay
+        'weight_change': weight_change
         'weight_variance': weight_variance
     }
 
@@ -324,10 +324,10 @@ def train_epoch(sim, inputs, steps_per_input=50):
     for input_data in inputs:
         # Present input
         feed_sense_input(
-            sim.model,
-            "vision",
-            input_data,
-            intensity=5.0
+            sim.model
+            "vision"
+            input_data
+            
         )
         
         # Process
@@ -339,8 +339,8 @@ def train_epoch(sim, inputs, steps_per_input=50):
 
 # Create training set
 training_inputs = [
-    np.eye(10),
-    np.rot90(np.eye(10)),
+    np.eye(10)
+    np.rot90(np.eye(10))
     np.ones((10, 10)) * 0.5
 ]
 
@@ -359,7 +359,7 @@ def train_with_reward(sim, input_data, reward, steps=50):
     """Train with reward signal."""
     
     # Present input
-    feed_sense_input(sim.model, "vision", input_data, intensity=5.0)
+    feed_sense_input(sim.model, "vision", input_data)
     
     # Process
     for step in range(steps):
@@ -396,7 +396,7 @@ def curriculum_training(sim):
     
     for epoch in range(5):
         for pattern in simple_patterns:
-            feed_sense_input(sim.model, "vision", pattern, intensity=5.0)
+            feed_sense_input(sim.model, "vision", pattern)
             sim.run(steps=30)
             sim.apply_plasticity()
     
@@ -409,7 +409,7 @@ def curriculum_training(sim):
     
     for epoch in range(5):
         for pattern in medium_patterns:
-            feed_sense_input(sim.model, "vision", pattern, intensity=5.0)
+            feed_sense_input(sim.model, "vision", pattern)
             sim.run(steps=30)
             sim.apply_plasticity()
     
@@ -421,7 +421,7 @@ def curriculum_training(sim):
     
     for epoch in range(5):
         for pattern in complex_patterns:
-            feed_sense_input(sim.model, "vision", pattern, intensity=5.0)
+            feed_sense_input(sim.model, "vision", pattern)
             sim.run(steps=30)
             sim.apply_plasticity()
 
@@ -451,10 +451,10 @@ def monitor_learning(sim, num_steps=1000, check_interval=100):
         if step % check_interval == 0:
             weights = [s['weight'] for s in sim.model.get_synapses().values()]
             weight_history.append({
-                'step': step,
-                'mean': np.mean(weights),
-                'std': np.std(weights),
-                'min': np.min(weights),
+                'step': step
+                'mean': np.mean(weights)
+                'std': np.std(weights)
+                'min': np.min(weights)
                 'max': np.max(weights)
             })
             
@@ -469,9 +469,9 @@ def monitor_learning(sim, num_steps=1000, check_interval=100):
     
     plt.figure(figsize=(10, 5))
     plt.plot(steps, means, label='Mean weight')
-    plt.fill_between(steps, 
-                     [m - s for m, s in zip(means, stds)],
-                     [m + s for m, s in zip(means, stds)],
+    plt.fill_between(steps
+                     [m - s for m, s in zip(means, stds)]
+                     [m + s for m, s in zip(means, stds)]
                      alpha=0.3, label='±1 std')
     plt.xlabel('Step')
     plt.ylabel('Weight')
@@ -654,8 +654,8 @@ def train_pattern_recognition():
     
     # Training patterns
     patterns = {
-        'vertical': np.repeat([[0,0,1,0,0]], 5, axis=0),
-        'horizontal': np.repeat([[0,0,0,0,0], [0,0,0,0,0], [1,1,1,1,1]], [2,2,1], axis=0),
+        'vertical': np.repeat([[0,0,1,0,0]], 5, axis=0)
+        'horizontal': np.repeat([[0,0,0,0,0], [0,0,0,0,0], [1,1,1,1,1]], [2,2,1], axis=0)
         'diagonal': np.eye(5)
     }
     
@@ -668,10 +668,10 @@ def train_pattern_recognition():
         for name, pattern in patterns.items():
             # Show pattern
             feed_sense_input(
-                sim.model,
-                "vision",
-                pattern,
-                intensity=5.0
+                sim.model
+                "vision"
+                pattern
+                
             )
             
             # Process and learn

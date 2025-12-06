@@ -52,11 +52,11 @@ db = KnowledgeDatabase(db_path="my_knowledge.db")
 # Create a knowledge entry
 entry = KnowledgeEntry(
     id=None,  # Auto-assigned by database
-    category="pattern",
-    data_type="vision",
+    category="pattern"
+    data_type="vision"
     data=np.eye(10),  # A diagonal pattern
-    label="diagonal",
-    metadata={"difficulty": "easy", "size": 10},
+    label="diagonal"
+    metadata={"difficulty": "easy", "size": 10}
     timestamp=datetime.now().isoformat()
 )
 
@@ -86,9 +86,9 @@ print(f"Data shape: {retrieved.data.shape}")
 ```python
 # Store various visual patterns
 patterns = {
-    "horizontal_line": np.zeros((10, 10)),
-    "vertical_line": np.zeros((10, 10)),
-    "diagonal": np.eye(10),
+    "horizontal_line": np.zeros((10, 10))
+    "vertical_line": np.zeros((10, 10))
+    "diagonal": np.eye(10)
     "checkerboard": None  # Will create below
 }
 
@@ -103,12 +103,12 @@ patterns["checkerboard"] = ((x + y) % 2).astype(float)
 pattern_ids = {}
 for name, pattern in patterns.items():
     entry = KnowledgeEntry(
-        id=None,
-        category="visual_pattern",
-        data_type="vision",
-        data=pattern,
-        label=name,
-        metadata={"created": datetime.now().isoformat()},
+        id=None
+        category="visual_pattern"
+        data_type="vision"
+        data=pattern
+        label=name
+        metadata={"created": datetime.now().isoformat()}
         timestamp=datetime.now().isoformat()
     )
     pattern_ids[name] = db.add_entry(entry)
@@ -126,12 +126,12 @@ for t in range(10):
     audio[t*2, t] = 1.0
 
 entry = KnowledgeEntry(
-    id=None,
-    category="audio_pattern",
-    data_type="audio",
-    data=audio,
-    label="rising_tone",
-    metadata={"frequency_bins": 20, "duration": 10},
+    id=None
+    category="audio_pattern"
+    data_type="audio"
+    data=audio
+    label="rising_tone"
+    metadata={"frequency_bins": 20, "duration": 10}
     timestamp=datetime.now().isoformat()
 )
 
@@ -150,12 +150,12 @@ for text in texts:
     digital_data = create_digital_sense_input(text)
     
     entry = KnowledgeEntry(
-        id=None,
-        category="text_pattern",
-        data_type="digital",
-        data=digital_data,
-        label=text,
-        metadata={"length": len(text)},
+        id=None
+        category="text_pattern"
+        data_type="digital"
+        data=digital_data
+        label=text
+        metadata={"length": len(text)}
         timestamp=datetime.now().isoformat()
     )
     
@@ -167,19 +167,19 @@ for text in texts:
 ```python
 # Store input-output pairs for supervised learning
 training_pairs = [
-    (np.eye(5), "class_A"),
-    (np.ones((5, 5)), "class_B"),
+    (np.eye(5), "class_A")
+    (np.ones((5, 5)), "class_B")
     (np.random.rand(5, 5), "class_C")
 ]
 
 for data, label in training_pairs:
     entry = KnowledgeEntry(
-        id=None,
-        category="training_data",
-        data_type="vision",
-        data=data,
-        label=label,
-        metadata={"training_phase": "initial"},
+        id=None
+        category="training_data"
+        data_type="vision"
+        data=data
+        label=label
+        metadata={"training_phase": "initial"}
         timestamp=datetime.now().isoformat()
     )
     
@@ -228,7 +228,7 @@ print(f"Audio entries: {len(audio_data)}")
 ```python
 # Get visual training data specifically
 visual_training = db.query_entries(
-    category="training_data",
+    category="training_data"
     data_type="vision"
 )
 print(f"Visual training samples: {len(visual_training)}")
@@ -284,10 +284,10 @@ for epoch in range(5):
     for entry in training_data:
         # Feed data to network
         feed_sense_input(
-            sim.model,
-            sense_name=entry.data_type,
-            input_data=entry.data,
-            intensity=5.0
+            sim.model
+            sense_name=entry.data_type
+            input_data=entry.data
+            
         )
         
         # Process
@@ -308,17 +308,17 @@ def train_batch(sim, db, batch_size=10, num_batches=50):
     for batch_num in range(num_batches):
         # Get random batch
         batch = db.get_random_batch(
-            batch_size=batch_size,
+            batch_size=batch_size
             category="training_data"
         )
         
         # Train on batch
         for entry in batch:
             feed_sense_input(
-                sim.model,
-                sense_name=entry.data_type,
-                input_data=entry.data,
-                intensity=5.0
+                sim.model
+                sense_name=entry.data_type
+                input_data=entry.data
+                
             )
             sim.run(steps=20)
             sim.apply_plasticity()
@@ -340,7 +340,7 @@ def curriculum_training(sim, db):
     
     # Sort by difficulty (stored in metadata)
     sorted_data = sorted(
-        all_data,
+        all_data
         key=lambda x: x.metadata.get("difficulty", 0)
     )
     
@@ -349,10 +349,10 @@ def curriculum_training(sim, db):
         print(f"Training on: {entry.label} (difficulty: {entry.metadata.get('difficulty')})")
         
         feed_sense_input(
-            sim.model,
-            sense_name=entry.data_type,
-            input_data=entry.data,
-            intensity=5.0
+            sim.model
+            sense_name=entry.data_type
+            input_data=entry.data
+            
         )
         
         sim.run(steps=30)
@@ -368,15 +368,15 @@ def store_experience(db, sensory_input, outcome, category="experience"):
     """Store an experience for later replay."""
     
     entry = KnowledgeEntry(
-        id=None,
-        category=category,
-        data_type="vision",
-        data=sensory_input,
-        label=outcome,
+        id=None
+        category=category
+        data_type="vision"
+        data=sensory_input
+        label=outcome
         metadata={
-            "reward": outcome,
+            "reward": outcome
             "stored_at": datetime.now().isoformat()
-        },
+        }
         timestamp=datetime.now().isoformat()
     )
     
@@ -394,10 +394,10 @@ def replay_experiences(sim, db, num_replays=20):
     
     for exp in replay_sample:
         feed_sense_input(
-            sim.model,
-            sense_name=exp.data_type,
-            input_data=exp.data,
-            intensity=5.0
+            sim.model
+            sense_name=exp.data_type
+            input_data=exp.data
+            
         )
         sim.run(steps=20)
         sim.apply_plasticity()
@@ -435,12 +435,12 @@ entries = []
 for i in range(100):
     data = np.random.rand(10, 10)
     entry = KnowledgeEntry(
-        id=None,
-        category="random_data",
-        data_type="vision",
-        data=data,
-        label=f"random_{i}",
-        metadata={"index": i},
+        id=None
+        category="random_data"
+        data_type="vision"
+        data=data
+        label=f"random_{i}"
+        metadata={"index": i}
         timestamp=datetime.now().isoformat()
     )
     entries.append(entry)
@@ -468,10 +468,10 @@ for entry in entries:
     # Save metadata as JSON
     with open(f"pattern_{entry.label}_meta.json", 'w') as f:
         json.dump({
-            'category': entry.category,
-            'data_type': entry.data_type,
-            'label': entry.label,
-            'metadata': entry.metadata,
+            'category': entry.category
+            'data_type': entry.data_type
+            'label': entry.label
+            'metadata': entry.metadata
             'timestamp': entry.timestamp
         }, f, indent=2)
 ```
@@ -538,16 +538,16 @@ def create_training_set():
             label = "diagonal"
         
         entry = KnowledgeEntry(
-            id=None,
-            category="training_pattern",
-            data_type="vision",
-            data=pattern,
-            label=label,
+            id=None
+            category="training_pattern"
+            data_type="vision"
+            data=pattern
+            label=label
             metadata={
-                "index": i,
-                "difficulty": "medium",
+                "index": i
+                "difficulty": "medium"
                 "created": datetime.now().isoformat()
-            },
+            }
             timestamp=datetime.now().isoformat()
         )
         
@@ -599,10 +599,10 @@ def pretrain_network():
         for i, entry in enumerate(training_data):
             # Feed pattern
             feed_sense_input(
-                sim.model,
-                sense_name="vision",
-                input_data=entry.data,
-                intensity=5.0
+                sim.model
+                sense_name="vision"
+                input_data=entry.data
+                
             )
             
             # Process
