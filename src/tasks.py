@@ -151,6 +151,11 @@ class PatternClassificationTask(Task):
     
     The network receives visual patterns and must classify them.
     Tests basic sensory processing and pattern recognition.
+    
+    NOTE: Current implementation uses placeholder prediction logic (random).
+    A full implementation would require dedicated output neurons and proper
+    decoding logic. This serves as a framework demonstration and can be
+    extended with actual classification when output layers are implemented.
     """
     
     def __init__(
@@ -227,10 +232,16 @@ class PatternClassificationTask(Task):
             for step in range(max_steps):
                 stats = simulation.step()
                 
-                # Check for output activity (simplified - would need proper output layer)
+                # NOTE: This is a simplified placeholder implementation
+                # Real implementation would need:
+                # 1. Dedicated output layer neurons (one per class)
+                # 2. Decode prediction from output layer spike rates
+                # 3. Winner-takes-all or rate-coded classification
+                # For now, we use random prediction to demonstrate the framework
                 if len(stats['spikes']) > 0 and first_response_step is None:
                     first_response_step = step
-                    # Simplified classification - would need proper output decoding
+                    # PLACEHOLDER: Random prediction for demonstration
+                    # TODO: Replace with actual output layer decoding
                     predicted_class = self.rng.integers(0, self.num_classes)
                     
             # Evaluate response
@@ -358,6 +369,11 @@ class TemporalSequenceTask(Task):
     
     The network receives sequences and must predict the next element.
     Tests temporal processing and memory capabilities.
+    
+    NOTE: Current implementation uses placeholder prediction evaluation (random).
+    A full implementation would require output neurons that predict the next
+    sequence element and comparison logic. This serves as a framework
+    demonstration and can be extended with actual prediction logic.
     """
     
     def __init__(
@@ -431,9 +447,15 @@ class TemporalSequenceTask(Task):
                 # Get next observation
                 observation, reward, done, info = self.env.step()
                 
-                # Simplified prediction evaluation
-                # Would need proper output decoding in real implementation
-                prediction_correct = self.rng.random() < 0.5  # Placeholder
+                # NOTE: This is a simplified placeholder implementation
+                # Real implementation would need:
+                # 1. Dedicated output neurons for predictions
+                # 2. Compare predicted next element with actual next element
+                # 3. Track prediction accuracy over sequence
+                # For now, we use random evaluation to demonstrate the framework
+                # PLACEHOLDER: Random evaluation for demonstration
+                # TODO: Replace with actual prediction comparison
+                prediction_correct = self.rng.random() < 0.5
                 
                 if prediction_correct:
                     correct_predictions += 1
@@ -490,7 +512,6 @@ class TemporalSequenceEnvironment(Environment):
         
         # Encode first element as one-hot vector
         element_encoding = np.zeros((20, 20))
-        element_encoding[:self.vocabulary_size, 0] = 0.0
         element_encoding[self.current_sequence[0], 0] = 1.0
         
         observation = {'digital': element_encoding}
@@ -512,7 +533,6 @@ class TemporalSequenceEnvironment(Environment):
         if not done:
             # Encode current element
             element_encoding = np.zeros((20, 20))
-            element_encoding[:self.vocabulary_size, 0] = 0.0
             element_encoding[self.current_sequence[self.sequence_position], 0] = 1.0
             observation = {'digital': element_encoding}
         else:
