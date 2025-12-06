@@ -57,7 +57,7 @@ def model():
     
     # Add some neurons
     for i in range(5):
-        model.add_neuron(i, i, i % 10, 0, health=0.9)
+        model.add_neuron(i, i, i, 0, health=0.9)
     
     # Add some synapses
     model.add_synapse(0, 1, weight=0.5, delay=1)

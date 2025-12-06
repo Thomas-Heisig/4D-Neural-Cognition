@@ -73,9 +73,9 @@ class BrainModel:
             raise ValueError("Either config_path or config must be provided")
 
         # Validate required configuration keys
-        required_keys = ["lattice_shape", "neuron_model", "cell_lifecycle", 
-                        "plasticity", "senses", "areas"]
-        missing_keys = [key for key in required_keys if key not in self.config]
+        REQUIRED_CONFIG_KEYS = ["lattice_shape", "neuron_model", "cell_lifecycle", 
+                               "plasticity", "senses", "areas"]
+        missing_keys = [key for key in REQUIRED_CONFIG_KEYS if key not in self.config]
         if missing_keys:
             raise KeyError(f"Missing required configuration keys: {missing_keys}")
 

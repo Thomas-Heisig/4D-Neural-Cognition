@@ -30,7 +30,10 @@ def calculate_entropy(spike_counts: List[int]) -> float:
         >>> calculate_entropy([40, 0, 0, 0])  # Concentrated - low entropy
         0.0
     """
-    if not spike_counts or sum(spike_counts) == 0:
+    if not spike_counts:
+        return 0.0
+    
+    if sum(spike_counts) == 0:
         return 0.0
     
     # Convert to probabilities

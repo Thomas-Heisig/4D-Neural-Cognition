@@ -106,7 +106,10 @@ class TestNeuronCreationPerformance:
         
         start_time = time.perf_counter()
         for i in range(1000):
-            model.add_neuron(i % 20, (i // 20) % 20, i % 20, 0)
+            x = i % 20
+            y = (i // 20) % 20
+            z = (i // 400) % 20
+            model.add_neuron(x, y, z, 0)
         elapsed = time.perf_counter() - start_time
         
         # Should complete in reasonable time (< 1s)
