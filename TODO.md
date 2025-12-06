@@ -52,6 +52,10 @@ This document tracks planned features, improvements, and tasks for the project. 
 - [x] Add performance benchmarks (16 tests)
 - [x] Add metrics tests (35 tests)
 - [ ] Set up continuous integration (CI/CD)
+  - [x] Created CI/CD setup documentation (Dec 2025)
+  - [ ] Implement GitHub Actions workflows
+  - [ ] Set up code coverage reporting
+  - [ ] Configure branch protection rules
 
 ### Documentation
 
