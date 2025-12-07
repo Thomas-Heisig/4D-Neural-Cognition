@@ -118,6 +118,8 @@ class AssociativeLearning(LearningSystem):
         super().__init__("Associative Learning", LearningCategory.BIOLOGICAL, config)
         self.associations: Dict[Tuple[str, str], float] = {}
         self.learning_rate = self.config.get("learning_rate", 0.1)
+        self.strength_min = self.config.get("strength_min", 0.0)
+        self.strength_max = self.config.get("strength_max", 1.0)
         
     def learn(self, context: LearningContext, data: Any) -> LearningResult:
         """Learn associations between stimuli."""
@@ -131,7 +133,8 @@ class AssociativeLearning(LearningSystem):
         key = (stim_a, stim_b)
         old_strength = self.associations.get(key, 0.0)
         new_strength = old_strength + self.learning_rate * strength
-        self.associations[key] = np.clip(new_strength, 0.0, 1.0)
+        # Clip to configured range (default [0.0, 1.0] for normalized strength)
+        self.associations[key] = np.clip(new_strength, self.strength_min, self.strength_max)
         
         result = LearningResult(
             success=True,
@@ -266,7 +269,11 @@ class SupervisedLearning(LearningSystem):
 
 
 class UnsupervisedLearning(LearningSystem):
-    """Unsupervised learning - pattern recognition without labels."""
+    """Unsupervised learning - pattern recognition without labels.
+    
+    Note: This is a simplified placeholder implementation using hash-based clustering.
+    For production use, implement proper clustering algorithms like k-means or DBSCAN.
+    """
     
     def __init__(self, config: Optional[Dict] = None):
         super().__init__("Unsupervised Learning", LearningCategory.MACHINE, config)
@@ -274,11 +281,18 @@ class UnsupervisedLearning(LearningSystem):
         self.num_clusters = self.config.get("num_clusters", 5)
         
     def learn(self, context: LearningContext, data: Any) -> LearningResult:
-        """Discover patterns in unlabeled data."""
+        """Discover patterns in unlabeled data.
+        
+        This is a simplified implementation using hash-based assignment.
+        For production use, replace with proper clustering algorithms that
+        consider data similarity (e.g., k-means, DBSCAN, hierarchical clustering).
+        """
         if not isinstance(data, dict) or "input" not in data:
             return LearningResult(success=False, feedback="Invalid data format")
             
         input_data = data["input"]
+        # Hash-based assignment (simplified placeholder)
+        # TODO: Replace with similarity-based clustering for production use
         cluster_id = hash(str(input_data)) % self.num_clusters
         
         if cluster_id not in self.clusters:
@@ -352,6 +366,8 @@ class TransferLearning(LearningSystem):
         super().__init__("Transfer Learning", LearningCategory.MACHINE, config)
         self.source_knowledge: Dict[str, Any] = {}
         self.target_adaptations: Dict[str, Any] = {}
+        # Minimum similarity threshold for successful transfer (configurable)
+        self.similarity_threshold = self.config.get("similarity_threshold", 0.3)
         
     def learn(self, context: LearningContext, data: Any) -> LearningResult:
         """Transfer knowledge to new domain."""
@@ -365,8 +381,9 @@ class TransferLearning(LearningSystem):
         transfer_key = f"{source}_to_{target}"
         self.target_adaptations[transfer_key] = {"similarity": similarity}
         
+        # Transfer is successful if similarity exceeds configured threshold
         result = LearningResult(
-            success=similarity > 0.3,
+            success=similarity > self.similarity_threshold,
             learning_delta=similarity,
             updated_parameters={"transfers": list(self.target_adaptations.keys())},
             metrics={"similarity": similarity, "transfers": len(self.target_adaptations)},
