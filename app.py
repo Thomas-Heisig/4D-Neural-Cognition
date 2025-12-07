@@ -780,8 +780,11 @@ def get_neurons_visualization():
         return jsonify({"status": "error", "message": "No model initialized"}), 400
 
     try:
+        # Configurable limit for visualization performance
+        viz_limit = int(os.environ.get("VIZ_NEURON_LIMIT", "1000"))
+        
         neurons_data = []
-        for neuron_id, neuron in list(current_model.neurons.items())[:1000]:  # Limit to 1000 for performance
+        for neuron_id, neuron in list(current_model.neurons.items())[:viz_limit]:
             neurons_data.append(
                 {
                     "id": neuron_id,
@@ -811,9 +814,11 @@ def get_connections_visualization():
         return jsonify({"status": "error", "message": "No model initialized"}), 400
 
     try:
+        # Configurable limit for visualization performance
+        viz_limit = int(os.environ.get("VIZ_CONNECTION_LIMIT", "500"))
+        
         connections_data = []
-        # Limit connections for performance
-        for synapse in list(current_model.synapses)[:500]:
+        for synapse in list(current_model.synapses)[:viz_limit]:
             pre_neuron = current_model.neurons.get(synapse.pre_id)
             post_neuron = current_model.neurons.get(synapse.post_id)
 

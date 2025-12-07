@@ -506,6 +506,21 @@ label {
     margin: 0 auto 10px;
 }
 
+/* Error message for 3D Viewer */
+.viewer-error {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: var(--danger-color);
+    background: var(--darker-bg);
+    padding: 20px;
+    border-radius: 8px;
+    border: 2px solid var(--danger-color);
+    max-width: 80%;
+}
+
 /* Status Badges */
 .status-badge {
     display: inline-block;

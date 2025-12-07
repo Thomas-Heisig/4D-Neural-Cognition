@@ -28,10 +28,19 @@ class NeuralVisualization {
         this.camera.position.set(30, 30, 30);
         this.camera.lookAt(0, 0, 0);
         
-        // Create renderer
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
-        this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-        this.container.appendChild(this.renderer.domElement);
+        // Create renderer with error handling
+        try {
+            this.renderer = new THREE.WebGLRenderer({ antialias: true });
+            this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+            this.container.appendChild(this.renderer.domElement);
+        } catch (error) {
+            console.error('WebGL not supported:', error);
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'viewer-error';
+            errorMsg.textContent = 'WebGL is not supported in your browser. Please use a modern browser with WebGL support.';
+            this.container.appendChild(errorMsg);
+            return;
+        }
         
         // Add orbit controls
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);

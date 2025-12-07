@@ -639,7 +639,8 @@ function showNotification(message, type = 'info') {
         z-index: 10000;
         animation: slideIn 0.3s ease-out;
     `;
-    notification.textContent = message;
+    // Use textContent to prevent XSS attacks
+    notification.textContent = String(message);
     document.body.appendChild(notification);
     
     setTimeout(() => {

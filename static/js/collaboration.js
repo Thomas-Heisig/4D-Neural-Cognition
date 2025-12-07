@@ -386,11 +386,17 @@ class CollaborationManager {
     
     // Helper functions
     generateId() {
-        return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        // Use crypto.getRandomValues for better randomness
+        const array = new Uint32Array(2);
+        crypto.getRandomValues(array);
+        return 'id_' + Date.now() + '_' + Array.from(array, n => n.toString(36)).join('');
     }
     
     generateUserId() {
-        return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        // Use crypto.getRandomValues for better randomness
+        const array = new Uint32Array(2);
+        crypto.getRandomValues(array);
+        return 'user_' + Date.now() + '_' + Array.from(array, n => n.toString(36)).join('');
     }
     
     generateUserColor() {

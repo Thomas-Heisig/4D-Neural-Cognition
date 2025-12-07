@@ -311,7 +311,10 @@ class ExperimentManager {
     
     // Generate unique ID
     generateId() {
-        return 'exp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        // Use crypto.getRandomValues for better randomness
+        const array = new Uint32Array(2);
+        crypto.getRandomValues(array);
+        return 'exp_' + Date.now() + '_' + Array.from(array, n => n.toString(36)).join('');
     }
     
     // Save state to localStorage
