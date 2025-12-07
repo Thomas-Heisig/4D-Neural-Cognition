@@ -303,7 +303,8 @@ synapse = Synapse(pre_id=0, post_id=1, weight=0.5)
 # Base weight change from Hebbian learning
 base_delta_w = 0.01
 
-# Process outcome
+# Process outcome (example: check if action achieved goal)
+action_successful = check_if_goal_achieved()  # Your task-specific logic
 reward = 1.0 if action_successful else -1.0
 neuromod.process_reward(reward=reward, expected_reward=0.0)
 

@@ -590,11 +590,17 @@ for step in range(1000):
     # Get neuron activities
     activities = sim.step()
     
+    # Helper function to estimate firing rate from recent activity
+    def estimate_rate(neuron_id, recent_activities, window=100):
+        """Estimate firing rate from spike count in recent window."""
+        spike_count = sum(1 for act in recent_activities[-window:] if neuron_id in act)
+        return spike_count / window * 1000.0  # Convert to Hz
+    
     # Update each synapse with BCM rule
     for synapse in sim.model.synapses:
         post_id = synapse.post_id
         
-        # Estimate firing rates (simplified)
+        # Estimate firing rates
         pre_rate = estimate_rate(synapse.pre_id, activities)
         post_rate = estimate_rate(post_id, activities)
         
@@ -710,10 +716,15 @@ for step in range(10000):
     
     # Metaplasticity (every 50 steps)
     if step % 50 == 0:
+        # Helper to estimate firing rates
+        def estimate_firing_rate(neuron_id):
+            # Simplified: use recent spike count
+            return len([s for s in recent_spikes if s == neuron_id]) / 50.0
+        
         for synapse in sim.model.synapses:
             post_id = synapse.post_id
-            pre_rate = estimate_rate(synapse.pre_id)
-            post_rate = estimate_rate(post_id)
+            pre_rate = estimate_firing_rate(synapse.pre_id)
+            post_rate = estimate_firing_rate(post_id)
             
             bcm_plasticity(
                 synapse, pre_rate, post_rate,

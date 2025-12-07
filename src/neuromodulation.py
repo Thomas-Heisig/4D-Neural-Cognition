@@ -264,7 +264,7 @@ class NeuromodulationSystem:
         neuron: "Neuron",
         synaptic_input: float,
         threshold: float
-    ) -> tuple[float, float]:
+    ) -> "tuple[float, float]":
         """Apply neuromodulatory effects to neuron update.
         
         Args:
