@@ -814,8 +814,8 @@ def get_connections_visualization():
         connections_data = []
         # Limit connections for performance
         for synapse in list(current_model.synapses)[:500]:
-            pre_neuron = current_model.neurons.get(synapse.pre_neuron_id)
-            post_neuron = current_model.neurons.get(synapse.post_neuron_id)
+            pre_neuron = current_model.neurons.get(synapse.pre_id)
+            post_neuron = current_model.neurons.get(synapse.post_id)
 
             if pre_neuron and post_neuron:
                 connections_data.append(
