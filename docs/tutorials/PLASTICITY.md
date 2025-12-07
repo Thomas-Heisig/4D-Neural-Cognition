@@ -532,34 +532,215 @@ correlate_activity_and_learning(sim)
 
 ## Advanced Topics
 
-### Homeostatic Scaling
+### Homeostatic Plasticity
 
-Maintain network stability by scaling weights:
+**Homeostatic plasticity** stabilizes network activity by globally scaling synaptic weights to maintain neurons near a target firing rate. This prevents runaway excitation or silencing after Hebbian changes.
 
 ```python
-def homeostatic_scaling(sim, target_mean=0.5, scale_factor=0.01):
-    """Scale weights to maintain target mean."""
-    
-    weights = [s['weight'] for s in sim.model.get_synapses().values()]
-    current_mean = np.mean(weights)
-    
-    if abs(current_mean - target_mean) > 0.1:
-        # Adjust weights toward target
-        adjustment = (target_mean - current_mean) * scale_factor
-        
-        for syn in sim.model.get_synapses().values():
-            syn['weight'] += adjustment
-            syn['weight'] = np.clip(syn['weight'], 0.0, 1.0)
+from src.plasticity import homeostatic_scaling
 
-# Apply periodically
+# Apply homeostatic scaling
+homeostatic_scaling(
+    neurons=sim.model.neurons,
+    synapses=sim.model.synapses,
+    target_rate=5.0,           # Target firing rate in Hz
+    time_window=1000,          # Time window for rate calculation
+    scaling_rate=0.01,         # Rate of adjustment
+    model=sim.model            # For weight bounds
+)
+
+# Integrate with training
 for step in range(1000):
     sim.step()
     
+    # Regular plasticity
     if step % 10 == 0:
         sim.apply_plasticity()
     
+    # Homeostatic scaling (slower timescale)
     if step % 100 == 0:
-        homeostatic_scaling(sim)
+        homeostatic_scaling(
+            neurons=sim.model.neurons,
+            synapses=sim.model.synapses,
+            model=sim.model
+        )
+```
+
+**Key Features:**
+- Multiplicative scaling of all incoming synapses
+- Maintains target firing rate
+- Prevents weight saturation
+- Acts on slow timescales (100-1000 steps)
+
+### Metaplasticity (BCM Theory)
+
+**Metaplasticity** is "the plasticity of plasticity" - the threshold for inducing LTP/LTD itself changes based on recent activity.
+
+```python
+from src.plasticity import BCMThreshold, bcm_plasticity
+
+# Create BCM threshold for each postsynaptic neuron
+bcm_thresholds = {
+    neuron_id: BCMThreshold(theta=0.5, target_rate=5.0, tau=1000.0)
+    for neuron_id in sim.model.neurons.keys()
+}
+
+# Training with BCM plasticity
+for step in range(1000):
+    # Get neuron activities
+    activities = sim.step()
+    
+    # Helper function to estimate firing rate from recent activity
+    def estimate_rate(neuron_id, recent_activities, window=100):
+        """Estimate firing rate from spike count in recent window."""
+        spike_count = sum(1 for act in recent_activities[-window:] if neuron_id in act)
+        return spike_count / window * 1000.0  # Convert to Hz
+    
+    # Update each synapse with BCM rule
+    for synapse in sim.model.synapses:
+        post_id = synapse.post_id
+        
+        # Estimate firing rates
+        pre_rate = estimate_rate(synapse.pre_id, activities)
+        post_rate = estimate_rate(post_id, activities)
+        
+        # Apply BCM plasticity
+        bcm_plasticity(
+            synapse=synapse,
+            pre_rate=pre_rate,
+            post_rate=post_rate,
+            bcm_threshold=bcm_thresholds[post_id],
+            learning_rate=0.01,
+            model=sim.model
+        )
+        
+        # Update threshold based on postsynaptic activity
+        bcm_thresholds[post_id].update(postsynaptic_rate=post_rate, dt=1.0)
+```
+
+**BCM Learning Rule:**
+- When `post_rate > threshold`: **LTP** (strengthening)
+- When `post_rate < threshold`: **LTD** (weakening)
+- Threshold adapts to maintain target activity level
+
+### Short-Term Plasticity
+
+**Short-term plasticity** (STP) modifies synaptic efficacy on timescales of milliseconds to seconds, implementing facilitation and depression.
+
+```python
+from src.plasticity import (
+    ShortTermPlasticityState,
+    apply_short_term_plasticity,
+    create_facilitating_synapse,
+    create_depressing_synapse
+)
+
+# Create STP states for each synapse
+stp_states = {}
+
+for synapse in sim.model.synapses:
+    # Choose facilitation or depression based on synapse type
+    if is_temporal_integration_synapse(synapse):
+        # Facilitating (builds up with repeated activation)
+        stp_states[synapse] = create_facilitating_synapse()
+    else:
+        # Depressing (adapts/habituates)
+        stp_states[synapse] = create_depressing_synapse()
+
+# Simulation with short-term plasticity
+for step in range(1000):
+    # Get spikes from previous step
+    spikes = set(sim.step())
+    
+    # Update each synapse
+    for synapse in sim.model.synapses:
+        pre_spiked = synapse.pre_id in spikes
+        stp_state = stp_states[synapse]
+        
+        # Get effective weight (modulated by STP)
+        effective_weight = apply_short_term_plasticity(
+            synapse=synapse,
+            stp_state=stp_state,
+            presynaptic_spike=pre_spiked,
+            dt=1.0
+        )
+        
+        # Use effective_weight for synaptic transmission
+        # (This would be integrated into neuron update)
+```
+
+**STP Types:**
+- **Facilitation**: Synapses strengthen with repeated use (temporal integration)
+- **Depression**: Synapses weaken with repeated use (novelty detection, adaptation)
+
+### Combining All Mechanisms
+
+```python
+from src.plasticity import (
+    hebbian_update,
+    apply_weight_decay,
+    homeostatic_scaling,
+    BCMThreshold,
+    bcm_plasticity,
+    ShortTermPlasticityState,
+    apply_short_term_plasticity
+)
+
+# Setup all plasticity mechanisms
+bcm_thresholds = {nid: BCMThreshold() for nid in sim.model.neurons.keys()}
+stp_states = {syn: ShortTermPlasticityState() for syn in sim.model.synapses}
+
+# Multi-scale plasticity training
+for step in range(10000):
+    spikes = set(sim.step())
+    
+    # Short-term plasticity (every step)
+    for synapse in sim.model.synapses:
+        pre_spiked = synapse.pre_id in spikes
+        stp_state = stp_states[synapse]
+        effective_weight = apply_short_term_plasticity(
+            synapse, stp_state, pre_spiked, dt=1.0
+        )
+    
+    # Long-term plasticity (every 10 steps)
+    if step % 10 == 0:
+        for synapse in sim.model.synapses:
+            pre_active = synapse.pre_id in spikes
+            post_active = synapse.post_id in spikes
+            
+            # Hebbian learning
+            hebbian_update(synapse, pre_active, post_active, sim.model)
+            
+            # Weight decay
+            apply_weight_decay(synapse, sim.model)
+    
+    # Metaplasticity (every 50 steps)
+    if step % 50 == 0:
+        # Helper to estimate firing rates
+        def estimate_firing_rate(neuron_id):
+            # Simplified: use recent spike count
+            return len([s for s in recent_spikes if s == neuron_id]) / 50.0
+        
+        for synapse in sim.model.synapses:
+            post_id = synapse.post_id
+            pre_rate = estimate_firing_rate(synapse.pre_id)
+            post_rate = estimate_firing_rate(post_id)
+            
+            bcm_plasticity(
+                synapse, pre_rate, post_rate,
+                bcm_thresholds[post_id], 0.01, sim.model
+            )
+            bcm_thresholds[post_id].update(post_rate, dt=50.0)
+    
+    # Homeostatic scaling (every 1000 steps)
+    if step % 1000 == 0:
+        homeostatic_scaling(
+            sim.model.neurons,
+            sim.model.synapses,
+            model=sim.model
+        )
+
+print("Multi-scale plasticity training complete!")
 ```
 
 ### Selective Plasticity
@@ -585,48 +766,6 @@ for step in range(1000):
         learning_events += 1
 
 print(f"Learned on {learning_events} out of 1000 steps")
-```
-
-### Meta-Plasticity
-
-Adjust learning rates based on history:
-
-```python
-class AdaptiveLearning:
-    """Learning rate that adapts based on history."""
-    
-    def __init__(self, initial_lr=0.01):
-        self.lr = initial_lr
-        self.performance_history = []
-    
-    def update_lr(self, performance):
-        """Adjust learning rate based on performance."""
-        self.performance_history.append(performance)
-        
-        # If performance declining, reduce learning rate
-        if len(self.performance_history) > 10:
-            recent = self.performance_history[-10:]
-            if recent[-1] < recent[0]:
-                self.lr *= 0.9  # Reduce
-                print(f"Reducing LR to {self.lr:.4f}")
-    
-    def apply(self, sim):
-        """Apply plasticity with current learning rate."""
-        # Custom plasticity with self.lr
-        pass
-
-# Use it
-adaptive = AdaptiveLearning(initial_lr=0.01)
-for step in range(1000):
-    sim.step()
-    
-    if step % 10 == 0:
-        adaptive.apply(sim)
-    
-    if step % 100 == 0:
-        # Measure performance somehow
-        performance = measure_performance(sim)
-        adaptive.update_lr(performance)
 ```
 
 ---
