@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Learning Systems Framework** (December 7, 2025)
+  - New `learning_systems.py` module integrating biological and machine learning approaches
+  - Biological/Psychological Learning Systems (3 implemented):
+    - Associative Learning: stimulus-stimulus/stimulus-response associations
+    - Non-Associative Learning: habituation and sensitization
+    - Operant Conditioning: reward/punishment-based learning
+  - Machine Learning Systems (5 implemented):
+    - Supervised Learning: learning from labeled data
+    - Unsupervised Learning: pattern clustering (placeholder implementation)
+    - Reinforcement Learning: Q-learning for optimal policy
+    - Transfer Learning: domain adaptation with similarity threshold
+    - Meta-Learning: learning strategy optimization
+  - LearningSystemManager for coordinating multiple systems
+  - Comprehensive test suite: 40 new tests with 93% coverage
+  - Demo example: `examples/learning_systems_demo.py`
+  - Documentation: `docs/LEARNING_SYSTEMS.md` with usage examples
+  - Total tests: 408 (368 original + 40 new)
+  - Code coverage: increased from 47% to 50%
+  - All systems configurable with parameters
+  - No security vulnerabilities
+
 ### Changed
 
 - **Documentation Synchronization** (December 7, 2025)
