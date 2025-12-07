@@ -189,18 +189,18 @@ The following sections contain features planned for future releases (v1.2+):
   - [x] Bursting neurons
   - [x] Implement Izhikevich model as alternative to LIF
 
-- [ ] **Neuromodulation**
-  - Dopamine system for reward learning
-  - Serotonin for mood/state regulation
-  - Norepinephrine for arousal
-  - Global modulatory signals
+- [x] **Neuromodulation** (Completed - Dec 2025)
+  - [x] Dopamine system for reward learning
+  - [x] Serotonin for mood/state regulation
+  - [x] Norepinephrine for arousal
+  - [x] Global modulatory signals
 
-- [x] **Advanced Plasticity** (Partially Complete - Dec 2025)
+- [x] **Advanced Plasticity** (Completed - Dec 2025)
   - [x] Spike-timing-dependent plasticity (STDP) - Implemented Dec 2025
   - [x] Weight decay mechanisms - Implemented Dec 2025
-  - [ ] Homeostatic plasticity
-  - [ ] Metaplasticity
-  - [ ] Short-term plasticity (facilitation/depression)
+  - [x] Homeostatic plasticity - Implemented Dec 2025
+  - [x] Metaplasticity - Implemented Dec 2025
+  - [x] Short-term plasticity (facilitation/depression) - Implemented Dec 2025
 
 ### Features - Sensory Systems
 
