@@ -181,11 +181,9 @@ def train_sequence_predictor(sim, sequences, sequence_length=20):
                 # Feed to network
                 feed_sense_input(sim.model, sense_name="digital", input_matrix=input_2d)
                 
-                # Process
+                # Process (plasticity applied automatically in step())
                 for step in range(10):
                     sim.step()
-                    if step % 3 == 0:
-                        sim.apply_plasticity()
                 
                 # Brief rest
                 for step in range(3):

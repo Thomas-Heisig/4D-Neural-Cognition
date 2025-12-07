@@ -272,11 +272,9 @@ def train_multimodal_association(sim, stimuli, epochs=3):
             text_2d = np.tile(text_vector[:10], (10, 1))
             feed_sense_input(sim.model, sense_name="digital", input_matrix=text_2d)
             
-            # Train
+            # Train (plasticity applied automatically in step())
             for step in range(25):
                 sim.step()
-                if step % 5 == 0:
-                    sim.apply_plasticity()
             
             # Rest
             for step in range(10):

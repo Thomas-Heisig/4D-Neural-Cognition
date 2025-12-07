@@ -224,11 +224,9 @@ def train_with_enhanced_vision(sim, patterns, use_edge_detection=True):
             # Feed to network
             feed_sense_input(sim.model, sense_name="vision", input_matrix=processed)
             
-            # Process and learn
+            # Process and learn (plasticity applied automatically in step())
             for step in range(20):
                 sim.step()
-                if step % 5 == 0:
-                    sim.apply_plasticity()
             
             # Rest period
             for step in range(5):

@@ -39,9 +39,9 @@ class ConnectivityAnalyzer:
         out_degrees = defaultdict(int)
 
         # Count degrees from synapses
-        for synapse in self.model.synapses.values():
-            out_degrees[synapse.pre_neuron_id] += 1
-            in_degrees[synapse.post_neuron_id] += 1
+        for synapse in self.model.synapses:
+            out_degrees[synapse.pre_id] += 1
+            in_degrees[synapse.post_id] += 1
 
         # Convert to arrays
         neuron_ids = sorted(self.model.neurons.keys())
@@ -190,7 +190,7 @@ class ConnectivityAnalyzer:
 
         # Compute modularity
         modularity = 0.0
-        for synapse in self.model.synapses.values():
+        for synapse in self.model.synapses:
             pre_id = synapse.pre_neuron_id
             post_id = synapse.post_neuron_id
 
@@ -218,8 +218,8 @@ class ConnectivityAnalyzer:
             return self._adjacency_cache
 
         adjacency = defaultdict(set)
-        for synapse in self.model.synapses.values():
-            adjacency[synapse.pre_neuron_id].add(synapse.post_neuron_id)
+        for synapse in self.model.synapses:
+            adjacency[synapse.pre_id].add(synapse.post_id)
 
         self._adjacency_cache = dict(adjacency)
         return self._adjacency_cache
