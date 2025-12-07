@@ -342,9 +342,12 @@ The `brain_base_model.json` contains:
 - **Frontend**: Vanilla JavaScript with Socket.IO
 - **Styling**: Modern CSS with dark theme
 - **Visualization**: HTML5 Canvas for heatmaps
-- **Data Storage**: HDF5 with compression
+- **Data Storage**: HDF5 with compression, SQLite for knowledge database
 - **Real-time Communication**: WebSocket (Flask-SocketIO)
 - **Scientific Computing**: NumPy
+- **Testing**: pytest with 186 tests, coverage reporting
+- **Code Quality**: pylint, flake8, black, mypy
+- **CI/CD**: GitHub Actions with multi-platform testing
 
 ---
 

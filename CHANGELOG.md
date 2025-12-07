@@ -318,4 +318,4 @@ Changes are grouped into:
 
 *Note*: This changelog follows [Keep a Changelog](https://keepachangelog.com/) format and [Semantic Versioning](https://semver.org/) principles.
 
-*Last Updated*: 2025-12-06
+*Last Updated*: 2025-12-07
