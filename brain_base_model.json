@@ -28,7 +28,42 @@
     "learning_rate": 0.001,
     "weight_min": -1.0,
     "weight_max": 1.0,
-    "weight_decay": 0.00001
+    "weight_decay": 0.00001,
+    "homeostatic": {
+      "enabled": true,
+      "target_rate": 5.0,
+      "time_window": 1000,
+      "scaling_rate": 0.01
+    },
+    "metaplasticity": {
+      "enabled": true,
+      "bcm_tau": 1000.0,
+      "bcm_target_rate": 5.0
+    },
+    "short_term": {
+      "enabled": true,
+      "default_type": "mixed",
+      "facilitation_fraction": 0.3
+    }
+  },
+
+  "neuromodulation": {
+    "enabled": true,
+    "dopamine": {
+      "baseline": 0.5,
+      "decay_rate": 0.1,
+      "learning_rate_modulation": 2.0
+    },
+    "serotonin": {
+      "baseline": 0.5,
+      "decay_rate": 0.1,
+      "inhibition_strength": 0.5
+    },
+    "norepinephrine": {
+      "baseline": 0.5,
+      "decay_rate": 0.1,
+      "gain_modulation": 2.0
+    }
   },
 
   "senses": {
