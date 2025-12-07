@@ -17,15 +17,17 @@ This project implements a 4D brain system that combines biological principles wi
 ## 🌟 Key Features
 
 - **4D Neuron Lattice**: Neurons in an (x, y, z, w) coordinate system
-- **Leaky Integrate-and-Fire Model**: Biophysically inspired neurons with membrane potential
+- **Multiple Neuron Models**: LIF, Izhikevich (regular spiking, fast spiking, bursting), with inhibitory neurons
 - **Cell Lifecycle**: Aging, death, and reproduction with inherited mutations
 - **Brain Areas & Senses**: Vision, Audition, Somatosensory, Taste, Smell, Vestibular, Digital
-- **Hebbian Plasticity**: "Cells that fire together, wire together" learning rule
+- **Advanced Plasticity**: Hebbian learning, STDP, weight decay, and homeostatic mechanisms
 - **Tasks & Evaluation**: Comprehensive benchmark framework for measuring network performance
 - **Knowledge Database**: Pre-training and continued learning from stored knowledge
 - **Configuration Comparison**: Objectively compare different network configurations
 - **Efficient Storage**: JSON for configuration, HDF5 for efficient data persistence with compression
-- **Modern Web Interface**: Browser-based interface with real-time visualization and logging
+- **Modern Web Interface**: Browser-based interface with real-time visualization and automatic checkpointing
+- **Robust & Secure**: Input validation, path sanitization, automatic recovery, and comprehensive error handling
+- **Comprehensive Testing**: 186 tests with 47% code coverage, CI/CD pipeline with GitHub Actions
 
 ---
 
@@ -136,8 +138,10 @@ Then open a browser and navigate to `http://localhost:5000`.
 - 🔥 **Heatmap Visualization**: Real-time display of neural activity
 - 💻 **Terminal**: Input/output for sensory data
 - 💬 **Chat Interface**: Interactive commands
-- 📋 **Logging**: Complete event logging
-- ⚡ **Training**: Start/stop/step controls
+- 📋 **Logging**: Complete event logging with automatic rotation
+- ⚡ **Training**: Start/stop/step controls with progress tracking
+- 💾 **Auto-Checkpoint**: Automatic model checkpointing and recovery
+- 🔒 **Security**: Input validation and path sanitization
 
 ### Command Line
 
@@ -183,12 +187,14 @@ For complete API documentation, see [API Reference](docs/api/API.md).
 ## Features
 
 - **4D Neuronengitter**: Neuronen in einem (x, y, z, w) Koordinatensystem
-- **Leaky Integrate-and-Fire Modell**: Biophysikalisch inspirierte Neuronen mit Membranpotential
+- **Mehrere Neuronenmodelle**: LIF, Izhikevich (Regular Spiking, Fast Spiking, Bursting), mit inhibitorischen Neuronen
 - **Zell-Lebenszyklus**: Alterung, Tod und Reproduktion mit Vererbung mutierter Eigenschaften
 - **Hirnareale & Sinne**: Vision, Audition, Somatosensorik, Geschmack, Geruch, Vestibulär, Digital
-- **Hebbsche Plastizität**: "Cells that fire together, wire together" Lernregel
+- **Erweiterte Plastizität**: Hebbsches Lernen, STDP, Gewichtszerfall und homöostatische Mechanismen
 - **Speicherung**: JSON für Konfiguration, HDF5 für effiziente Datenspeicherung (mit Kompression)
-- **Web-Frontend**: Modernes Browser-Interface mit Echtzeit-Visualisierung und Logging
+- **Web-Frontend**: Modernes Browser-Interface mit Echtzeit-Visualisierung und automatischen Checkpoints
+- **Robust & Sicher**: Eingabevalidierung, Pfad-Sanitisierung, automatische Wiederherstellung
+- **Umfassende Tests**: 186 Tests mit 47% Code-Abdeckung, CI/CD-Pipeline mit GitHub Actions
 
 ## Installation
 
@@ -215,8 +221,10 @@ Das Frontend bietet:
 - 🔥 **Heatmap-Visualisierung**: Echtzeit-Darstellung von Input-, Hidden- und Output-Layern
 - 💻 **Terminal**: Input/Output für sensorische Daten
 - 💬 **Chat-Interface**: Interaktive Befehle und Operationen
-- 📋 **Logging**: Vollständige Protokollierung aller Systemereignisse
-- ⚡ **Training**: Start/Stop-Kontrolle für Simulationsläufe
+- 📋 **Logging**: Vollständige Protokollierung mit automatischer Rotation
+- ⚡ **Training**: Start/Stop-Kontrolle mit Fortschrittsverfolgung
+- 💾 **Auto-Checkpoint**: Automatische Modell-Checkpoints und Wiederherstellung
+- 🔒 **Sicherheit**: Eingabevalidierung und Pfad-Sanitisierung
 
 ### Kommandozeilen-Beispiel
 
@@ -271,9 +279,12 @@ for step in range(100):
 ├── 📄 LICENSE                # MIT License
 │
 ├── 📁 docs/                  # Technical documentation
-│   ├── API.md               # API reference
-│   ├── ARCHITECTURE.md      # Architecture details
-│   └── INSTALLATION.md      # Installation guide
+│   ├── INDEX.md             # Complete documentation index
+│   ├── ARCHITECTURE.md      # System architecture
+│   ├── user-guide/          # User documentation
+│   ├── developer-guide/     # Contributor documentation
+│   ├── api/                 # API reference
+│   └── tutorials/           # Learning guides
 │
 ├── 📄 brain_base_model.json  # Base model configuration
 ├── 📄 example.py             # CLI example script
@@ -289,14 +300,25 @@ for step in range(100):
 │   └── js/
 │       └── app.js           # Frontend JavaScript
 │
+├── 📁 tests/                 # Test suite
+│   ├── test_*.py            # Unit tests
+│   ├── test_integration.py  # Integration tests
+│   └── test_performance.py  # Performance benchmarks
+│
 └── 📁 src/                   # Core source code
     ├── __init__.py          # Package initialization
     ├── brain_model.py       # Neuron & synapse structures
     ├── simulation.py        # Main simulation loop
     ├── cell_lifecycle.py    # Cell death & reproduction
-    ├── plasticity.py        # Hebbian learning rules
+    ├── plasticity.py        # Learning rules (Hebbian, STDP)
+    ├── neuron_models.py     # Multiple neuron types (LIF, Izhikevich)
     ├── senses.py            # Sensory input processing
-    └── storage.py           # HDF5/JSON persistence
+    ├── storage.py           # HDF5/JSON persistence
+    ├── tasks.py             # Task/benchmark framework
+    ├── evaluation.py        # Performance evaluation
+    ├── knowledge_db.py      # Knowledge database system
+    ├── metrics.py           # Evaluation metrics
+    └── visualization.py     # Data visualization tools
 ```
 
 ---
@@ -320,9 +342,12 @@ The `brain_base_model.json` contains:
 - **Frontend**: Vanilla JavaScript with Socket.IO
 - **Styling**: Modern CSS with dark theme
 - **Visualization**: HTML5 Canvas for heatmaps
-- **Data Storage**: HDF5 with compression
+- **Data Storage**: HDF5 with compression, SQLite for knowledge database
 - **Real-time Communication**: WebSocket (Flask-SocketIO)
 - **Scientific Computing**: NumPy
+- **Testing**: pytest with 186 tests, coverage reporting
+- **Code Quality**: pylint, flake8, black, mypy
+- **CI/CD**: GitHub Actions with multi-platform testing
 
 ---
 
@@ -446,11 +471,13 @@ Dieses Modell implementiert ein 4D-Hirnsystem, das biologische Prinzipien mit di
 ## Features
 
 - **4D Neuronengitter**: Neuronen in einem (x, y, z, w) Koordinatensystem
-- **Leaky Integrate-and-Fire Modell**: Biophysikalisch inspirierte Neuronen
+- **Mehrere Neuronenmodelle**: LIF, Izhikevich, inhibitorische Neuronen
 - **Zell-Lebenszyklus**: Alterung, Tod und Reproduktion
 - **Hirnareale & Sinne**: Vision, Audition, Somatosensorik, Geschmack, Geruch, Vestibulär, Digital
-- **Hebbsche Plastizität**: "Cells that fire together, wire together"
-- **Web-Frontend**: Modernes Browser-Interface mit Echtzeit-Visualisierung
+- **Erweiterte Plastizität**: Hebbsches Lernen, STDP, Gewichtszerfall
+- **Web-Frontend**: Modernes Browser-Interface mit Echtzeit-Visualisierung und Auto-Checkpoints
+- **Robust & Sicher**: Eingabevalidierung, automatische Wiederherstellung
+- **Umfassende Tests**: 186 Tests, CI/CD-Pipeline
 
 ## Installation
 
