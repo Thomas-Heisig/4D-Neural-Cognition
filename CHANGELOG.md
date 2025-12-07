@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Documentation Synchronization** (December 7, 2025)
+  - Updated README.md to accurately reflect current app.py and example.py features
+  - Enhanced Key Features section to include:
+    - Multiple neuron models (LIF, Izhikevich variants, inhibitory neurons)
+    - Advanced plasticity (Hebbian, STDP, weight decay)
+    - Comprehensive testing (186 tests, 47% coverage, CI/CD)
+    - Robust security and error handling
+  - Updated web interface features to include:
+    - Auto-checkpoint and recovery system
+    - Security features (input validation, path sanitization)
+    - Log rotation
+  - Updated TODO.md to mark STDP implementation as completed
+  - Added documentation changelog entry to ISSUES.md
+  - Verified all documentation cross-references
+
 ### Added
 
 - **CI/CD & Development Infrastructure** (December 2025)

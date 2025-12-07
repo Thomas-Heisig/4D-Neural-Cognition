@@ -159,11 +159,12 @@ This document tracks planned features, improvements, and tasks for the project. 
   - Norepinephrine for arousal
   - Global modulatory signals
 
-- [ ] **Advanced Plasticity**
-  - Spike-timing-dependent plasticity (STDP)
-  - Homeostatic plasticity
-  - Metaplasticity
-  - Short-term plasticity (facilitation/depression)
+- [x] **Advanced Plasticity** (Partially Complete - Dec 2025)
+  - [x] Spike-timing-dependent plasticity (STDP) - Implemented Dec 2025
+  - [x] Weight decay mechanisms - Implemented Dec 2025
+  - [ ] Homeostatic plasticity
+  - [ ] Metaplasticity
+  - [ ] Short-term plasticity (facilitation/depression)
 
 ### Features - Sensory Systems
 
