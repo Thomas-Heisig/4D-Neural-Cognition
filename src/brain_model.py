@@ -2,6 +2,12 @@
 
 import json
 from dataclasses import dataclass, field
+from typing import Optional
+
+try:
+    from .sparse_connectivity import SparseConnectivityMatrix
+except ImportError:
+    from sparse_connectivity import SparseConnectivityMatrix
 
 
 @dataclass
@@ -63,12 +69,13 @@ class Synapse:
 class BrainModel:
     """Main brain model class managing neurons and synapses."""
 
-    def __init__(self, config_path: str = None, config: dict = None):
+    def __init__(self, config_path: str = None, config: dict = None, use_sparse_connectivity: bool = False):
         """Initialize brain model from config file or dict.
 
         Args:
             config_path: Path to JSON configuration file
             config: Configuration dictionary
+            use_sparse_connectivity: If True, use sparse matrix for synapses (more efficient for large networks)
 
         Raises:
             ValueError: If neither config_path nor config is provided
@@ -97,7 +104,16 @@ class BrainModel:
 
         self.lattice_shape = tuple(self.config["lattice_shape"])
         self.neurons: dict[int, Neuron] = {}
-        self.synapses: list[Synapse] = []
+        self.use_sparse_connectivity = use_sparse_connectivity
+        
+        # Initialize synapse storage (sparse or list-based)
+        if use_sparse_connectivity:
+            self._sparse_synapses: Optional[SparseConnectivityMatrix] = SparseConnectivityMatrix()
+            self.synapses: list[Synapse] = []  # Keep empty for compatibility
+        else:
+            self._sparse_synapses: Optional[SparseConnectivityMatrix] = None
+            self.synapses: list[Synapse] = []
+        
         self.current_step: int = 0
         self._next_neuron_id: int = 0
 
@@ -185,7 +201,10 @@ class BrainModel:
         if neuron_id in self.neurons:
             del self.neurons[neuron_id]
             # Remove associated synapses
-            self.synapses = [s for s in self.synapses if s.pre_id != neuron_id and s.post_id != neuron_id]
+            if self.use_sparse_connectivity:
+                self._sparse_synapses.remove_synapses_for_neuron(neuron_id)
+            else:
+                self.synapses = [s for s in self.synapses if s.pre_id != neuron_id and s.post_id != neuron_id]
 
     def add_synapse(
         self,
@@ -193,10 +212,27 @@ class BrainModel:
         post_id: int,
         weight: float = 0.1,
         delay: int = 1,
+        synapse_type: str = "excitatory",
     ) -> Synapse:
-        """Add a synapse between two neurons."""
-        synapse = Synapse(pre_id=pre_id, post_id=post_id, weight=weight, delay=delay)
-        self.synapses.append(synapse)
+        """Add a synapse between two neurons.
+        
+        Args:
+            pre_id: Pre-synaptic neuron ID
+            post_id: Post-synaptic neuron ID
+            weight: Synaptic weight
+            delay: Synaptic delay in time steps
+            synapse_type: Type of synapse ("excitatory" or "inhibitory")
+        
+        Returns:
+            The created Synapse object
+        """
+        synapse = Synapse(pre_id=pre_id, post_id=post_id, weight=weight, delay=delay, synapse_type=synapse_type)
+        
+        if self.use_sparse_connectivity:
+            self._sparse_synapses.add_synapse(pre_id, post_id, weight, delay, synapse_type=synapse_type)
+        else:
+            self.synapses.append(synapse)
+        
         return synapse
 
     def get_synapses_for_neuron(self, neuron_id: int, direction: str = "both") -> list[Synapse]:
@@ -205,14 +241,34 @@ class BrainModel:
         Args:
             neuron_id: The neuron ID to get synapses for.
             direction: "pre" for outgoing, "post" for incoming, "both" for all.
+            
+        Returns:
+            List of Synapse objects
         """
-        result = []
-        for s in self.synapses:
-            if direction in ("pre", "both") and s.pre_id == neuron_id:
-                result.append(s)
-            elif direction in ("post", "both") and s.post_id == neuron_id:
-                result.append(s)
-        return result
+        if self.use_sparse_connectivity:
+            result = []
+            
+            if direction in ("post", "both"):
+                # Get incoming synapses
+                for syn_data in self._sparse_synapses.get_incoming_synapses(neuron_id):
+                    idx, pre_id, weight, delay, plasticity_tag, synapse_type = syn_data
+                    result.append(Synapse(pre_id, neuron_id, weight, delay, plasticity_tag, synapse_type))
+            
+            if direction in ("pre", "both"):
+                # Get outgoing synapses
+                for syn_data in self._sparse_synapses.get_outgoing_synapses(neuron_id):
+                    idx, post_id, weight, delay, plasticity_tag, synapse_type = syn_data
+                    result.append(Synapse(neuron_id, post_id, weight, delay, plasticity_tag, synapse_type))
+            
+            return result
+        else:
+            result = []
+            for s in self.synapses:
+                if direction in ("pre", "both") and s.pre_id == neuron_id:
+                    result.append(s)
+                elif direction in ("post", "both") and s.post_id == neuron_id:
+                    result.append(s)
+            return result
 
     def coord_to_id_map(self) -> dict[tuple, int]:
         """Create a mapping from 4D coordinates to neuron IDs."""
@@ -238,10 +294,27 @@ class BrainModel:
 
     def to_dict(self) -> dict:
         """Convert model to dictionary for serialization."""
+        # Get synapses from sparse matrix if used, otherwise use list
+        if self.use_sparse_connectivity:
+            synapse_list = self._sparse_synapses.to_list()
+        else:
+            synapse_list = [
+                {
+                    "pre_id": s.pre_id,
+                    "post_id": s.post_id,
+                    "weight": s.weight,
+                    "delay": s.delay,
+                    "plasticity_tag": s.plasticity_tag,
+                    "synapse_type": s.synapse_type,
+                }
+                for s in self.synapses
+            ]
+        
         return {
             "config": self.config,
             "current_step": self.current_step,
             "next_neuron_id": self._next_neuron_id,
+            "use_sparse_connectivity": self.use_sparse_connectivity,
             "neurons": [
                 {
                     "id": n.id,
@@ -258,22 +331,14 @@ class BrainModel:
                 }
                 for n in self.neurons.values()
             ],
-            "synapses": [
-                {
-                    "pre_id": s.pre_id,
-                    "post_id": s.post_id,
-                    "weight": s.weight,
-                    "delay": s.delay,
-                    "plasticity_tag": s.plasticity_tag,
-                }
-                for s in self.synapses
-            ],
+            "synapses": synapse_list,
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> "BrainModel":
         """Create model from dictionary."""
-        model = cls(config=data["config"])
+        use_sparse = data.get("use_sparse_connectivity", False)
+        model = cls(config=data["config"], use_sparse_connectivity=use_sparse)
         model.current_step = data["current_step"]
         model._next_neuron_id = data["next_neuron_id"]
 
@@ -293,14 +358,26 @@ class BrainModel:
             )
             model.neurons[neuron.id] = neuron
 
+        # Load synapses into appropriate storage
         for s_data in data["synapses"]:
-            synapse = Synapse(
-                pre_id=s_data["pre_id"],
-                post_id=s_data["post_id"],
-                weight=s_data["weight"],
-                delay=s_data["delay"],
-                plasticity_tag=s_data["plasticity_tag"],
-            )
-            model.synapses.append(synapse)
+            if use_sparse:
+                model._sparse_synapses.add_synapse(
+                    pre_id=s_data["pre_id"],
+                    post_id=s_data["post_id"],
+                    weight=s_data["weight"],
+                    delay=s_data["delay"],
+                    plasticity_tag=s_data.get("plasticity_tag", 0.0),
+                    synapse_type=s_data.get("synapse_type", "excitatory"),
+                )
+            else:
+                synapse = Synapse(
+                    pre_id=s_data["pre_id"],
+                    post_id=s_data["post_id"],
+                    weight=s_data["weight"],
+                    delay=s_data["delay"],
+                    plasticity_tag=s_data.get("plasticity_tag", 0.0),
+                    synapse_type=s_data.get("synapse_type", "excitatory"),
+                )
+                model.synapses.append(synapse)
 
         return model

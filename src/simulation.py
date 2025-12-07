@@ -1,6 +1,6 @@
 """Main simulation loop for 4D Neural Cognition."""
 
-from typing import Callable
+from typing import Callable, Union
 
 import numpy as np
 
@@ -8,10 +8,12 @@ try:
     from .brain_model import BrainModel
     from .cell_lifecycle import maybe_kill_and_reproduce, update_health_and_age
     from .plasticity import apply_weight_decay, hebbian_update
+    from .time_indexed_spikes import TimeIndexedSpikeBuffer, SpikeHistoryAdapter
 except ImportError:
     from brain_model import BrainModel
     from cell_lifecycle import maybe_kill_and_reproduce, update_health_and_age
     from plasticity import apply_weight_decay, hebbian_update
+    from time_indexed_spikes import TimeIndexedSpikeBuffer, SpikeHistoryAdapter
 
 
 class Simulation:
@@ -21,16 +23,27 @@ class Simulation:
         self,
         model: BrainModel,
         seed: int = None,
+        use_time_indexed_spikes: bool = False,
     ):
         """Initialize the simulation.
 
         Args:
             model: The brain model to simulate.
             seed: Random seed for reproducibility.
+            use_time_indexed_spikes: If True, use time-indexed spike buffer for O(1) lookups
         """
         self.model = model
         self.rng = np.random.default_rng(seed)
-        self.spike_history: dict[int, list[int]] = {}
+        self.use_time_indexed_spikes = use_time_indexed_spikes
+        
+        # Initialize spike storage
+        if use_time_indexed_spikes:
+            self._spike_buffer = TimeIndexedSpikeBuffer(window_size=100)
+            self.spike_history = SpikeHistoryAdapter(self._spike_buffer)
+        else:
+            self._spike_buffer = None
+            self.spike_history: dict[int, list[int]] = {}
+        
         self._callbacks: list[Callable] = []
 
     def add_callback(self, callback: Callable) -> None:
@@ -174,16 +187,28 @@ class Simulation:
         # Sum weighted contributions from neurons that spiked at the right time
         # considering synaptic delay
         synaptic_input = 0.0
-        for synapse in self.model.get_synapses_for_neuron(neuron_id, direction="post"):
-            pre_neuron = self.model.neurons.get(synapse.pre_id)
-            if pre_neuron is not None:
-                # Check if presynaptic neuron spiked at time matching the delay
-                pre_spike_times = self.spike_history.get(synapse.pre_id, [])
-                for spike_time in pre_spike_times:
-                    # Synaptic delay: spike arrives after 'delay' time steps
-                    if current_step - spike_time == synapse.delay:
+        
+        if self.use_time_indexed_spikes:
+            # Optimized O(1) lookup using time-indexed buffer
+            for synapse in self.model.get_synapses_for_neuron(neuron_id, direction="post"):
+                pre_neuron = self.model.neurons.get(synapse.pre_id)
+                if pre_neuron is not None:
+                    # Direct O(1) check if neuron spiked at the right time
+                    spike_time = current_step - synapse.delay
+                    if self._spike_buffer.did_spike_at(synapse.pre_id, spike_time):
                         synaptic_input += synapse.weight
-                        break
+        else:
+            # Original O(n) lookup with list iteration
+            for synapse in self.model.get_synapses_for_neuron(neuron_id, direction="post"):
+                pre_neuron = self.model.neurons.get(synapse.pre_id)
+                if pre_neuron is not None:
+                    # Check if presynaptic neuron spiked at time matching the delay
+                    pre_spike_times = self.spike_history.get(synapse.pre_id, [])
+                    for spike_time in pre_spike_times:
+                        # Synaptic delay: spike arrives after 'delay' time steps
+                        if current_step - spike_time == synapse.delay:
+                            synaptic_input += synapse.weight
+                            break
 
         # Phase 3: Compute total input current
         # Combines synaptic input and external sensory input
@@ -210,9 +235,12 @@ class Simulation:
             neuron.last_spike_time = current_step
 
             # Record spike in history for synaptic transmission
-            if neuron_id not in self.spike_history:
-                self.spike_history[neuron_id] = []
-            self.spike_history[neuron_id].append(current_step)
+            if self.use_time_indexed_spikes:
+                self._spike_buffer.add_spike(neuron_id, current_step)
+            else:
+                if neuron_id not in self.spike_history:
+                    self.spike_history[neuron_id] = []
+                self.spike_history[neuron_id].append(current_step)
 
             return True
 
@@ -292,13 +320,19 @@ class Simulation:
         # Phase 4: Housekeeping - Memory management and callbacks
         # Clean up old spike history to prevent unbounded memory growth
         # Only keep spikes from recent past (needed for synaptic transmission)
-        max_history = 100  # Keep last 100 time steps
         current_step = self.model.current_step
-        for neuron_id in list(self.spike_history.keys()):
-            self.spike_history[neuron_id] = [t for t in self.spike_history[neuron_id] if current_step - t < max_history]
-            # Remove empty histories to free memory
-            if not self.spike_history[neuron_id]:
-                del self.spike_history[neuron_id]
+        
+        if self.use_time_indexed_spikes:
+            # Time-indexed buffer handles cleanup automatically
+            self._spike_buffer.advance_time(current_step)
+        else:
+            # Manual cleanup for dict-based history
+            max_history = 100  # Keep last 100 time steps
+            for neuron_id in list(self.spike_history.keys()):
+                self.spike_history[neuron_id] = [t for t in self.spike_history[neuron_id] if current_step - t < max_history]
+                # Remove empty histories to free memory
+                if not self.spike_history[neuron_id]:
+                    del self.spike_history[neuron_id]
 
         # Execute registered callbacks (e.g., logging, visualization)
         for callback in self._callbacks:
