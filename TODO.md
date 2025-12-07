@@ -62,8 +62,14 @@ This document tracks planned features, improvements, and tasks for the project. 
 - [x] Optimize neuron update loop (Dec 2025)
   - [x] Optimized spike checking from O(n*m) to O(m) using set lookup
   - [x] Spike history already limited to 100 steps for memory efficiency
-  - [ ] Future: Consider sparse matrix representation for synapses
-  - [ ] Future: Implement time-indexed spike lookup for O(1) synaptic delay checking
+  - [x] Implemented sparse matrix representation for synapses (Dec 2025)
+    - Optional SparseConnectivityMatrix class using CSR format
+    - More memory efficient for large networks: O(num_synapses) vs O(num_neurons^2)
+    - Fast row-wise access for incoming/outgoing synapse queries
+  - [x] Implemented time-indexed spike lookup for O(1) synaptic delay checking (Dec 2025)
+    - TimeIndexedSpikeBuffer with circular buffer and hash tables
+    - O(1) spike lookup instead of O(n) list iteration
+    - Automatic cleanup of old spikes outside window
 
 ### Testing
 
