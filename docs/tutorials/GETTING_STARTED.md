@@ -48,7 +48,7 @@ Run the test suite to ensure everything is working:
 pytest -v
 ```
 
-You should see all tests passing (186 tests).
+You should see all tests passing (408 tests).
 
 ---
 

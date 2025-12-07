@@ -239,7 +239,7 @@ For complete API documentation, see [API Reference](docs/api/API.md).
 - **Speicherung**: JSON für Konfiguration, HDF5 für effiziente Datenspeicherung (mit Kompression)
 - **Web-Frontend**: Modernes Browser-Interface mit Echtzeit-Visualisierung und automatischen Checkpoints
 - **Robust & Sicher**: Eingabevalidierung, Pfad-Sanitisierung, automatische Wiederherstellung
-- **Umfassende Tests**: 186 Tests mit 47% Code-Abdeckung, CI/CD-Pipeline mit GitHub Actions
+- **Umfassende Tests**: 408 Tests mit 50% Code-Abdeckung, CI/CD-Pipeline mit GitHub Actions
 
 ## Installation
 
@@ -390,7 +390,7 @@ The `brain_base_model.json` contains:
 - **Data Storage**: HDF5 with compression, SQLite for knowledge database
 - **Real-time Communication**: WebSocket (Flask-SocketIO)
 - **Scientific Computing**: NumPy
-- **Testing**: pytest with 186 tests, coverage reporting
+- **Testing**: pytest with 408 tests, coverage reporting
 - **Code Quality**: pylint, flake8, black, mypy
 - **CI/CD**: GitHub Actions with multi-platform testing
 

@@ -5,7 +5,7 @@ This script:
 1. Initializes the 4D brain model from configuration
 2. Creates neurons in sensory areas
 3. Runs a simulation with sensory input (including digital sense)
-4. Saves the model state to JSON and optionally HDF4
+4. Saves the model state to JSON and optionally HDF5
 """
 
 import os
