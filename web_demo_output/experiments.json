@@ -1,0 +1,41 @@
+[
+  {
+    "id": "exp_0",
+    "name": "Learning Rate 0.001",
+    "description": "Experiment with learning rate 0.001",
+    "parameters": {
+      "learning_rate": 0.001,
+      "density": 0.05,
+      "weight_mean": 0.1,
+      "weight_std": 0.05,
+      "connection_probability": 0.001
+    },
+    "status": "created"
+  },
+  {
+    "id": "exp_1",
+    "name": "Learning Rate 0.01",
+    "description": "Experiment with learning rate 0.01",
+    "parameters": {
+      "learning_rate": 0.01,
+      "density": 0.05,
+      "weight_mean": 0.1,
+      "weight_std": 0.05,
+      "connection_probability": 0.001
+    },
+    "status": "created"
+  },
+  {
+    "id": "exp_2",
+    "name": "Learning Rate 0.1",
+    "description": "Experiment with learning rate 0.1",
+    "parameters": {
+      "learning_rate": 0.1,
+      "density": 0.05,
+      "weight_mean": 0.1,
+      "weight_std": 0.05,
+      "connection_probability": 0.001
+    },
+    "status": "created"
+  }
+]

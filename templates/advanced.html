@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4D Neural Cognition - Advanced Interface</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/advanced.css') }}">
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js" integrity="sha384-DkkWv9oJFWiuM0IAUU1xFjc+vBc4+5CkEvYyKqH1gKEKzY5+GqHgqPzj7uHxGGEq" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-C0W5CbPlf1hCH8oGMF/6OD4AhKN+/1qXFmHfMRN7+YhO9S/a7XVD8O5VfVz5cY3p" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ==" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header with Navigation -->
+        <header>
+            <h1>🧠 4D Neural Cognition - Advanced Interface</h1>
+            <nav class="nav-tabs">
+                <button class="nav-tab active" data-tab="visualization">3D/4D Visualization</button>
+                <button class="nav-tab" data-tab="analytics">Real-time Analytics</button>
+                <button class="nav-tab" data-tab="experiments">Experiment Management</button>
+                <button class="nav-tab" data-tab="collaboration">Collaboration</button>
+            </nav>
+        </header>
+
+        <!-- Tab Content -->
+        <div class="tab-content active" id="visualization-tab">
+            <div class="grid-2col">
+                <!-- 3D Viewer -->
+                <div class="panel large-panel">
+                    <h2>🎮 Interactive 3D Neuron Viewer</h2>
+                    <div id="neuronViewer3D" class="viewer-3d"></div>
+                    
+                    <div class="control-group">
+                        <h3>4D Projection Controls</h3>
+                        <label>W-Dimension Slice:</label>
+                        <input type="range" id="wDimension" min="0" max="20" step="0.1" value="0">
+                        <span id="wDimensionValue">0.0</span>
+                        
+                        <div class="button-row">
+                            <button id="loadNeuronViz" class="btn btn-primary">Load Neurons</button>
+                            <button id="loadConnections" class="btn btn-secondary">Show Connections</button>
+                            <button id="animateActivity" class="btn btn-success">Animate Activity</button>
+                            <button id="resetCamera" class="btn btn-secondary">Reset Camera</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visualization Controls -->
+                <div class="panel">
+                    <h2>⚙️ Visualization Settings</h2>
+                    
+                    <div class="control-group">
+                        <h3>Display Options</h3>
+                        <label>
+                            <input type="checkbox" id="showNeurons" checked> Show Neurons
+                        </label>
+                        <label>
+                            <input type="checkbox" id="showConnections"> Show Connections
+                        </label>
+                        <label>
+                            <input type="checkbox" id="showActivity" checked> Show Activity
+                        </label>
+                        <label>
+                            <input type="checkbox" id="showGrid" checked> Show Grid
+                        </label>
+                    </div>
+
+                    <div class="control-group">
+                        <h3>Color Mapping</h3>
+                        <select id="colorMode">
+                            <option value="membrane">Membrane Potential</option>
+                            <option value="health">Neuron Health</option>
+                            <option value="age">Neuron Age</option>
+                            <option value="activity">Activity Level</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <h3>Animation Controls</h3>
+                        <label>Time Step:</label>
+                        <input type="range" id="timeStep" min="0" max="1000" step="1" value="0">
+                        <span id="timeStepValue">0</span>
+                        
+                        <label>Animation Speed:</label>
+                        <input type="range" id="animSpeed" min="1" max="100" step="1" value="10">
+                        <span id="animSpeedValue">10</span>
+                        
+                        <div class="button-row">
+                            <button id="playAnimation" class="btn btn-success">▶ Play</button>
+                            <button id="pauseAnimation" class="btn btn-warning">⏸ Pause</button>
+                            <button id="stopAnimation" class="btn btn-danger">⏹ Stop</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="analytics-tab">
+            <div class="grid-2x2">
+                <!-- Spike Rate Histogram -->
+                <div class="panel">
+                    <h2>📊 Spike Rate Histogram</h2>
+                    <div class="chart-container">
+                        <canvas id="spikeRateChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Network Statistics -->
+                <div class="panel">
+                    <h2>📈 Network Statistics</h2>
+                    <div class="chart-container">
+                        <canvas id="networkStatsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Learning Curves -->
+                <div class="panel">
+                    <h2>📉 Learning Curves</h2>
+                    <div class="chart-container">
+                        <canvas id="learningCurveChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Performance Metrics -->
+                <div class="panel">
+                    <h2>🎯 Performance Metrics</h2>
+                    <div class="chart-container">
+                        <canvas id="performanceMetricsChart"></canvas>
+                    </div>
+                    <div class="metrics-display">
+                        <div class="metric-item">
+                            <span class="metric-label">Accuracy:</span>
+                            <span class="metric-value" id="metricAccuracy">0.00</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Precision:</span>
+                            <span class="metric-value" id="metricPrecision">0.00</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Recall:</span>
+                            <span class="metric-value" id="metricRecall">0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>🔄 Data Export</h2>
+                <div class="button-row">
+                    <button id="exportAnalytics" class="btn btn-primary">Export Analytics Data</button>
+                    <button id="clearAnalytics" class="btn btn-danger">Clear All Data</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="experiments-tab">
+            <div class="grid-2col">
+                <!-- Experiment List -->
+                <div class="panel">
+                    <h2>🧪 Experiments</h2>
+                    <div class="experiment-list" id="experimentList">
+                        <!-- Populated dynamically -->
+                    </div>
+                    <div class="button-row">
+                        <button id="createExperiment" class="btn btn-primary">New Experiment</button>
+                        <button id="importExperiment" class="btn btn-secondary">Import</button>
+                    </div>
+                </div>
+
+                <!-- Experiment Details -->
+                <div class="panel">
+                    <h2>📋 Experiment Details</h2>
+                    <div id="experimentDetails" class="experiment-details">
+                        <p class="info-text">Select an experiment to view details</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parameter Controls -->
+            <div class="panel">
+                <h2>🎛️ Advanced Controls</h2>
+                
+                <div class="control-group">
+                    <h3>Batch Parameter Modification</h3>
+                    <div class="param-editor" id="batchParams">
+                        <label>Learning Rate:</label>
+                        <input type="number" id="batchLearningRate" step="0.001" value="0.01">
+                        
+                        <label>Weight Decay:</label>
+                        <input type="number" id="batchWeightDecay" step="0.0001" value="0.0001">
+                        
+                        <label>Neuron Density:</label>
+                        <input type="number" id="batchDensity" step="0.01" value="0.1">
+                        
+                        <button id="applyBatchParams" class="btn btn-success">Apply to Selected</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>Parameter Sweep</h3>
+                    <div class="sweep-config">
+                        <label>Parameter to Sweep:</label>
+                        <select id="sweepParam">
+                            <option value="learning_rate">Learning Rate</option>
+                            <option value="density">Neuron Density</option>
+                            <option value="weight_mean">Weight Mean</option>
+                        </select>
+                        
+                        <label>Values (comma-separated):</label>
+                        <input type="text" id="sweepValues" placeholder="0.001, 0.01, 0.1">
+                        
+                        <button id="createSweep" class="btn btn-primary">Create Sweep Experiments</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>A/B Testing</h3>
+                    <div class="ab-test">
+                        <label>Test Name:</label>
+                        <input type="text" id="abTestName" placeholder="Test Name">
+                        
+                        <button id="setupABTest" class="btn btn-warning">Setup A/B Test</button>
+                        <button id="compareABTest" class="btn btn-info">Compare Results</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparison View -->
+            <div class="panel">
+                <h2>🔬 Experiment Comparison</h2>
+                <div id="comparisonView" class="comparison-view">
+                    <p class="info-text">Select multiple experiments to compare</p>
+                </div>
+                <button id="compareSelected" class="btn btn-primary">Compare Selected Experiments</button>
+            </div>
+        </div>
+
+        <div class="tab-content" id="collaboration-tab">
+            <div class="grid-2col">
+                <!-- Active Users -->
+                <div class="panel">
+                    <h2>👥 Active Users</h2>
+                    <div id="activeUsers" class="user-list">
+                        <!-- Populated dynamically -->
+                    </div>
+                    <div class="user-controls">
+                        <input type="text" id="username" placeholder="Your username">
+                        <button id="joinSession" class="btn btn-primary">Join Session</button>
+                    </div>
+                </div>
+
+                <!-- Shared Simulations -->
+                <div class="panel">
+                    <h2>🔗 Shared Simulations</h2>
+                    <div id="sharedSimulations" class="shared-sim-list">
+                        <!-- Populated dynamically -->
+                    </div>
+                    <div class="button-row">
+                        <button id="createSharedSim" class="btn btn-primary">New Shared Simulation</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Annotations -->
+            <div class="panel">
+                <h2>💬 Comments & Annotations</h2>
+                <div id="annotationsList" class="annotations-list">
+                    <!-- Populated dynamically -->
+                </div>
+                <div class="annotation-input">
+                    <textarea id="annotationText" placeholder="Add a comment or annotation..."></textarea>
+                    <select id="annotationTarget">
+                        <option value="simulation">Simulation</option>
+                        <option value="experiment">Experiment</option>
+                        <option value="neuron">Neuron</option>
+                    </select>
+                    <button id="addAnnotation" class="btn btn-success">Add Annotation</button>
+                </div>
+            </div>
+
+            <!-- Version Control -->
+            <div class="panel">
+                <h2>🔄 Version Control</h2>
+                <div id="versionHistory" class="version-history">
+                    <!-- Populated dynamically -->
+                </div>
+                <div class="version-controls">
+                    <input type="text" id="versionName" placeholder="Version name">
+                    <textarea id="versionDescription" placeholder="Version description..."></textarea>
+                    <div class="button-row">
+                        <button id="createVersion" class="btn btn-primary">Create Version</button>
+                        <button id="compareVersions" class="btn btn-info">Compare Versions</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/visualization.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/experiments.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/collaboration.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/advanced.js') }}"></script>
+</body>
+</html>

@@ -765,6 +765,128 @@ def process_chat_command(command):
         return f"Unknown command: {command}. Type 'help' for available commands."
 
 
+@app.route("/advanced")
+def advanced():
+    """Serve the advanced interface with 3D/4D visualization and collaboration features."""
+    return render_template("advanced.html")
+
+
+@app.route("/api/visualization/neurons", methods=["GET"])
+def get_neurons_visualization():
+    """Get neuron data for 3D/4D visualization."""
+    global current_model
+
+    if current_model is None:
+        return jsonify({"status": "error", "message": "No model initialized"}), 400
+
+    try:
+        # Configurable limit for visualization performance
+        viz_limit = int(os.environ.get("VIZ_NEURON_LIMIT", "1000"))
+        
+        neurons_data = []
+        for neuron_id, neuron in list(current_model.neurons.items())[:viz_limit]:
+            neurons_data.append(
+                {
+                    "id": neuron_id,
+                    "x": neuron.x,
+                    "y": neuron.y,
+                    "z": neuron.z,
+                    "w": getattr(neuron, "w", 0),  # 4th dimension if available
+                    "v_membrane": neuron.v_membrane,
+                    "health": neuron.health,
+                    "age": neuron.age,
+                    "activity": 1.0 if abs(neuron.v_membrane - neuron.v_rest) > 10 else 0.0,
+                }
+            )
+
+        return jsonify({"status": "success", "neurons": neurons_data, "count": len(neurons_data)})
+    except Exception as e:
+        logger.error(f"Failed to get visualization data: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/visualization/connections", methods=["GET"])
+def get_connections_visualization():
+    """Get connection data for visualization."""
+    global current_model
+
+    if current_model is None:
+        return jsonify({"status": "error", "message": "No model initialized"}), 400
+
+    try:
+        # Configurable limit for visualization performance
+        viz_limit = int(os.environ.get("VIZ_CONNECTION_LIMIT", "500"))
+        
+        connections_data = []
+        for synapse in list(current_model.synapses)[:viz_limit]:
+            pre_neuron = current_model.neurons.get(synapse.pre_id)
+            post_neuron = current_model.neurons.get(synapse.post_id)
+
+            if pre_neuron and post_neuron:
+                connections_data.append(
+                    {
+                        "from": {
+                            "x": pre_neuron.x,
+                            "y": pre_neuron.y,
+                            "z": pre_neuron.z,
+                            "w": getattr(pre_neuron, "w", 0),
+                        },
+                        "to": {
+                            "x": post_neuron.x,
+                            "y": post_neuron.y,
+                            "z": post_neuron.z,
+                            "w": getattr(post_neuron, "w", 0),
+                        },
+                        "weight": synapse.weight,
+                    }
+                )
+
+        return jsonify({"status": "success", "connections": connections_data, "count": len(connections_data)})
+    except Exception as e:
+        logger.error(f"Failed to get connections data: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@socketio.on("register_user")
+def handle_register_user(data):
+    """Handle user registration for collaboration."""
+    try:
+        logger.info(f"User registered: {data.get('username')}")
+        emit("user_joined", {"user": data}, broadcast=True)
+    except Exception as e:
+        logger.error(f"Error registering user: {str(e)}")
+
+
+@socketio.on("create_shared_simulation")
+def handle_create_shared_simulation(data):
+    """Handle creation of shared simulation."""
+    try:
+        logger.info(f"Shared simulation created: {data.get('name')}")
+        emit("simulation_created", {"simulation": data}, broadcast=True)
+    except Exception as e:
+        logger.error(f"Error creating shared simulation: {str(e)}")
+
+
+@socketio.on("add_annotation")
+def handle_add_annotation(data):
+    """Handle adding annotation."""
+    try:
+        logger.info(f"Annotation added by {data.get('authorName')}")
+        emit("annotation_added", {"annotation": data}, broadcast=True)
+    except Exception as e:
+        logger.error(f"Error adding annotation: {str(e)}")
+
+
+@socketio.on("create_version")
+def handle_create_version(data):
+    """Handle version creation."""
+    try:
+        logger.info(f"Version created: {data.get('name')}")
+        emit("version_created", {"version": data}, broadcast=True)
+    except Exception as e:
+        logger.error(f"Error creating version: {str(e)}")
+
+
 if __name__ == "__main__":
     logger.info("Starting 4D Neural Cognition web interface")
     socketio.run(app, host="0.0.0.0", port=5000, debug=True)

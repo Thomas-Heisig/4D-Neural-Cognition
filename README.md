@@ -30,6 +30,11 @@ This project implements a 4D brain system that combines biological principles wi
 - **Configuration Comparison**: Objectively compare different network configurations
 - **Efficient Storage**: JSON for configuration, HDF5 for efficient data persistence with compression
 - **Modern Web Interface**: Browser-based interface with real-time visualization and automatic checkpointing
+- **Advanced Web Features**:
+  - **3D/4D Visualization**: Interactive 3D neuron viewer with 4D projection controls and activity animation
+  - **Real-time Analytics**: Spike rate histograms, network statistics, learning curves, and performance metrics
+  - **Experiment Management**: Batch parameter modification, parameter sweeps, A/B testing, and version control
+  - **Collaboration**: Multi-user support, shared simulations, annotations, and version history
 - **Robust & Secure**: Input validation, path sanitization, automatic recovery, and comprehensive error handling
 - **Comprehensive Testing**: 408 tests with 50% code coverage, CI/CD pipeline with GitHub Actions
 
@@ -61,9 +66,10 @@ pip install -r requirements.txt
 # Run example simulation
 python example.py
 
-# Or start web interface
+# Start web interface
 python app.py
-# Open browser to http://localhost:5000
+# Basic Interface: http://localhost:5000
+# Advanced Interface: http://localhost:5000/advanced
 ```
 
 ---
@@ -136,12 +142,46 @@ Start the web application for a user-friendly graphical interface:
 python app.py
 ```
 
-Then open a browser and navigate to `http://localhost:5000`.
+Then open a browser and navigate to:
+- **Basic Interface**: `http://localhost:5000`
+- **Advanced Interface**: `http://localhost:5000/advanced`
 
-**Features**:
+**Basic Interface Features**:
 - 🎮 **Model Control**: Initialize and configure models
 - 🔥 **Heatmap Visualization**: Real-time display of neural activity
 - 💻 **Terminal**: Input/output for sensory data
+- 💬 **Chat & Operations**: Command-based interaction
+- 📋 **System Logs**: Real-time logging and monitoring
+
+**Advanced Interface Features**:
+- 🎨 **3D/4D Visualization**:
+  - Interactive 3D neuron viewer with orbit controls
+  - 4D projection controls using stereographic projection
+  - Activity animation over time
+  - Connection visualization between neurons
+  - Multiple color mapping modes (membrane potential, health, age, activity)
+
+- 📊 **Real-time Analytics**:
+  - Spike rate histograms
+  - Network statistics (neurons, synapses over time)
+  - Learning curves with dual y-axis
+  - Performance metrics dashboard (radar charts)
+  - Data export functionality
+
+- 🧪 **Experiment Management**:
+  - Create and manage experiments
+  - Batch parameter modification
+  - Parameter sweep tools
+  - A/B testing of configurations
+  - Experiment comparison and versioning
+  - Import/export experiments
+
+- 👥 **Collaborative Features**:
+  - Multi-user support with real-time updates
+  - Shared simulations
+  - Comment and annotation system
+  - Version control for experiments
+  - Version comparison tools
 - 💬 **Chat Interface**: Interactive commands
 - 📋 **Logging**: Complete event logging with automatic rotation
 - ⚡ **Training**: Start/stop/step controls with progress tracking
