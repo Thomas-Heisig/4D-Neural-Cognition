@@ -41,16 +41,20 @@ This document tracks planned features, improvements, and tasks for the project. 
 ### Testing
 
 - [x] Create unit tests for core modules (Dec 2025):
-  - [x] brain_model.py (26 tests)
-  - [x] simulation.py (27 tests)
-  - [x] cell_lifecycle.py (22 tests)
-  - [x] plasticity.py (16 tests)
-  - [x] senses.py (18 tests)
-  - [x] storage.py (14 tests)
+  - [x] brain_model.py (26 tests, 88% coverage)
+  - [x] simulation.py (27 tests, 97% coverage)
+  - [x] cell_lifecycle.py (22 tests, 96% coverage)
+  - [x] plasticity.py (16 tests, 61% coverage)
+  - [x] senses.py (18 tests, 73% coverage)
+  - [x] storage.py (14 tests, 94% coverage)
+  - [x] neuron_models.py (31 tests, 98% coverage) - Added Dec 2025
+  - [x] evaluation.py (23 tests, 92% coverage) - Added Dec 2025
+  - [x] knowledge_db.py (21 tests, 51% coverage) - Added Dec 2025
 - [x] Set up pytest framework with configuration (Dec 2025)
 - [x] Add integration tests for full simulation runs (12 tests)
 - [x] Add performance benchmarks (16 tests)
-- [x] Add metrics tests (35 tests)
+- [x] Add metrics tests (35 tests, 95% coverage)
+- [x] Improve overall test coverage from 32% to 59% (Dec 2025)
 - [x] Set up continuous integration (CI/CD) (Dec 2025)
   - [x] Created CI/CD setup documentation (Dec 2025)
   - [x] Implemented GitHub Actions workflows (tests, code quality, security)
@@ -295,8 +299,8 @@ This document tracks planned features, improvements, and tasks for the project. 
   - [x] Basic simulation tutorial (with examples)
   - [x] Sensory input tutorial (all 7 senses)
   - [x] Plasticity tutorial (Hebbian, decay, strategies)
-  - [ ] Custom neuron models
-  - [ ] Performance optimization guide
+  - [x] Custom neuron models (Dec 2025)
+  - [x] Performance optimization guide (Dec 2025)
 
 - [ ] **Examples**
   - Pattern recognition example
