@@ -11,13 +11,23 @@ This document tracks planned features, improvements, and tasks for the project. 
 - Core High Priority features completed (see breakdown below)
 
 **📊 Completion Status:**
-- 🔴 **Critical Priority**: All actionable items complete. Memory leak fixes, error handling, state validation, checkpointing, test infrastructure (261 tests), and CI/CD setup are complete. Two items marked as "Future" for potential future optimization.
-- 🟡 **High Priority**: Core v1.1 features complete including:
-  - Tasks & Evaluation system (100% complete)
-  - Inhibitory neurons and multiple neuron types (100% complete)
-  - Advanced plasticity: STDP and Weight Decay (complete); Homeostatic/Metaplasticity (planned for v1.2+)
-  - Documentation & Tutorials (100% complete)
-  - Future v1.2+ features: Neuromodulation, Enhanced Vision/Digital Processing, Motor Output, 3D/4D Visualization, Advanced Web Controls, Real-time Analytics, GPU Acceleration, Parallel Computing, Database Integration, Cloud Support, Advanced Data Export
+- 🔴 **Critical Priority**: All actionable items complete.
+  - Memory leak fixes, error handling, state validation, checkpointing
+  - Test infrastructure: 261 tests passing (verified via `pytest`)
+  - CI/CD pipeline setup complete
+  - Note: Lines 38-39 mention future optimizations (sparse matrix, time-indexed lookup) - these are enhancements, not requirements
+- 🟡 **High Priority**: Core v1.1 features complete:
+  - Tasks & Evaluation system (100%)
+  - Inhibitory neurons and multiple neuron types (100%)
+  - Advanced plasticity: STDP and Weight Decay (100%)
+  - Documentation & Tutorials (100%)
+  
+**Future v1.2+ Features:**
+- Neuromodulation system, Homeostatic/Metaplasticity, Short-term plasticity
+- Enhanced Vision/Digital Processing, Motor Output
+- 3D/4D Visualization, Advanced Web Controls, Real-time Analytics
+- GPU Acceleration, Parallel Computing, Memory Optimization
+- Database Integration, Cloud Support, Advanced Data Export
 
 ## Legend
 
