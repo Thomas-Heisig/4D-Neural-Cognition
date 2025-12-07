@@ -21,10 +21,21 @@ class Neuron:
     external_input: float = 0.0
     last_spike_time: int = -1000
     params: dict = field(default_factory=dict)
+    neuron_type: str = "excitatory"  # "excitatory", "inhibitory", "regular_spiking", "fast_spiking", "bursting"
+    model_type: str = "lif"  # "lif" (Leaky Integrate-and-Fire) or "izhikevich"
+    u_recovery: float = 0.0  # Recovery variable for Izhikevich model
 
     def position(self) -> tuple:
         """Return the 4D position tuple."""
         return (self.x, self.y, self.z, self.w)
+    
+    def is_inhibitory(self) -> bool:
+        """Check if neuron is inhibitory."""
+        return self.neuron_type in ["inhibitory", "fast_spiking"]
+    
+    def is_excitatory(self) -> bool:
+        """Check if neuron is excitatory."""
+        return self.neuron_type in ["excitatory", "regular_spiking", "bursting"]
 
 
 @dataclass
@@ -36,6 +47,17 @@ class Synapse:
     weight: float = 0.1
     delay: int = 1
     plasticity_tag: float = 0.0
+    synapse_type: str = "excitatory"  # "excitatory" or "inhibitory"
+    
+    def is_inhibitory(self) -> bool:
+        """Check if synapse is inhibitory."""
+        return self.synapse_type == "inhibitory"
+    
+    def get_effective_weight(self) -> float:
+        """Get effective weight (negative for inhibitory synapses)."""
+        if self.is_inhibitory():
+            return -abs(self.weight)
+        return abs(self.weight)
 
 
 class BrainModel:
