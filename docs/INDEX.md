@@ -40,6 +40,12 @@ Our documentation is organized according to international standards (ISO/IEC/IEE
 ### 📖 Tutorials
 **[Tutorials](tutorials/)** - Step-by-step learning guides
 - **[Quick Start](tutorials/QUICK_START_EVALUATION.md)** - 5-minute start
+- **[Getting Started](tutorials/GETTING_STARTED.md)** - Complete beginner guide
+- **[Basic Simulation](tutorials/BASIC_SIMULATION.md)** - Running simulations
+- **[Sensory Input](tutorials/SENSORY_INPUT.md)** - Providing input to networks
+- **[Plasticity](tutorials/PLASTICITY.md)** - Learning and adaptation
+- **[Custom Neuron Models](tutorials/CUSTOM_NEURON_MODELS.md)** - Using LIF and Izhikevich models
+- **[Performance Optimization](tutorials/PERFORMANCE_OPTIMIZATION.md)** - Speed and efficiency guide
 - Working examples and demonstrations
 - Best practices and patterns
 
@@ -371,7 +377,8 @@ Planned documentation improvements:
 - [ ] Interactive Jupyter notebooks
 - [ ] API reference with type hints
 - [ ] Architecture diagrams (enhanced)
-- [ ] Performance tuning guide
+- [x] Performance tuning guide (Dec 2025)
+- [x] Custom neuron models guide (Dec 2025)
 - [ ] Advanced usage patterns
 - [ ] Research paper (planned)
 - [ ] Multi-language translations
