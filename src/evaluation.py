@@ -72,7 +72,7 @@ class BenchmarkResult:
 class BenchmarkSuite:
     """Suite of benchmark tasks for evaluating configurations."""
 
-    def __init__(self, name: str = "Default Suite", description: str = ""):
+    def __init__(self, name: str = "Default Suite", description: str = "") -> None:
         """Initialize benchmark suite.
 
         Args:
@@ -190,7 +190,7 @@ class BenchmarkSuite:
 class ConfigurationComparator:
     """Compare multiple configurations on the same tasks."""
 
-    def __init__(self, output_dir: Optional[Path] = None):
+    def __init__(self, output_dir: Optional[Path] = None) -> None:
         """Initialize comparator.
 
         Args:

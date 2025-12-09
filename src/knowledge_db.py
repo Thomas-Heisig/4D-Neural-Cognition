@@ -76,7 +76,7 @@ class KnowledgeEntry:
 class KnowledgeDatabase:
     """Database for storing and retrieving training knowledge."""
 
-    def __init__(self, db_path: str = "knowledge.db"):
+    def __init__(self, db_path: str = "knowledge.db") -> None:
         """Initialize knowledge database.
 
         Args:
@@ -308,7 +308,7 @@ class KnowledgeDatabase:
 class KnowledgeBasedTrainer:
     """Trainer that uses knowledge database for pre-training and continued learning."""
 
-    def __init__(self, simulation, knowledge_db: KnowledgeDatabase):
+    def __init__(self, simulation, knowledge_db: KnowledgeDatabase) -> None:
         """Initialize knowledge-based trainer.
 
         Args:
