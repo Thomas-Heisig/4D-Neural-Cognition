@@ -831,7 +831,8 @@ class MultiModalIntegrationTask(Task):
 
             # Feed both modalities
             feed_sense_input(simulation.model, "vision", observation["vision"])
-            feed_sense_input(simulation.model, "audio", observation["audio"])
+            # Use digital sense for audio (audio is already 2D)
+            feed_sense_input(simulation.model, "digital", observation["audio"])
 
             first_response_step = None
             predicted_class = None

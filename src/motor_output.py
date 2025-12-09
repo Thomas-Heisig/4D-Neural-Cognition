@@ -58,7 +58,7 @@ class MotorCortexArea:
         activations = []
         for neuron in neurons:
             # Use membrane potential as activation measure
-            activation = neuron.v if hasattr(neuron, 'v') else 0.0
+            activation = neuron.v_membrane if hasattr(neuron, 'v_membrane') else 0.0
             activations.append(activation)
 
         activations = np.array(activations)
