@@ -39,11 +39,25 @@ class NumpyExporter:
         neuron_ids = sorted(model.neurons.keys())
         n_neurons = len(neuron_ids)
         
-        positions = np.array([model.neurons[nid].position for nid in neuron_ids])
+        positions = np.array([model.neurons[nid].position() for nid in neuron_ids])
         v_membrane = np.array([model.neurons[nid].v_membrane for nid in neuron_ids])
         health = np.array([model.neurons[nid].health for nid in neuron_ids])
         age = np.array([model.neurons[nid].age for nid in neuron_ids])
-        areas = np.array([model.neurons[nid].area for nid in neuron_ids], dtype=object)
+        # Determine area for each neuron based on position
+        areas = []
+        for nid in neuron_ids:
+            neuron = model.neurons[nid]
+            area_name = "unknown"
+            for area_def in model.get_areas():
+                ranges = area_def["coord_ranges"]
+                if (ranges["x"][0] <= neuron.x < ranges["x"][1] and
+                    ranges["y"][0] <= neuron.y < ranges["y"][1] and
+                    ranges["z"][0] <= neuron.z < ranges["z"][1] and
+                    ranges["w"][0] <= neuron.w < ranges["w"][1]):
+                    area_name = area_def["name"]
+                    break
+            areas.append(area_name)
+        areas = np.array(areas, dtype=object)
         
         # Collect synapse data
         n_synapses = len(model.synapses)
@@ -67,7 +81,7 @@ class NumpyExporter:
             delays=delays,
             n_neurons=n_neurons,
             n_synapses=n_synapses,
-            lattice_size=model.lattice_size
+            lattice_shape=model.lattice_shape
         )
         
         print(f"Network structure exported to {output_path}")
@@ -147,11 +161,22 @@ class CSVExporter:
             # Write neuron data
             for nid in sorted(model.neurons.keys()):
                 neuron = model.neurons[nid]
+                # Determine area
+                area_name = "unknown"
+                for area_def in model.get_areas():
+                    ranges = area_def["coord_ranges"]
+                    if (ranges["x"][0] <= neuron.x < ranges["x"][1] and
+                        ranges["y"][0] <= neuron.y < ranges["y"][1] and
+                        ranges["z"][0] <= neuron.z < ranges["z"][1] and
+                        ranges["w"][0] <= neuron.w < ranges["w"][1]):
+                        area_name = area_def["name"]
+                        break
+                
+                pos = neuron.position()
                 writer.writerow([
                     nid,
-                    neuron.position[0], neuron.position[1],
-                    neuron.position[2], neuron.position[3],
-                    neuron.area,
+                    pos[0], pos[1], pos[2], pos[3],
+                    area_name,
                     neuron.v_membrane, neuron.health, neuron.age,
                     neuron.last_spike_time
                 ])
@@ -183,14 +208,30 @@ class CSVExporter:
                 post_neuron = model.neurons.get(synapse.post_id)
                 
                 if pre_neuron and post_neuron:
-                    distance = np.linalg.norm(
-                        np.array(pre_neuron.position) - np.array(post_neuron.position)
-                    )
+                    pre_pos = np.array(pre_neuron.position())
+                    post_pos = np.array(post_neuron.position())
+                    distance = np.linalg.norm(pre_pos - post_pos)
+                    
+                    # Determine areas
+                    pre_area = "unknown"
+                    post_area = "unknown"
+                    for area_def in model.get_areas():
+                        ranges = area_def["coord_ranges"]
+                        if (ranges["x"][0] <= pre_neuron.x < ranges["x"][1] and
+                            ranges["y"][0] <= pre_neuron.y < ranges["y"][1] and
+                            ranges["z"][0] <= pre_neuron.z < ranges["z"][1] and
+                            ranges["w"][0] <= pre_neuron.w < ranges["w"][1]):
+                            pre_area = area_def["name"]
+                        if (ranges["x"][0] <= post_neuron.x < ranges["x"][1] and
+                            ranges["y"][0] <= post_neuron.y < ranges["y"][1] and
+                            ranges["z"][0] <= post_neuron.z < ranges["z"][1] and
+                            ranges["w"][0] <= post_neuron.w < ranges["w"][1]):
+                            post_area = area_def["name"]
                     
                     writer.writerow([
                         synapse.pre_id, synapse.post_id,
                         synapse.weight, synapse.delay,
-                        pre_neuron.area, post_neuron.area,
+                        pre_area, post_area,
                         distance
                     ])
         
@@ -273,12 +314,23 @@ class CSVExporter:
                     mean_isi = 0
                     cv_isi = 0
                 
+                # Determine area
+                area_name = "unknown"
+                for area_def in model.get_areas():
+                    ranges = area_def["coord_ranges"]
+                    if (ranges["x"][0] <= neuron.x < ranges["x"][1] and
+                        ranges["y"][0] <= neuron.y < ranges["y"][1] and
+                        ranges["z"][0] <= neuron.z < ranges["z"][1] and
+                        ranges["w"][0] <= neuron.w < ranges["w"][1]):
+                        area_name = area_def["name"]
+                        break
+                
                 # Get connectivity
                 n_incoming = len(model.get_synapses_for_neuron(nid, 'post'))
                 n_outgoing = len(model.get_synapses_for_neuron(nid, 'pre'))
                 
                 writer.writerow([
-                    nid, neuron.area, len(spikes), firing_rate,
+                    nid, area_name, len(spikes), firing_rate,
                     mean_isi, cv_isi, n_incoming, n_outgoing
                 ])
         
@@ -314,13 +366,27 @@ class MATLABExporter:
         
         # Prepare neuron data
         neuron_ids = sorted(model.neurons.keys())
+        areas_list = []
+        for nid in neuron_ids:
+            neuron = model.neurons[nid]
+            area_name = "unknown"
+            for area_def in model.get_areas():
+                ranges = area_def["coord_ranges"]
+                if (ranges["x"][0] <= neuron.x < ranges["x"][1] and
+                    ranges["y"][0] <= neuron.y < ranges["y"][1] and
+                    ranges["z"][0] <= neuron.z < ranges["z"][1] and
+                    ranges["w"][0] <= neuron.w < ranges["w"][1]):
+                    area_name = area_def["name"]
+                    break
+            areas_list.append(area_name)
+        
         neurons_struct = {
             'ids': np.array(neuron_ids),
-            'positions': np.array([model.neurons[nid].position for nid in neuron_ids]),
+            'positions': np.array([model.neurons[nid].position() for nid in neuron_ids]),
             'v_membrane': np.array([model.neurons[nid].v_membrane for nid in neuron_ids]),
             'health': np.array([model.neurons[nid].health for nid in neuron_ids]),
             'age': np.array([model.neurons[nid].age for nid in neuron_ids]),
-            'areas': [model.neurons[nid].area for nid in neuron_ids],  # Cell array in MATLAB
+            'areas': areas_list,  # Cell array in MATLAB
         }
         
         # Prepare synapse data
@@ -359,7 +425,7 @@ class MATLABExporter:
                 'export_date': datetime.now().isoformat(),
                 'n_neurons': len(neuron_ids),
                 'n_synapses': len(model.synapses),
-                'lattice_size': model.lattice_size,
+                'lattice_shape': model.lattice_shape,
             }
         }
         
