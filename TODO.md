@@ -11,6 +11,15 @@ This document tracks planned features, improvements, and tasks for the project. 
 - Core High Priority features completed (see breakdown below)
 - 186 new tests added for 4 previously untested modules
 
+**🚀 NEW IMPLEMENTATIONS (December 9, 2025 - Session 3):**
+- ✅ 10 TODO items completed across 4 major categories
+- **Advanced Analysis**: Phase space plots, network motif detection
+- **Learning & Memory**: Long-term memory consolidation, replay mechanisms, sleep-like states
+- **Attention Mechanisms**: Top-down/bottom-up attention, winner-take-all circuits
+- **Type Hints**: Improved coverage in senses.py and learning_systems.py
+- New modules: longterm_memory.py (538 lines, 3 classes)
+- Enhanced modules: visualization.py (+188 lines), network_analysis.py (+289 lines), working_memory.py (+193 lines)
+
 **🚀 NEW TEST IMPLEMENTATIONS (December 9, 2025 - Session 1):**
 - ✅ 143 new tests added (408 → 551 tests)
 - ✅ Coverage increased from 48% to 63%
@@ -339,15 +348,15 @@ The following sections contain features planned for future releases (v1.2+):
   - [x] Attractor networks (Hopfield-style, pattern storage/recall)
   - [x] Memory gating mechanisms (buffer, content search, gating control)
 
-- [ ] **Long-term Memory**
-  - Memory consolidation
-  - Replay mechanisms
-  - Sleep-like states
+- [x] **Long-term Memory** (Dec 2025)
+  - [x] Memory consolidation (MemoryConsolidation class)
+  - [x] Replay mechanisms (MemoryReplay class with prioritized replay)
+  - [x] Sleep-like states (SleepLikeState class with offline learning)
 
-- [ ] **Attention Mechanisms**
-  - Top-down attention signals
-  - Bottom-up saliency
-  - Winner-take-all circuits
+- [x] **Attention Mechanisms** (Dec 2025)
+  - [x] Top-down attention signals (AttentionMechanism.apply_topdown_attention)
+  - [x] Bottom-up saliency (AttentionMechanism.compute_saliency)
+  - [x] Winner-take-all circuits (AttentionMechanism.winner_take_all)
 
 ### Features - Advanced Analysis
 
@@ -361,8 +370,14 @@ The following sections contain features planned for future releases (v1.2+):
   - [x] Raster plots - `plot_raster()` with time window and neuron filtering
   - [x] PSTHs (peri-stimulus time histograms) - `plot_psth()` with stimulus alignment
   - [x] Spike train correlation - `plot_spike_train_correlation()` for synchrony detection
-  - [ ] Phase space plots
-  - [ ] Network motif detection
+  - [x] Phase space plots - `plot_phase_space()` for 2D/3D dynamical system visualization (Dec 2025)
+  - [x] Network motif visualization - `plot_network_motifs()` for connectivity patterns (Dec 2025)
+
+- [x] **Network Motif Detection** (Dec 2025)
+  - [x] Triadic motif detection (NetworkMotifDetector class)
+  - [x] 6 motif types: feedforward, convergent, divergent, feedback, reciprocal, fully-connected
+  - [x] Statistical significance testing via randomization
+  - [x] Degree-preserving network randomization
 
 - [ ] **Model Comparison**
   - Compare different configurations
