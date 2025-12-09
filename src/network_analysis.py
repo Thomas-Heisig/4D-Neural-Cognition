@@ -847,3 +847,291 @@ class NetworkMotifDetector:
                 pass
         
         return randomized
+
+
+class InformationTheoryAnalyzer:
+    """Analyze information theoretic properties of neural networks."""
+    
+    def __init__(self, model: "BrainModel"):
+        """Initialize information theory analyzer.
+        
+        Args:
+            model: Brain model to analyze
+        """
+        self.model = model
+        self.spike_history: List[List[int]] = []
+    
+    def record_spikes(self, spikes: List[int]) -> None:
+        """Record spike events for later analysis.
+        
+        Args:
+            spikes: List of neuron IDs that spiked this timestep
+        """
+        self.spike_history.append(spikes)
+    
+    def calculate_entropy(self, neuron_id: int, time_window: int = 100) -> float:
+        """Calculate entropy of a neuron's firing pattern.
+        
+        Higher entropy indicates more random/unpredictable firing.
+        Lower entropy indicates more regular/predictable firing.
+        
+        Args:
+            neuron_id: ID of neuron to analyze
+            time_window: Number of recent timesteps to analyze
+        
+        Returns:
+            Shannon entropy in bits
+        """
+        if len(self.spike_history) < time_window:
+            time_window = len(self.spike_history)
+        
+        if time_window == 0:
+            return 0.0
+        
+        # Count spikes vs no-spikes
+        recent_history = self.spike_history[-time_window:]
+        spike_count = sum(1 for spikes in recent_history if neuron_id in spikes)
+        no_spike_count = time_window - spike_count
+        
+        # Calculate probabilities
+        p_spike = spike_count / time_window
+        p_no_spike = no_spike_count / time_window
+        
+        # Calculate entropy: H = -Σ p(x) log2(p(x))
+        entropy = 0.0
+        if p_spike > 0:
+            entropy -= p_spike * np.log2(p_spike)
+        if p_no_spike > 0:
+            entropy -= p_no_spike * np.log2(p_no_spike)
+        
+        return float(entropy)
+    
+    def calculate_mutual_information(
+        self, 
+        neuron_a: int, 
+        neuron_b: int,
+        time_window: int = 100,
+        bin_size: int = 1
+    ) -> float:
+        """Calculate mutual information between two neurons.
+        
+        Measures how much knowing one neuron's activity tells us about another.
+        High MI indicates strong statistical dependence (not necessarily causal).
+        
+        Args:
+            neuron_a: First neuron ID
+            neuron_b: Second neuron ID
+            time_window: Number of timesteps to analyze
+            bin_size: Bin size for discretizing spike times (default: 1ms)
+        
+        Returns:
+            Mutual information in bits
+        """
+        if len(self.spike_history) < time_window:
+            time_window = len(self.spike_history)
+        
+        if time_window == 0:
+            return 0.0
+        
+        recent_history = self.spike_history[-time_window:]
+        
+        # Count joint and marginal occurrences
+        count_00 = 0  # Neither fires
+        count_01 = 0  # Only B fires
+        count_10 = 0  # Only A fires
+        count_11 = 0  # Both fire
+        
+        for spikes in recent_history:
+            a_fires = neuron_a in spikes
+            b_fires = neuron_b in spikes
+            
+            if a_fires and b_fires:
+                count_11 += 1
+            elif a_fires:
+                count_10 += 1
+            elif b_fires:
+                count_01 += 1
+            else:
+                count_00 += 1
+        
+        # Calculate probabilities
+        total = time_window
+        p_00 = count_00 / total
+        p_01 = count_01 / total
+        p_10 = count_10 / total
+        p_11 = count_11 / total
+        
+        # Marginal probabilities
+        p_a0 = p_00 + p_01  # A doesn't fire
+        p_a1 = p_10 + p_11  # A fires
+        p_b0 = p_00 + p_10  # B doesn't fire
+        p_b1 = p_01 + p_11  # B fires
+        
+        # Calculate mutual information: I(A;B) = Σ p(a,b) log2(p(a,b) / (p(a)p(b)))
+        mi = 0.0
+        
+        if p_00 > 0 and p_a0 > 0 and p_b0 > 0:
+            mi += p_00 * np.log2(p_00 / (p_a0 * p_b0))
+        if p_01 > 0 and p_a0 > 0 and p_b1 > 0:
+            mi += p_01 * np.log2(p_01 / (p_a0 * p_b1))
+        if p_10 > 0 and p_a1 > 0 and p_b0 > 0:
+            mi += p_10 * np.log2(p_10 / (p_a1 * p_b0))
+        if p_11 > 0 and p_a1 > 0 and p_b1 > 0:
+            mi += p_11 * np.log2(p_11 / (p_a1 * p_b1))
+        
+        return float(mi)
+    
+    def calculate_transfer_entropy(
+        self,
+        source_neuron: int,
+        target_neuron: int,
+        time_window: int = 100,
+        delay: int = 1
+    ) -> float:
+        """Calculate transfer entropy from source to target neuron.
+        
+        Measures directed information flow: how much source's past
+        helps predict target's future, beyond target's own history.
+        
+        Args:
+            source_neuron: Source neuron ID
+            target_neuron: Target neuron ID
+            time_window: Number of timesteps to analyze
+            delay: Time delay to consider (in timesteps)
+        
+        Returns:
+            Transfer entropy in bits (directional)
+        """
+        if len(self.spike_history) < time_window + delay:
+            return 0.0
+        
+        # Extract histories
+        recent_history = self.spike_history[-(time_window + delay):]
+        
+        # Count state transitions
+        counts = defaultdict(int)
+        
+        for t in range(len(recent_history) - delay):
+            # Current states
+            target_past = 1 if target_neuron in recent_history[t] else 0
+            source_past = 1 if source_neuron in recent_history[t] else 0
+            
+            # Future state (after delay)
+            target_future = 1 if target_neuron in recent_history[t + delay] else 0
+            
+            # Count (target_future, target_past, source_past) combinations
+            state = (target_future, target_past, source_past)
+            counts[state] += 1
+        
+        # Calculate probabilities
+        total = sum(counts.values())
+        if total == 0:
+            return 0.0
+        
+        probs = {state: count / total for state, count in counts.items()}
+        
+        # Calculate marginal probabilities
+        p_tf_tp = defaultdict(float)  # P(target_future, target_past)
+        p_tf_tp_sp = defaultdict(float)  # P(target_future, target_past, source_past)
+        p_tp = defaultdict(float)  # P(target_past)
+        p_tp_sp = defaultdict(float)  # P(target_past, source_past)
+        
+        for (tf, tp, sp), prob in probs.items():
+            p_tf_tp[(tf, tp)] += prob
+            p_tf_tp_sp[(tf, tp, sp)] = prob
+            p_tp[tp] += prob
+            p_tp_sp[(tp, sp)] += prob
+        
+        # Calculate transfer entropy
+        te = 0.0
+        for (tf, tp, sp), p_full in p_tf_tp_sp.items():
+            if p_full > 0:
+                p_cond = p_tf_tp.get((tf, tp), 0)
+                p_tp_val = p_tp.get(tp, 0)
+                p_tp_sp_val = p_tp_sp.get((tp, sp), 0)
+                
+                if p_cond > 0 and p_tp_val > 0 and p_tp_sp_val > 0:
+                    te += p_full * np.log2((p_full * p_tp_val) / (p_cond * p_tp_sp_val))
+        
+        return float(te)
+    
+    def calculate_population_entropy(self, time_window: int = 100) -> float:
+        """Calculate entropy of population activity patterns.
+        
+        Measures diversity of population states over time.
+        
+        Args:
+            time_window: Number of timesteps to analyze
+        
+        Returns:
+            Population entropy in bits
+        """
+        if len(self.spike_history) < time_window:
+            time_window = len(self.spike_history)
+        
+        if time_window == 0:
+            return 0.0
+        
+        recent_history = self.spike_history[-time_window:]
+        
+        # Convert each timestep's spike pattern to a hashable state
+        # (using frozenset for order-independent comparison)
+        state_counts = defaultdict(int)
+        for spikes in recent_history:
+            state = frozenset(spikes)
+            state_counts[state] += 1
+        
+        # Calculate probabilities
+        probs = [count / time_window for count in state_counts.values()]
+        
+        # Calculate entropy
+        entropy = -sum(p * np.log2(p) for p in probs if p > 0)
+        
+        return float(entropy)
+    
+    def get_analysis_summary(self, time_window: int = 100) -> Dict[str, Any]:
+        """Get comprehensive information theory analysis summary.
+        
+        Args:
+            time_window: Number of timesteps to analyze
+        
+        Returns:
+            Dictionary with various information theoretic measures
+        """
+        neuron_ids = list(self.model.neurons.keys())
+        
+        # Sample neurons for pairwise analysis (avoid O(n²) for large networks)
+        sample_size = min(10, len(neuron_ids))
+        sample_neurons = np.random.choice(neuron_ids, size=sample_size, replace=False)
+        
+        # Calculate individual neuron entropies
+        entropies = {}
+        for nid in sample_neurons:
+            entropies[nid] = self.calculate_entropy(nid, time_window)
+        
+        # Calculate pairwise mutual information
+        mutual_info = []
+        for i, nid_a in enumerate(sample_neurons):
+            for nid_b in sample_neurons[i+1:]:
+                mi = self.calculate_mutual_information(nid_a, nid_b, time_window)
+                mutual_info.append(mi)
+        
+        # Population measures
+        pop_entropy = self.calculate_population_entropy(time_window)
+        
+        return {
+            'neuron_entropies': {
+                'mean': float(np.mean(list(entropies.values()))) if entropies else 0.0,
+                'std': float(np.std(list(entropies.values()))) if entropies else 0.0,
+                'min': float(np.min(list(entropies.values()))) if entropies else 0.0,
+                'max': float(np.max(list(entropies.values()))) if entropies else 0.0,
+            },
+            'mutual_information': {
+                'mean': float(np.mean(mutual_info)) if mutual_info else 0.0,
+                'std': float(np.std(mutual_info)) if mutual_info else 0.0,
+                'max': float(np.max(mutual_info)) if mutual_info else 0.0,
+            },
+            'population_entropy': pop_entropy,
+            'sample_size': sample_size,
+            'time_window': time_window
+        }
