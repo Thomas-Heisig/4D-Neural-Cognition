@@ -32,7 +32,9 @@ def main():
     
     # 1. Create brain model
     print("\n1. Creating brain model...")
-    model = BrainModel(config_path="../brain_base_model.json")
+    # Use robust path resolution
+    config_path = os.path.join(os.path.dirname(__file__), "..", "brain_base_model.json")
+    model = BrainModel(config_path=config_path)
     sim = Simulation(model, seed=42)
     
     # Initialize neurons in specific areas

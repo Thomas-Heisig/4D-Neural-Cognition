@@ -778,7 +778,7 @@ def plot_network_motifs(
     
     # Calculate z-scores (assuming random network as null model)
     # For a random network, expected frequency is approximately uniform
-    if motif_counts and len(motif_counts) > 0:
+    if motif_counts:
         expected_freq = 100.0 / len(motif_counts)
         z_scores = [(freq - expected_freq) / np.sqrt(expected_freq) if expected_freq > 0 else 0
                     for freq in frequencies]
