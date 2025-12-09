@@ -104,6 +104,7 @@ class Task(ABC):
             seed: Random seed for reproducibility.
         """
         self.seed = seed
+        self.rng = np.random.default_rng(seed)
         self.env: Optional[Environment] = None
 
     @abstractmethod

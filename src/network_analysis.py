@@ -191,8 +191,8 @@ class ConnectivityAnalyzer:
         # Compute modularity
         modularity = 0.0
         for synapse in self.model.synapses:
-            pre_id = synapse.pre_neuron_id
-            post_id = synapse.post_neuron_id
+            pre_id = synapse.pre_id
+            post_id = synapse.post_id
 
             if pre_id in communities and post_id in communities:
                 # Delta function: 1 if same community, 0 otherwise
