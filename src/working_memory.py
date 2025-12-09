@@ -419,8 +419,9 @@ class WorkingMemoryBuffer:
                 raise ValueError(f"Invalid slot index {slot_index}")
 
         # Find empty slot or replace oldest
-        if None in self.slots:
-            slot_index = self.slots.index(None)
+        empty_slots = [i for i, slot in enumerate(self.slots) if slot is None]
+        if empty_slots:
+            slot_index = empty_slots[0]
         else:
             slot_index = int(np.argmax(self.slot_ages))
 
