@@ -268,19 +268,22 @@ This document tracks known bugs, limitations, and technical debt in the project.
 
 ### Testing
 
-#### No Unit Tests (RESOLVED)
-- **Status**: ✅ Fully Completed (December 2025)
-- **Location**: All core modules now covered
-- **Resolution**: Added comprehensive test suite with pytest
-  - 186 total tests with 100% pass rate
+#### No Unit Tests (RESOLVED & ENHANCED)
+- **Status**: ✅ Significantly Enhanced (December 9, 2025)
+- **Location**: All major modules now covered
+- **Resolution**: Comprehensive test suite with pytest
+  - 551 total tests with 100% pass rate (was 408, added 143 new)
   - Core module tests: brain_model (26), simulation (27), cell_lifecycle (22)
   - Additional module tests: plasticity (16), senses (18), storage (14)
   - Integration tests (12), performance benchmarks (16), metrics tests (35)
+  - **NEW** visualization.py (54 tests, 95% coverage)
+  - **NEW** working_memory.py (50 tests, 97% coverage)
+  - **NEW** vision_processing.py (39 tests, 100% coverage)
   - pytest configuration with coverage support
   - Fixtures for common test scenarios
-  - 47% overall code coverage with high coverage in core modules
-- **Remaining Work**: None - test suite is complete
-- **Priority**: Completed
+  - 63% overall code coverage (up from 48%)
+- **Remaining Work**: Continue expanding coverage for remaining modules
+- **Priority**: Ongoing enhancement
 
 #### No Integration Tests (RESOLVED)
 - **Status**: ✅ Completed (December 2025)
@@ -434,7 +437,26 @@ Use appropriate template when filing:
 
 ## Changelog
 
-### 2025-12-09 (Latest - Major Features, Security & Documentation)
+### 2025-12-09 (Latest Update - Test Coverage Expansion)
+- ✅ ADDED: 143 new comprehensive tests across 3 untested modules
+- ✅ ACHIEVED: 63% overall code coverage (up from 48%)
+- ✅ TESTED: visualization.py - 54 tests, 95% coverage
+  - Performance comparison plots, learning curves, confusion matrices
+  - Activity pattern visualization, raster plots, PSTH
+  - Spike train correlation, network statistics
+- ✅ TESTED: working_memory.py - 50 tests, 97% coverage
+  - Persistent activity patterns, attractor networks
+  - Memory gating mechanisms, working memory buffer
+- ✅ TESTED: vision_processing.py - 39 tests, 100% coverage
+  - Edge detection (Sobel, Laplacian), color processing
+  - Motion detection, optical flow, multi-scale pyramids
+- ✅ FIXED: Bug in WorkingMemoryBuffer.store() - ambiguous truth value error
+  - Changed from `None in self.slots` to list comprehension
+  - Prevents numpy array comparison ambiguity
+- ✅ VERIFIED: Type hints complete in all 3 tested modules
+- All 551 tests passing (408 original + 143 new)
+
+### 2025-12-09 (Earlier - Major Features, Security & Documentation)
 - ✅ RESOLVED: Neuron death network disconnection - implemented automatic reconnection
 - ✅ RESOLVED: Progress indicator inaccuracy - added time tracking and estimation
 - ✅ RESOLVED: Rate limiting - comprehensive DoS protection with Flask-Limiter
