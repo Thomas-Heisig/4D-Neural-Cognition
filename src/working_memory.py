@@ -9,6 +9,10 @@ This module provides:
 import numpy as np
 from typing import Dict, List, Optional, Tuple, Any, TYPE_CHECKING
 
+# Constants for numerical stability and default parameters
+EPSILON = 1e-8  # Small value to prevent division by zero
+WINNER_SUPPRESSION_FACTOR = 0.1  # Suppression factor for non-winner neurons in WTA
+
 if TYPE_CHECKING:
     try:
         from .brain_model import BrainModel
@@ -517,7 +521,7 @@ class WorkingMemoryBuffer:
                 # Compute cosine similarity
                 dot_product = np.dot(query, slot)
                 norm_product = np.linalg.norm(query) * np.linalg.norm(slot)
-                similarity = dot_product / (norm_product + 1e-8)
+                similarity = dot_product / (norm_product + EPSILON)
                 similarities.append((i, float(similarity)))
 
         # Sort by similarity
@@ -670,7 +674,7 @@ class AttentionMechanism:
         for neuron_id, neuron in area_neurons:
             # Saliency based on deviation from mean (center-surround)
             deviation = abs(neuron.membrane_potential - mean_activity)
-            saliency_score = deviation / (std_activity + 1e-8)
+            saliency_score = deviation / (std_activity + EPSILON)
             
             # Add temporal change component if requested
             if use_temporal_change and hasattr(neuron, 'previous_potential'):
@@ -752,7 +756,7 @@ class AttentionMechanism:
         # Suppress non-winners
         for neuron_id, _ in area_neurons[top_k:]:
             if neuron_id in self.model.neurons:
-                self.model.neurons[neuron_id].external_input *= 0.1
+                self.model.neurons[neuron_id].external_input *= WINNER_SUPPRESSION_FACTOR
         
         return winners
     

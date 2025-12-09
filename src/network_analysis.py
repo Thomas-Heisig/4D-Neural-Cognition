@@ -7,6 +7,7 @@ This module provides tools for:
 """
 
 import numpy as np
+import random
 from typing import Dict, List, Tuple, Set, Optional, Any, TYPE_CHECKING
 from collections import defaultdict, deque
 
@@ -639,7 +640,6 @@ class NetworkMotifDetector:
         all_triads = list(combinations(neuron_ids, 3))
         
         if sample_size and sample_size < len(all_triads):
-            import random
             triads_to_analyze = random.sample(all_triads, sample_size)
         else:
             triads_to_analyze = all_triads

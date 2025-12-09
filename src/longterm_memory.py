@@ -142,7 +142,7 @@ class MemoryConsolidation:
             
             try:
                 self.model.add_synapse(st_id, lt_id, weight=abs(weight))
-            except:
+            except (ValueError, KeyError):
                 # Synapse might already exist, try to strengthen it
                 for synapse in self.model.synapses:
                     if synapse.pre_id == st_id and synapse.post_id == lt_id:
