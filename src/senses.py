@@ -1,7 +1,7 @@
 """Sense input processing and brain area mapping."""
 
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -163,7 +163,7 @@ def get_area_input_neurons(
     model: "BrainModel",
     sense_name: str,
     z_layer: int = 0,
-) -> list:
+) -> list[Any]:
     """Get the neurons in the input layer of a sensory area.
 
     Args:

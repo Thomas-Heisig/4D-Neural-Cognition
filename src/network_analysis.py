@@ -7,6 +7,7 @@ This module provides tools for:
 """
 
 import numpy as np
+import random
 from typing import Dict, List, Tuple, Set, Optional, Any, TYPE_CHECKING
 from collections import defaultdict, deque
 
@@ -559,3 +560,290 @@ class PopulationDynamicsAnalyzer:
     def reset(self) -> None:
         """Clear activity history."""
         self.activity_history.clear()
+
+
+class NetworkMotifDetector:
+    """Detector for recurring connectivity patterns (network motifs).
+    
+    Network motifs are patterns of interconnections that recur significantly more
+    often than in randomized networks. They are considered the building blocks of
+    complex networks and can reveal functional circuit properties.
+    
+    This implementation focuses on 3-node motifs (triads) which are the smallest
+    non-trivial motifs and computationally tractable.
+    
+    Attributes:
+        model: The brain model to analyze
+        motif_counts: Dictionary storing counts of each motif type
+        
+    Example:
+        >>> detector = NetworkMotifDetector(model)
+        >>> motifs = detector.detect_triadic_motifs()
+        >>> print(f"Found {motifs['feedforward_chain']} feedforward chains")
+    """
+    
+    def __init__(self, model: "BrainModel"):
+        """Initialize network motif detector.
+        
+        Args:
+            model: The brain model to analyze
+        """
+        self.model = model
+        self.motif_counts: Dict[str, int] = {}
+    
+    def detect_triadic_motifs(self, sample_size: Optional[int] = None) -> Dict[str, int]:
+        """Detect 3-node motifs in the network.
+        
+        Analyzes all or a sample of 3-node subgraphs (triads) to identify
+        recurring connectivity patterns. Returns counts of each motif type.
+        
+        Motif types detected:
+        - feedforward_chain: A→B→C (no feedback)
+        - convergent: A→C, B→C (two inputs converge)
+        - divergent: A→B, A→C (one input diverges)
+        - feedback_loop: A→B→C→A (3-node cycle)
+        - reciprocal_pair: A↔B→C (one reciprocal connection)
+        - fully_connected: All 6 possible connections present
+        
+        Args:
+            sample_size: Optional number of triads to sample (for large networks).
+                        If None, analyzes all possible triads.
+        
+        Returns:
+            Dictionary mapping motif type names to their counts
+            
+        Note:
+            For networks with N neurons, there are N*(N-1)*(N-2)/6 possible triads.
+            Sampling is recommended for networks with >1000 neurons.
+        """
+        self.motif_counts = {
+            "feedforward_chain": 0,
+            "convergent": 0,
+            "divergent": 0,
+            "feedback_loop": 0,
+            "reciprocal_pair": 0,
+            "fully_connected": 0,
+            "empty": 0,  # No connections
+            "other": 0,  # Other patterns
+        }
+        
+        neuron_ids = list(self.model.neurons.keys())
+        
+        if len(neuron_ids) < 3:
+            return self.motif_counts
+        
+        # Build adjacency information for fast lookup
+        adjacency = self._build_adjacency_dict()
+        
+        # Generate all possible triads or sample
+        from itertools import combinations
+        all_triads = list(combinations(neuron_ids, 3))
+        
+        if sample_size and sample_size < len(all_triads):
+            triads_to_analyze = random.sample(all_triads, sample_size)
+        else:
+            triads_to_analyze = all_triads
+        
+        # Analyze each triad
+        for n1, n2, n3 in triads_to_analyze:
+            motif_type = self._classify_triad_motif(n1, n2, n3, adjacency)
+            self.motif_counts[motif_type] += 1
+        
+        return self.motif_counts.copy()
+    
+    def _build_adjacency_dict(self) -> Dict[Tuple[int, int], bool]:
+        """Build adjacency dictionary for fast connection lookup.
+        
+        Returns:
+            Dictionary mapping (pre_id, post_id) tuples to True
+        """
+        adjacency = {}
+        for synapse in self.model.synapses:
+            adjacency[(synapse.pre_id, synapse.post_id)] = True
+        return adjacency
+    
+    def _classify_triad_motif(
+        self,
+        n1: int,
+        n2: int,
+        n3: int,
+        adjacency: Dict[Tuple[int, int], bool]
+    ) -> str:
+        """Classify the connectivity pattern of a 3-node subgraph.
+        
+        Args:
+            n1, n2, n3: The three neuron IDs
+            adjacency: Adjacency dictionary for fast lookup
+            
+        Returns:
+            String identifier for the motif type
+        """
+        # Check all 6 possible directed connections
+        edges = {
+            (n1, n2): (n1, n2) in adjacency,
+            (n2, n1): (n2, n1) in adjacency,
+            (n1, n3): (n1, n3) in adjacency,
+            (n3, n1): (n3, n1) in adjacency,
+            (n2, n3): (n2, n3) in adjacency,
+            (n3, n2): (n3, n2) in adjacency,
+        }
+        
+        edge_count = sum(edges.values())
+        
+        # No connections
+        if edge_count == 0:
+            return "empty"
+        
+        # Fully connected (all 6 edges)
+        if edge_count == 6:
+            return "fully_connected"
+        
+        # Check for feedback loop (3-cycle)
+        if (edges[(n1, n2)] and edges[(n2, n3)] and edges[(n3, n1)]) or \
+           (edges[(n1, n3)] and edges[(n3, n2)] and edges[(n2, n1)]):
+            return "feedback_loop"
+        
+        # Check for reciprocal connections
+        reciprocal_count = sum([
+            edges[(n1, n2)] and edges[(n2, n1)],
+            edges[(n1, n3)] and edges[(n3, n1)],
+            edges[(n2, n3)] and edges[(n3, n2)],
+        ])
+        
+        if reciprocal_count > 0:
+            return "reciprocal_pair"
+        
+        # Check for feedforward chain (A→B→C with no feedback)
+        chains = [
+            (edges[(n1, n2)] and edges[(n2, n3)] and not any([
+                edges[(n2, n1)], edges[(n3, n2)], edges[(n3, n1)], edges[(n1, n3)]
+            ])),
+            (edges[(n1, n3)] and edges[(n3, n2)] and not any([
+                edges[(n3, n1)], edges[(n2, n3)], edges[(n2, n1)], edges[(n1, n2)]
+            ])),
+            (edges[(n2, n1)] and edges[(n1, n3)] and not any([
+                edges[(n1, n2)], edges[(n3, n1)], edges[(n3, n2)], edges[(n2, n3)]
+            ])),
+            (edges[(n2, n3)] and edges[(n3, n1)] and not any([
+                edges[(n3, n2)], edges[(n1, n3)], edges[(n1, n2)], edges[(n2, n1)]
+            ])),
+            (edges[(n3, n1)] and edges[(n1, n2)] and not any([
+                edges[(n1, n3)], edges[(n2, n1)], edges[(n2, n3)], edges[(n3, n2)]
+            ])),
+            (edges[(n3, n2)] and edges[(n2, n1)] and not any([
+                edges[(n2, n3)], edges[(n1, n2)], edges[(n1, n3)], edges[(n3, n1)]
+            ])),
+        ]
+        
+        if any(chains):
+            return "feedforward_chain"
+        
+        # Check for convergent (two neurons connect to one target)
+        if (edges[(n1, n3)] and edges[(n2, n3)]) or \
+           (edges[(n1, n2)] and edges[(n3, n2)]) or \
+           (edges[(n2, n1)] and edges[(n3, n1)]):
+            return "convergent"
+        
+        # Check for divergent (one neuron connects to two targets)
+        if (edges[(n1, n2)] and edges[(n1, n3)]) or \
+           (edges[(n2, n1)] and edges[(n2, n3)]) or \
+           (edges[(n3, n1)] and edges[(n3, n2)]):
+            return "divergent"
+        
+        # Any other pattern
+        return "other"
+    
+    def compute_motif_significance(
+        self,
+        n_randomizations: int = 100,
+        seed: Optional[int] = None
+    ) -> Dict[str, float]:
+        """Compute statistical significance of motif counts via randomization.
+        
+        Compares observed motif counts to those in randomized networks with
+        the same degree distribution. Returns z-scores for each motif type.
+        
+        Args:
+            n_randomizations: Number of random networks to generate
+            seed: Random seed for reproducibility
+            
+        Returns:
+            Dictionary mapping motif types to z-scores
+            
+        Note:
+            Z-score > 2 indicates motif appears significantly more than expected.
+            Z-score < -2 indicates motif appears significantly less than expected.
+        """
+        if seed is not None:
+            np.random.seed(seed)
+        
+        # Get observed motif counts
+        observed = self.detect_triadic_motifs()
+        
+        # Store motif counts from randomized networks
+        randomized_counts = {motif: [] for motif in observed.keys()}
+        
+        # Create randomized networks and count motifs
+        for _ in range(n_randomizations):
+            # Randomize by rewiring edges while preserving degree distribution
+            randomized_model = self._create_degree_preserving_randomization()
+            
+            # Detect motifs in randomized network
+            temp_detector = NetworkMotifDetector(randomized_model)
+            random_motifs = temp_detector.detect_triadic_motifs()
+            
+            for motif, count in random_motifs.items():
+                randomized_counts[motif].append(count)
+        
+        # Compute z-scores
+        z_scores = {}
+        for motif, obs_count in observed.items():
+            random_counts = randomized_counts[motif]
+            mean = np.mean(random_counts)
+            std = np.std(random_counts)
+            
+            if std > 0:
+                z_scores[motif] = (obs_count - mean) / std
+            else:
+                z_scores[motif] = 0.0
+        
+        return z_scores
+    
+    def _create_degree_preserving_randomization(self) -> "BrainModel":
+        """Create randomized network preserving degree distribution.
+        
+        Uses edge rewiring to create random network with same in/out degrees.
+        
+        Returns:
+            Randomized brain model
+        """
+        # This is a simplified implementation
+        # A full implementation would use the configuration model or edge-swapping
+        
+        # For now, create a simple random network with same number of edges
+        import copy
+        randomized = copy.deepcopy(self.model)
+        
+        # Clear synapses
+        randomized.synapses.clear()
+        
+        # Recreate same number of random synapses
+        neuron_ids = list(randomized.neurons.keys())
+        n_synapses = len(self.model.synapses)
+        
+        for _ in range(n_synapses):
+            pre_id = np.random.choice(neuron_ids)
+            post_id = np.random.choice(neuron_ids)
+            
+            # Avoid self-connections
+            while pre_id == post_id:
+                post_id = np.random.choice(neuron_ids)
+            
+            # Add synapse (if not duplicate)
+            try:
+                randomized.add_synapse(pre_id, post_id, weight=0.1)
+            except (ValueError, KeyError):
+                # Ignore duplicates or invalid neuron IDs
+                pass
+        
+        return randomized

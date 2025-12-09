@@ -81,11 +81,11 @@ class LearningSystem(ABC):
         """Get description of this learning system."""
         pass
     
-    def activate(self):
+    def activate(self) -> None:
         """Activate this learning system."""
         self.is_active = True
         
-    def deactivate(self):
+    def deactivate(self) -> None:
         """Deactivate this learning system."""
         self.is_active = False
         
@@ -445,18 +445,18 @@ class LearningSystemManager:
         self.systems: Dict[str, LearningSystem] = {}
         self.active_systems: List[str] = []
         
-    def register_system(self, system: LearningSystem):
+    def register_system(self, system: LearningSystem) -> None:
         """Register a new learning system."""
         self.systems[system.name] = system
         
-    def activate_system(self, system_name: str):
+    def activate_system(self, system_name: str) -> None:
         """Activate a learning system."""
         if system_name in self.systems:
             self.systems[system_name].activate()
             if system_name not in self.active_systems:
                 self.active_systems.append(system_name)
                 
-    def deactivate_system(self, system_name: str):
+    def deactivate_system(self, system_name: str) -> None:
         """Deactivate a learning system."""
         if system_name in self.systems:
             self.systems[system_name].deactivate()

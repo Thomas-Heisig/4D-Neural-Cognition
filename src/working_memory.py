@@ -9,6 +9,10 @@ This module provides:
 import numpy as np
 from typing import Dict, List, Optional, Tuple, Any, TYPE_CHECKING
 
+# Constants for numerical stability and default parameters
+EPSILON = 1e-8  # Small value to prevent division by zero
+WINNER_SUPPRESSION_FACTOR = 0.1  # Suppression factor for non-winner neurons in WTA
+
 if TYPE_CHECKING:
     try:
         from .brain_model import BrainModel
@@ -517,10 +521,247 @@ class WorkingMemoryBuffer:
                 # Compute cosine similarity
                 dot_product = np.dot(query, slot)
                 norm_product = np.linalg.norm(query) * np.linalg.norm(slot)
-                similarity = dot_product / (norm_product + 1e-8)
+                similarity = dot_product / (norm_product + EPSILON)
                 similarities.append((i, float(similarity)))
 
         # Sort by similarity
         similarities.sort(key=lambda x: x[1], reverse=True)
 
         return similarities[:top_k]
+
+
+class AttentionMechanism:
+    """Implements attention mechanisms for selective processing.
+    
+    Provides both top-down (goal-directed) and bottom-up (stimulus-driven)
+    attention control. Attention modulates neural activity to prioritize
+    relevant information while suppressing irrelevant inputs.
+    
+    Attributes:
+        model: The brain model
+        attention_weights: Current attention weights for each neuron
+        saliency_map: Bottom-up saliency scores
+        
+    Example:
+        >>> attention = AttentionMechanism(model)
+        >>> # Apply top-down attention to prefrontal area
+        >>> attention.apply_topdown_attention("prefrontal_cortex", strength=1.5)
+        >>> # Compute bottom-up saliency from visual input
+        >>> saliency = attention.compute_saliency("vision_area")
+    """
+    
+    def __init__(
+        self,
+        model: "BrainModel",
+        default_attention: float = 1.0,
+    ):
+        """Initialize attention mechanism.
+        
+        Args:
+            model: Brain model to apply attention to
+            default_attention: Default attention weight (1.0 = no modulation)
+        """
+        self.model = model
+        self.default_attention = default_attention
+        self.attention_weights: Dict[int, float] = {}
+        self.saliency_map: Dict[int, float] = {}
+        
+        # Initialize all neurons with default attention
+        for neuron_id in self.model.neurons.keys():
+            self.attention_weights[neuron_id] = default_attention
+    
+    def apply_topdown_attention(
+        self,
+        target_area: str,
+        strength: float = 1.5,
+        decay_rate: float = 0.1,
+    ) -> None:
+        """Apply top-down attention to a brain area.
+        
+        Top-down attention represents goal-directed focus on a particular
+        brain area or set of neurons. This enhances processing in the
+        attended region while potentially suppressing unattended regions.
+        
+        Args:
+            target_area: Name of brain area to attend to
+            strength: Attention strength multiplier (>1 enhances, <1 suppresses)
+            decay_rate: Rate at which attention decays over time
+            
+        Example:
+            >>> # Focus attention on visual area for visual search task
+            >>> attention.apply_topdown_attention("vision_area", strength=2.0)
+        """
+        areas = self.model.get_areas()
+        target = next((a for a in areas if a["name"] == target_area), None)
+        
+        if target is None:
+            return
+        
+        # Get neurons in target area
+        ranges = target["coord_ranges"]
+        
+        for neuron_id, neuron in self.model.neurons.items():
+            # Check if neuron is in target area
+            in_area = (
+                ranges["x"][0] <= neuron.x <= ranges["x"][1] and
+                ranges["y"][0] <= neuron.y <= ranges["y"][1] and
+                ranges["z"][0] <= neuron.z <= ranges["z"][1] and
+                ranges["w"][0] <= neuron.w <= ranges["w"][1]
+            )
+            
+            if in_area:
+                # Enhance attention in target area
+                self.attention_weights[neuron_id] = strength
+            else:
+                # Decay attention in non-target areas
+                current = self.attention_weights.get(neuron_id, self.default_attention)
+                self.attention_weights[neuron_id] = current * (1 - decay_rate)
+    
+    def compute_saliency(
+        self,
+        sensory_area: str,
+        use_temporal_change: bool = True,
+    ) -> Dict[int, float]:
+        """Compute bottom-up saliency map from sensory input.
+        
+        Bottom-up attention is driven by stimulus properties. Salient features
+        (e.g., high contrast, rapid change, unique features) automatically
+        capture attention.
+        
+        Args:
+            sensory_area: Name of sensory area to compute saliency for
+            use_temporal_change: Whether to include temporal change in saliency
+            
+        Returns:
+            Dictionary mapping neuron IDs to saliency scores
+            
+        Example:
+            >>> # Compute visual saliency from current neural activity
+            >>> saliency = attention.compute_saliency("vision_area")
+            >>> # Most salient neuron
+            >>> max_salient = max(saliency.items(), key=lambda x: x[1])
+        """
+        areas = self.model.get_areas()
+        area = next((a for a in areas if a["name"] == sensory_area), None)
+        
+        if area is None:
+            return {}
+        
+        ranges = area["coord_ranges"]
+        saliency = {}
+        
+        # Get neurons in sensory area
+        area_neurons = []
+        for neuron_id, neuron in self.model.neurons.items():
+            in_area = (
+                ranges["x"][0] <= neuron.x <= ranges["x"][1] and
+                ranges["y"][0] <= neuron.y <= ranges["y"][1] and
+                ranges["z"][0] <= neuron.z <= ranges["z"][1] and
+                ranges["w"][0] <= neuron.w <= ranges["w"][1]
+            )
+            if in_area:
+                area_neurons.append((neuron_id, neuron))
+        
+        if not area_neurons:
+            return {}
+        
+        # Compute activity statistics
+        activities = np.array([n.membrane_potential for _, n in area_neurons])
+        mean_activity = np.mean(activities)
+        std_activity = np.std(activities)
+        
+        # Compute saliency for each neuron
+        for neuron_id, neuron in area_neurons:
+            # Saliency based on deviation from mean (center-surround)
+            deviation = abs(neuron.membrane_potential - mean_activity)
+            saliency_score = deviation / (std_activity + EPSILON)
+            
+            # Add temporal change component if requested
+            if use_temporal_change and hasattr(neuron, 'previous_potential'):
+                temporal_change = abs(
+                    neuron.membrane_potential - neuron.previous_potential
+                )
+                saliency_score += temporal_change * 0.5
+            
+            saliency[neuron_id] = float(saliency_score)
+        
+        self.saliency_map = saliency
+        return saliency
+    
+    def apply_attention_modulation(self) -> None:
+        """Apply attention weights to modulate neural processing.
+        
+        Multiplies external input to each neuron by its attention weight.
+        This enhances processing of attended stimuli and suppresses
+        unattended stimuli.
+        
+        Should be called each simulation step after sensory input is provided.
+        """
+        for neuron_id, weight in self.attention_weights.items():
+            if neuron_id in self.model.neurons:
+                neuron = self.model.neurons[neuron_id]
+                # Modulate external input by attention weight
+                neuron.external_input *= weight
+    
+    def winner_take_all(
+        self,
+        area_name: str,
+        top_k: int = 1,
+    ) -> List[int]:
+        """Implement winner-take-all selection in a brain area.
+        
+        Selects the most active neurons and suppresses all others.
+        This creates focused, competitive selection of neural populations.
+        
+        Args:
+            area_name: Name of brain area to apply WTA
+            top_k: Number of "winners" to select
+            
+        Returns:
+            List of winning neuron IDs
+            
+        Example:
+            >>> # Select single most active neuron in motor area
+            >>> winners = attention.winner_take_all("motor_cortex", top_k=1)
+        """
+        areas = self.model.get_areas()
+        area = next((a for a in areas if a["name"] == area_name), None)
+        
+        if area is None:
+            return []
+        
+        ranges = area["coord_ranges"]
+        
+        # Collect neurons in area with their activity
+        area_neurons = []
+        for neuron_id, neuron in self.model.neurons.items():
+            in_area = (
+                ranges["x"][0] <= neuron.x <= ranges["x"][1] and
+                ranges["y"][0] <= neuron.y <= ranges["y"][1] and
+                ranges["z"][0] <= neuron.z <= ranges["z"][1] and
+                ranges["w"][0] <= neuron.w <= ranges["w"][1]
+            )
+            if in_area:
+                area_neurons.append((neuron_id, neuron.membrane_potential))
+        
+        if not area_neurons:
+            return []
+        
+        # Sort by activity level
+        area_neurons.sort(key=lambda x: x[1], reverse=True)
+        
+        # Select top-k winners
+        winners = [nid for nid, _ in area_neurons[:top_k]]
+        
+        # Suppress non-winners
+        for neuron_id, _ in area_neurons[top_k:]:
+            if neuron_id in self.model.neurons:
+                self.model.neurons[neuron_id].external_input *= WINNER_SUPPRESSION_FACTOR
+        
+        return winners
+    
+    def reset_attention(self) -> None:
+        """Reset all attention weights to default."""
+        for neuron_id in self.attention_weights.keys():
+            self.attention_weights[neuron_id] = self.default_attention
+        self.saliency_map.clear()

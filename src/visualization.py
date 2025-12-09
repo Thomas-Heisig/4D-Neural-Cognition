@@ -628,3 +628,176 @@ def plot_spike_train_correlation(
         plot_data["save_path"] = save_path
     
     return plot_data
+
+
+def plot_phase_space(
+    state_variable_1: np.ndarray,
+    state_variable_2: np.ndarray,
+    state_variable_3: Optional[np.ndarray] = None,
+    labels: Optional[Tuple[str, str, str]] = None,
+    title: str = "Phase Space Plot",
+    save_path: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Create phase space plot for network dynamics.
+    
+    Phase space plots visualize the trajectory of a dynamical system by plotting
+    state variables against each other. This is useful for understanding network
+    behavior, identifying attractors, and detecting chaotic dynamics.
+    
+    Args:
+        state_variable_1: First state variable (e.g., mean firing rate)
+        state_variable_2: Second state variable (e.g., membrane potential)
+        state_variable_3: Optional third state variable for 3D phase space
+        labels: Tuple of labels for (x, y, z) axes
+        title: Plot title
+        save_path: Optional path to save figure
+        
+    Returns:
+        Dictionary with plot data for rendering
+        
+    Examples:
+        >>> # 2D phase space plot
+        >>> firing_rates = np.array([0.1, 0.2, 0.3, 0.4, 0.3, 0.2])
+        >>> membrane_potentials = np.array([-70, -65, -60, -55, -60, -65])
+        >>> plot_data = plot_phase_space(firing_rates, membrane_potentials,
+        ...                              labels=("Firing Rate", "V_m (mV)"))
+        
+        >>> # 3D phase space plot
+        >>> synchrony = np.array([0.5, 0.6, 0.7, 0.8, 0.7, 0.6])
+        >>> plot_data = plot_phase_space(firing_rates, membrane_potentials, synchrony,
+        ...                              labels=("Firing Rate", "V_m", "Synchrony"))
+    """
+    if len(state_variable_1) != len(state_variable_2):
+        return {"error": "State variables must have the same length"}
+    
+    if state_variable_3 is not None and len(state_variable_3) != len(state_variable_1):
+        return {"error": "All state variables must have the same length"}
+    
+    # Set default labels
+    if labels is None:
+        if state_variable_3 is not None:
+            labels = ("State Variable 1", "State Variable 2", "State Variable 3")
+        else:
+            labels = ("State Variable 1", "State Variable 2", None)
+    
+    is_3d = state_variable_3 is not None
+    
+    plot_data = {
+        "type": "phase_space_3d" if is_3d else "phase_space_2d",
+        "x": state_variable_1.tolist(),
+        "y": state_variable_2.tolist(),
+        "title": title,
+        "xlabel": labels[0],
+        "ylabel": labels[1],
+    }
+    
+    if is_3d:
+        plot_data["z"] = state_variable_3.tolist()
+        plot_data["zlabel"] = labels[2]
+        
+        # Compute trajectory statistics for 3D
+        trajectory_length = np.sum(np.sqrt(
+            np.diff(state_variable_1)**2 + 
+            np.diff(state_variable_2)**2 + 
+            np.diff(state_variable_3)**2
+        ))
+    else:
+        # Compute trajectory statistics for 2D
+        trajectory_length = np.sum(np.sqrt(
+            np.diff(state_variable_1)**2 + 
+            np.diff(state_variable_2)**2
+        ))
+    
+    plot_data["trajectory_length"] = float(trajectory_length)
+    plot_data["num_points"] = len(state_variable_1)
+    
+    # Compute phase space metrics
+    # Check for fixed points (where trajectory stays in small region)
+    if len(state_variable_1) > 10:
+        # Use sliding window to detect regions of low velocity
+        window_size = min(10, len(state_variable_1) // 5)
+        velocities = []
+        
+        for i in range(len(state_variable_1) - window_size):
+            window_1 = state_variable_1[i:i+window_size]
+            window_2 = state_variable_2[i:i+window_size]
+            
+            # Compute variance in window (low variance = potential fixed point)
+            variance = np.var(window_1) + np.var(window_2)
+            velocities.append(variance)
+        
+        plot_data["min_velocity_variance"] = float(np.min(velocities)) if velocities else 0.0
+        plot_data["mean_velocity_variance"] = float(np.mean(velocities)) if velocities else 0.0
+    
+    if save_path:
+        plot_data["save_path"] = save_path
+    
+    return plot_data
+
+
+def plot_network_motifs(
+    motif_counts: Dict[str, int],
+    total_triplets: int,
+    title: str = "Network Motif Distribution",
+    save_path: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Visualize distribution of network motifs.
+    
+    Network motifs are recurring patterns of connectivity that appear more frequently
+    than expected by chance. This function visualizes the distribution of different
+    motif types (e.g., feedforward, feedback, reciprocal connections).
+    
+    Args:
+        motif_counts: Dictionary mapping motif names to their counts
+        total_triplets: Total number of three-neuron subgraphs analyzed
+        title: Plot title
+        save_path: Optional path to save figure
+        
+    Returns:
+        Dictionary with plot data for rendering
+        
+    Examples:
+        >>> motifs = {
+        ...     "chain": 150,
+        ...     "convergent": 80,
+        ...     "divergent": 75,
+        ...     "feedback": 45,
+        ...     "reciprocal": 30,
+        ... }
+        >>> plot_data = plot_network_motifs(motifs, 1000)
+    """
+    if not motif_counts:
+        return {"error": "No motif data provided"}
+    
+    motif_names = list(motif_counts.keys())
+    counts = list(motif_counts.values())
+    
+    # Calculate frequencies
+    frequencies = [count / total_triplets * 100 if total_triplets > 0 else 0 
+                   for count in counts]
+    
+    # Calculate z-scores (assuming random network as null model)
+    # For a random network, expected frequency is approximately uniform
+    if motif_counts:
+        expected_freq = 100.0 / len(motif_counts)
+        z_scores = [(freq - expected_freq) / np.sqrt(expected_freq) if expected_freq > 0 else 0
+                    for freq in frequencies]
+    else:
+        z_scores = [0.0 for _ in frequencies]
+    
+    plot_data = {
+        "type": "network_motifs",
+        "motif_names": motif_names,
+        "counts": counts,
+        "frequencies": frequencies,
+        "z_scores": z_scores,
+        "total_triplets": total_triplets,
+        "title": title,
+        "xlabel": "Motif Type",
+        "ylabel": "Count",
+    }
+    
+    if save_path:
+        plot_data["save_path"] = save_path
+    
+    return plot_data

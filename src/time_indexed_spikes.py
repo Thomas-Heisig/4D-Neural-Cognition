@@ -244,7 +244,7 @@ class SpikeHistoryAdapter:
         """
         return len(self._buffer.get_spike_times(neuron_id)) > 0
     
-    def keys(self):
+    def keys(self) -> List[int]:
         """Get all neuron IDs that have spikes (dict-like interface).
         
         Returns:
