@@ -16,6 +16,8 @@ import numpy as np
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # Ensure logs directory exists BEFORE configuring logging
 os.makedirs("logs", exist_ok=True)
@@ -48,6 +50,15 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "neural-cognition-secret-key-4d-CHANGE-IN-PRODUCTION")
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Rate limiting to prevent DoS attacks
+# Default: 200 requests per day, 50 per hour for general endpoints
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 # Global state
 current_model = None
@@ -233,6 +244,7 @@ def index():
 
 
 @app.route("/api/model/init", methods=["POST"])
+@limiter.limit("20 per minute")  # Limit model initialization
 def init_model():
     """Initialize a new brain model."""
     global current_model, current_simulation
@@ -380,6 +392,7 @@ def simulation_step():
 
 
 @app.route("/api/simulation/run", methods=["POST"])
+@limiter.limit("10 per minute")  # Limit intensive simulation runs
 def run_simulation():
     """Run simulation for multiple steps."""
     global current_simulation, is_training
@@ -416,8 +429,15 @@ def run_simulation():
         # For very long simulations, we don't need every intermediate step
         max_history_steps = 100
         recent_steps = []
+        
+        # Time tracking for progress estimation
+        import time
+        start_time = time.time()
+        step_times = []
 
         for step in range(n_steps):
+            step_start = time.time()
+            
             # Check training flag under lock to avoid race conditions
             with simulation_lock:
                 if not is_training:
@@ -436,9 +456,24 @@ def run_simulation():
                 if checkpoint_path:
                     logger.info(f"Auto-checkpoint saved at step {current_step}")
 
+            # Track step time for progress estimation
+            step_time = time.time() - step_start
+            step_times.append(step_time)
+            if len(step_times) > 50:  # Keep last 50 steps for moving average
+                step_times.pop(0)
+
             if (step + 1) % 10 == 0:
+                # Calculate time estimates
+                avg_step_time = sum(step_times) / len(step_times)
+                remaining_steps = n_steps - (step + 1)
+                estimated_remaining_time = avg_step_time * remaining_steps
+                progress_percent = ((step + 1) / n_steps) * 100
+                
                 step_info = {
                     "step": step + 1,
+                    "total_steps": n_steps,
+                    "progress_percent": round(progress_percent, 1),
+                    "estimated_remaining_seconds": round(estimated_remaining_time, 1),
                     "spikes": len(stats["spikes"]),
                     "neurons": len(current_model.neurons),
                     "synapses": len(current_model.synapses),
@@ -451,7 +486,7 @@ def run_simulation():
 
                 # Send progress via SocketIO
                 socketio.emit("training_progress", step_info)
-                logger.info(f"Step {step + 1}/{n_steps}: {len(stats['spikes'])} spikes")
+                logger.info(f"Step {step + 1}/{n_steps} ({progress_percent:.1f}%): {len(stats['spikes'])} spikes, ~{estimated_remaining_time:.0f}s remaining")
 
         # Add final state to results
         results["final_neurons"] = len(current_model.neurons)
@@ -518,6 +553,7 @@ def recover_from_checkpoint():
 
 
 @app.route("/api/input/feed", methods=["POST"])
+@limiter.limit("60 per minute")  # Limit input feeding
 def feed_input():
     """Feed sensory input to the model."""
     global current_model
@@ -626,6 +662,7 @@ def get_heatmap_data():
 
 
 @app.route("/api/model/save", methods=["POST"])
+@limiter.limit("30 per minute")  # Limit save operations
 def save_model():
     """Save current model state."""
     global current_model
@@ -669,6 +706,7 @@ def save_model():
 
 
 @app.route("/api/model/load", methods=["POST"])
+@limiter.limit("30 per minute")  # Limit load operations
 def load_model():
     """Load model state from file."""
     global current_model, current_simulation

@@ -1,7 +1,6 @@
 """Unit tests for knowledge_db module."""
 
 import json
-import pickle
 import tempfile
 import time
 from pathlib import Path

@@ -5,11 +5,12 @@ that the neural network can access and train on, even before it has
 learned from direct experience.
 """
 
+import base64
 import json
-import pickle
 import sqlite3
 import time
 from dataclasses import dataclass
+from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -29,12 +30,21 @@ class KnowledgeEntry:
     timestamp: str
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for storage."""
+        """Convert to dictionary for storage.
+        
+        Uses numpy's native save format (NPY) encoded as base64 instead of pickle
+        for better security. NPY format cannot execute arbitrary code.
+        """
+        # Use numpy's native binary format instead of pickle
+        buffer = BytesIO()
+        np.save(buffer, self.data, allow_pickle=False)  # Explicitly disable pickle
+        data_blob = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        
         return {
             "id": self.id,
             "category": self.category,
             "data_type": self.data_type,
-            "data_blob": pickle.dumps(self.data),
+            "data_blob": data_blob,
             "label": json.dumps(self.label) if self.label is not None else None,
             "metadata": json.dumps(self.metadata),
             "timestamp": self.timestamp,
@@ -42,12 +52,21 @@ class KnowledgeEntry:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "KnowledgeEntry":
-        """Create from dictionary."""
+        """Create from dictionary.
+        
+        Loads numpy arrays from NPY format (base64 encoded) instead of pickle
+        for security reasons.
+        """
+        # Decode from base64 and load using numpy's native format
+        data_blob = base64.b64decode(data["data_blob"])
+        buffer = BytesIO(data_blob)
+        data_array = np.load(buffer, allow_pickle=False)  # Explicitly disable pickle
+        
         return cls(
             id=data["id"],
             category=data["category"],
             data_type=data["data_type"],
-            data=pickle.loads(data["data_blob"]),
+            data=data_array,
             label=json.loads(data["label"]) if data["label"] else None,
             metadata=json.loads(data["metadata"]),
             timestamp=data["timestamp"],
