@@ -221,18 +221,124 @@ class NorepinephrineSystem:
 
 
 @dataclass
+class AcetylcholineSystem:
+    """Acetylcholine system for attention and learning.
+    
+    Acetylcholine influences:
+    - Attention and arousal
+    - Learning and memory consolidation
+    - Cortical plasticity
+    - REM sleep
+    """
+    
+    state: NeuromodulatorState = field(default_factory=lambda: NeuromodulatorState(baseline=0.5))
+    attention_history: List[float] = field(default_factory=list)
+    max_history: int = 100
+    plasticity_modulation: float = 1.5  # How much ACh affects plasticity
+    
+    def update(self, attention_demand: float = 0.0, novelty: float = 0.0) -> None:
+        """Update acetylcholine level based on attention demand.
+        
+        Args:
+            attention_demand: Required attention level
+            novelty: Novelty of stimuli
+        """
+        # High attention/novelty -> higher acetylcholine
+        arousal_signal = attention_demand + novelty
+        self.state.level = max(0.0, min(1.0, self.state.baseline + arousal_signal * 0.5))
+        
+        # Track attention
+        if attention_demand > 0:
+            self.attention_history.append(attention_demand)
+            if len(self.attention_history) > self.max_history:
+                self.attention_history.pop(0)
+    
+    def get_plasticity_multiplier(self) -> float:
+        """Get plasticity multiplier based on ACh level.
+        
+        Higher ACh -> enhanced plasticity (especially for new learning)
+        
+        Returns:
+            Multiplier for plasticity (1.0 to 1.0 + plasticity_modulation)
+        """
+        return 1.0 + (self.state.level * self.plasticity_modulation)
+    
+    def modulate_attention(self, sensory_signal: float) -> float:
+        """Modulate sensory signal based on ACh level.
+        
+        Args:
+            sensory_signal: Base sensory input
+            
+        Returns:
+            Modulated sensory signal
+        """
+        # ACh enhances signal-to-noise ratio
+        return sensory_signal * (1.0 + self.state.level * 0.5)
+
+
+@dataclass
+class OrexinSystem:
+    """Orexin (hypocretin) system for wakefulness and arousal.
+    
+    Orexin influences:
+    - Wake/sleep transitions
+    - Arousal and alertness
+    - Reward seeking
+    - Energy homeostasis
+    """
+    
+    state: NeuromodulatorState = field(default_factory=lambda: NeuromodulatorState(baseline=0.5))
+    sleep_pressure: float = 0.0
+    arousal_strength: float = 2.0  # How much orexin affects arousal
+    
+    def update(self, circadian_phase: float = 0.5, sleep_need: float = 0.0) -> None:
+        """Update orexin level based on circadian rhythm and sleep need.
+        
+        Args:
+            circadian_phase: Circadian phase (0=night, 1=day)
+            sleep_need: Sleep pressure (0=rested, 1=sleep deprived)
+        """
+        # High during wakefulness, low during sleep
+        # Suppressed by high sleep pressure
+        wake_signal = circadian_phase - sleep_need
+        self.state.level = max(0.0, min(1.0, self.state.baseline + wake_signal * 0.5))
+        
+        self.sleep_pressure = sleep_need
+    
+    def get_arousal_level(self) -> float:
+        """Get arousal level modulated by orexin.
+        
+        Returns:
+            Arousal level (0-1)
+        """
+        return self.state.level * self.arousal_strength
+    
+    def promote_wakefulness(self) -> bool:
+        """Check if orexin promotes wakefulness.
+        
+        Returns:
+            True if in wake-promoting state
+        """
+        return self.state.level > 0.6
+
+
+@dataclass
 class NeuromodulationSystem:
     """Complete neuromodulation system managing all neuromodulators."""
     
     dopamine: DopamineSystem = field(default_factory=DopamineSystem)
     serotonin: SerotoninSystem = field(default_factory=SerotoninSystem)
     norepinephrine: NorepinephrineSystem = field(default_factory=NorepinephrineSystem)
+    acetylcholine: AcetylcholineSystem = field(default_factory=AcetylcholineSystem)
+    orexin: OrexinSystem = field(default_factory=OrexinSystem)
     
     def step(self) -> None:
         """Update all neuromodulator systems (decay toward baseline)."""
         self.dopamine.state.decay_toward_baseline()
         self.serotonin.state.decay_toward_baseline()
         self.norepinephrine.state.decay_toward_baseline()
+        self.acetylcholine.state.decay_toward_baseline()
+        self.orexin.state.decay_toward_baseline()
     
     def get_state(self) -> Dict[str, float]:
         """Get current state of all neuromodulators.
@@ -244,6 +350,8 @@ class NeuromodulationSystem:
             "dopamine": self.dopamine.state.level,
             "serotonin": self.serotonin.state.level,
             "norepinephrine": self.norepinephrine.state.level,
+            "acetylcholine": self.acetylcholine.state.level,
+            "orexin": self.orexin.state.level,
         }
     
     def modulate_learning(self, base_delta_w: float) -> float:
@@ -257,6 +365,10 @@ class NeuromodulationSystem:
         """
         # Dopamine modulates magnitude of learning
         delta_w = self.dopamine.modulate_plasticity(base_delta_w)
+        
+        # Acetylcholine enhances plasticity (attention-dependent)
+        delta_w *= self.acetylcholine.get_plasticity_multiplier()
+        
         return delta_w
     
     def modulate_neuron_update(
@@ -312,6 +424,25 @@ class NeuromodulationSystem:
             novelty: Novelty of stimuli
         """
         self.norepinephrine.update(uncertainty, novelty)
+        # Also affects acetylcholine (novelty detection)
+        self.acetylcholine.update(novelty=novelty)
+    
+    def process_attention(self, attention_demand: float) -> None:
+        """Process attention through acetylcholine system.
+        
+        Args:
+            attention_demand: Required attention level
+        """
+        self.acetylcholine.update(attention_demand=attention_demand)
+    
+    def process_circadian(self, circadian_phase: float, sleep_need: float) -> None:
+        """Process circadian and sleep signals through orexin system.
+        
+        Args:
+            circadian_phase: Time of day (0=night, 1=day)
+            sleep_need: Sleep pressure
+        """
+        self.orexin.update(circadian_phase, sleep_need)
 
 
 def create_neuromodulation_system(config: Dict = None) -> NeuromodulationSystem:
@@ -330,6 +461,8 @@ def create_neuromodulation_system(config: Dict = None) -> NeuromodulationSystem:
     dopamine_config = config.get("dopamine", {})
     serotonin_config = config.get("serotonin", {})
     norepinephrine_config = config.get("norepinephrine", {})
+    acetylcholine_config = config.get("acetylcholine", {})
+    orexin_config = config.get("orexin", {})
     
     dopamine = DopamineSystem(
         state=NeuromodulatorState(
@@ -355,8 +488,26 @@ def create_neuromodulation_system(config: Dict = None) -> NeuromodulationSystem:
         gain_modulation=norepinephrine_config.get("gain_modulation", 2.0)
     )
     
+    acetylcholine = AcetylcholineSystem(
+        state=NeuromodulatorState(
+            baseline=acetylcholine_config.get("baseline", 0.5),
+            decay_rate=acetylcholine_config.get("decay_rate", 0.1)
+        ),
+        plasticity_modulation=acetylcholine_config.get("plasticity_modulation", 1.5)
+    )
+    
+    orexin = OrexinSystem(
+        state=NeuromodulatorState(
+            baseline=orexin_config.get("baseline", 0.5),
+            decay_rate=orexin_config.get("decay_rate", 0.1)
+        ),
+        arousal_strength=orexin_config.get("arousal_strength", 2.0)
+    )
+    
     return NeuromodulationSystem(
         dopamine=dopamine,
         serotonin=serotonin,
-        norepinephrine=norepinephrine
+        norepinephrine=norepinephrine,
+        acetylcholine=acetylcholine,
+        orexin=orexin
     )
