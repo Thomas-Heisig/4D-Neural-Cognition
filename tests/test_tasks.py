@@ -100,7 +100,7 @@ class TestPatternClassificationEnvironment:
         observation, info = env.reset()
         
         observation, reward, done, info = env.step()
-        assert done == True  # Single-step task
+        assert done  # Single-step task
         assert 'target_class' in info
 
     def test_render(self):
@@ -204,7 +204,7 @@ class TestTemporalSequenceEnvironment:
             _, _, done, _ = env.step()
             steps += 1
         
-        assert done == True
+        assert done
 
 
 class TestTemporalSequenceTask:
@@ -344,7 +344,7 @@ class TestMultiModalIntegrationEnvironment:
         env.reset()
         
         observation, reward, done, info = env.step()
-        assert done == True  # Single-step task
+        assert done  # Single-step task
 
 
 class TestMultiModalIntegrationTask:
@@ -463,7 +463,7 @@ class TestTransferLearningEnvironment:
         assert 'vision' in observation
         assert 'target_class' in info
         assert 'is_target_task' in info
-        assert info['is_target_task'] == False
+        assert not info['is_target_task']
 
     def test_reset_target_task(self):
         """Test reset with target task."""
@@ -472,7 +472,7 @@ class TestTransferLearningEnvironment:
         
         assert 'vision' in observation
         assert 'target_class' in info
-        assert info['is_target_task'] == True
+        assert info['is_target_task']
 
     def test_generate_patterns(self):
         """Test pattern generation."""
