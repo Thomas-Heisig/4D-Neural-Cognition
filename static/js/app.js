@@ -435,7 +435,37 @@ socket.on('chat_response', (data) => {
 });
 
 socket.on('training_progress', (data) => {
-    showInfo(`Schritt ${data.step}: ${data.spikes} Spikes, ${data.neurons} Neuronen`);
+    // Format remaining time
+    let timeStr = '';
+    if (data.estimated_remaining_seconds !== undefined) {
+        const seconds = data.estimated_remaining_seconds;
+        if (seconds < 60) {
+            timeStr = `${Math.round(seconds)}s`;
+        } else if (seconds < 3600) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.round(seconds % 60);
+            timeStr = `${mins}m ${secs}s`;
+        } else {
+            const hours = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            timeStr = `${hours}h ${mins}m`;
+        }
+    }
+    
+    // Build progress message
+    let message = `Schritt ${data.step}`;
+    if (data.total_steps) {
+        message += `/${data.total_steps}`;
+    }
+    if (data.progress_percent !== undefined) {
+        message += ` (${data.progress_percent}%)`;
+    }
+    if (timeStr) {
+        message += ` - ${timeStr} verbleibend`;
+    }
+    message += `: ${data.spikes} Spikes, ${data.neurons} Neuronen`;
+    
+    showInfo(message);
 });
 
 // Event Listeners

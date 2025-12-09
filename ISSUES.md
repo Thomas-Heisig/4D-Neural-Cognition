@@ -74,15 +74,18 @@ This document tracks known bugs, limitations, and technical debt in the project.
 - **Workaround**: Use automatic checkpoints and recovery endpoint
 - **Related**: `app.py:save_checkpoint()`, `app.py:recover_from_checkpoint()`
 
-#### Neuron Death Can Create Disconnected Networks
-- **Status**: Open
-- **Severity**: Medium
-- **Affected Versions**: All
-- **Description**: When neurons die, their synapses are removed but no reconnection occurs
-- **Reproduction**: Enable death, run for extended period, check connectivity
-- **Impact**: Network becomes sparse and disconnected over time
-- **Workaround**: Disable death or periodically regenerate connections
-- **Related**: `cell_lifecycle.py:maybe_kill_and_reproduce()`
+#### Neuron Death Can Create Disconnected Networks (RESOLVED)
+- **Status**: ✅ Fixed (December 2025)
+- **Severity**: Low (reduced from Medium)
+- **Affected Versions**: Fixed in current version
+- **Description**: Network disconnection during cell lifecycle has been mitigated
+- **Resolution**: Added automatic reconnection mechanism
+  - Implemented `_attempt_reconnection()` function
+  - When synapses are lost during reproduction, new connections are created
+  - Reconnects to nearby neurons (within 5.0 distance) or random neurons
+  - Maintains network connectivity during long simulations
+- **Impact**: Networks now maintain connectivity through lifecycle events
+- **Related**: `cell_lifecycle.py:maybe_kill_and_reproduce()`, `_attempt_reconnection()`
 
 #### Sensory Input Dimension Mismatch (RESOLVED)
 - **Status**: ✅ Fixed (December 2025)
@@ -116,15 +119,19 @@ This document tracks known bugs, limitations, and technical debt in the project.
 - **Resolution**: Added automatic log rotation to prevent unbounded growth
 - **Related**: `app.py:logging configuration`
 
-#### Progress Indicator Inaccurate
-- **Status**: Open
+#### Progress Indicator Inaccurate (RESOLVED)
+- **Status**: ✅ Fixed (December 2025)
 - **Severity**: Low
-- **Affected Versions**: All
-- **Description**: Training progress bar doesn't reflect actual time remaining
-- **Reproduction**: Start long training run, observe progress bar
-- **Impact**: User confusion about completion time
-- **Workaround**: Monitor step count directly
-- **Related**: `static/js/app.js:training progress`
+- **Affected Versions**: Fixed in current version
+- **Description**: Training progress now shows accurate time estimates
+- **Resolution**: Added comprehensive time tracking and estimation
+  - Tracks individual step times during simulation
+  - Calculates moving average of last 50 steps for accuracy
+  - Computes progress percentage and estimated remaining time
+  - Displays formatted time (seconds, minutes, hours) in frontend
+  - Backend sends progress updates with time estimates every 10 steps
+- **Impact**: Users can now accurately predict completion time
+- **Related**: `app.py:run_simulation()`, `static/js/app.js:training_progress`
 
 ---
 
@@ -162,12 +169,15 @@ This document tracks known bugs, limitations, and technical debt in the project.
 - **Future**: Add projection controls and slicing
 - **Workaround**: View 3D slices at different w-coordinates
 
-#### Limited Neuron Models
-- **Description**: Only LIF model currently implemented
-- **Impact**: Cannot model diverse neuron behaviors
-- **Limitation**: Implementation time constraint
-- **Future**: Add Izhikevich, Hodgkin-Huxley models
-- **Workaround**: Tune LIF parameters to approximate different behaviors
+#### Limited Neuron Models (RESOLVED)
+- **Status**: ✅ Resolved (December 2025)
+- **Description**: Multiple neuron models now implemented
+- **Resolution**: 
+  - Leaky Integrate-and-Fire (LIF) model - Original implementation
+  - Izhikevich model with multiple neuron types (regular spiking, fast spiking, bursting)
+  - Hodgkin-Huxley model - Biophysically realistic model with ion channels
+- **Impact**: Can now model diverse neuron behaviors accurately
+- **Related**: `src/neuron_models.py:update_lif_neuron()`, `update_izhikevich_neuron()`, `update_hodgkin_huxley_neuron()`
 
 #### No Recurrent Connections Within Areas
 - **Description**: Synapses typically connect different areas, not within
@@ -354,21 +364,45 @@ This document tracks known bugs, limitations, and technical debt in the project.
   - Path normalization and sanitization
 - **Impact**: Cannot access files outside designated directories
 
-### No Rate Limiting
+### No Rate Limiting (RESOLVED)
 - **Location**: Web API
-- **Issue**: No protection against DoS
-- **Severity**: Low
-- **Impact**: Server could be overwhelmed
-- **Mitigation**: Add rate limiting
-- **Status**: Nice to have
+- **Status**: ✅ Fixed (December 2025)
+- **Severity**: Low (was)
+- **Resolution**: Implemented comprehensive rate limiting with Flask-Limiter
+  - Default limits: 200 requests per day, 50 per hour for general endpoints
+  - Simulation endpoints: 10 per minute (resource-intensive operations)
+  - Save/Load endpoints: 30 per minute (disk I/O operations)
+  - Input feed endpoints: 60 per minute (frequent operations)
+  - Uses memory storage for rate limit tracking
+- **Impact**: Server now protected against DoS attacks
+- **Related**: `app.py:limiter`, rate limit decorators on endpoints
 
-### Pickle Usage Concerns
-- **Location**: Potentially in storage
-- **Issue**: Pickle can execute arbitrary code
-- **Severity**: High (if used)
-- **Impact**: Remote code execution
-- **Mitigation**: Avoid pickle, use JSON/HDF5 only
-- **Status**: Verify not used
+### Pickle Usage Concerns (RESOLVED)
+- **Location**: knowledge_db.py (was using pickle)
+- **Status**: ✅ Fixed (December 2025)
+- **Severity**: High (was)
+- **Resolution**: Eliminated pickle usage completely
+  - Replaced pickle with numpy's native NPY format for array serialization
+  - Uses base64 encoding for database storage
+  - Explicitly disabled pickle with `allow_pickle=False`
+  - Cannot execute arbitrary code - secure serialization only
+  - Updated all tests to use new serialization format
+  - All 21 knowledge_db tests pass with new implementation
+- **Impact**: Remote code execution vulnerability eliminated
+- **Related**: `src/knowledge_db.py:to_dict()`, `from_dict()`, `tests/test_knowledge_db.py`
+
+### CSRF Protection (ADDED)
+- **Location**: Web application
+- **Status**: ✅ Added (December 2025)
+- **Description**: CSRF protection for form submissions
+- **Implementation**: 
+  - Added Flask-WTF dependency for CSRF protection
+  - Configurable via DISABLE_CSRF_FOR_API environment variable
+  - Disabled by default for API-only mode (CORS handles cross-origin)
+  - Can be enabled for production deployments with web forms
+  - Provides protection against cross-site request forgery attacks
+- **Impact**: Enhanced security for web form submissions
+- **Related**: `app.py:csrf`, `requirements.txt`
 
 ---
 
@@ -400,7 +434,29 @@ Use appropriate template when filing:
 
 ## Changelog
 
-### 2025-12-07 (Latest - Documentation Synchronization)
+### 2025-12-09 (Latest - Major Features, Security & Documentation)
+- ✅ RESOLVED: Neuron death network disconnection - implemented automatic reconnection
+- ✅ RESOLVED: Progress indicator inaccuracy - added time tracking and estimation
+- ✅ RESOLVED: Rate limiting - comprehensive DoS protection with Flask-Limiter
+- ✅ RESOLVED: Pickle security vulnerability - replaced with secure NPY format
+- ✅ ADDED: CSRF protection - Flask-WTF with environment variable control
+- ✅ ADDED: Hodgkin-Huxley neuron model - biophysically realistic ion channel model
+- ✅ ADDED: Raster plot visualization - spike time display with filtering
+- ✅ ADDED: PSTH (peri-stimulus time histogram) - stimulus-aligned analysis
+- ✅ ADDED: Spike train correlation - temporal relationship detection
+- ✅ ADDED: MATHEMATICAL_MODEL.md - 7.4KB comprehensive mathematical documentation
+  - All 3 neuron models with equations (LIF, Izhikevich, HH)
+  - Synaptic transmission and plasticity rules
+  - Network dynamics and statistical analysis
+- ✅ ADDED: ALGORITHMS.md - 17KB detailed algorithm documentation
+  - Core simulation loop with complexity analysis
+  - Optimization techniques (sparse matrices, time-indexed buffers)
+  - Performance analysis and scalability metrics
+- ✅ UPDATED: TODO.md and ISSUES.md to reflect 18+ completed items
+- All tests passing: 21 knowledge_db tests, 31 neuron_models tests
+- Type hints verified throughout codebase
+
+### 2025-12-07 (Earlier - Documentation Synchronization)
 - ✅ UPDATED: README.md to reflect all current features in app.py and example.py
 - ✅ UPDATED: Key features section to include multiple neuron models, STDP, and comprehensive testing
 - ✅ UPDATED: Web interface features to include auto-checkpoint and security features
