@@ -391,6 +391,19 @@ This document tracks known bugs, limitations, and technical debt in the project.
 - **Impact**: Remote code execution vulnerability eliminated
 - **Related**: `src/knowledge_db.py:to_dict()`, `from_dict()`, `tests/test_knowledge_db.py`
 
+### CSRF Protection (ADDED)
+- **Location**: Web application
+- **Status**: ✅ Added (December 2025)
+- **Description**: CSRF protection for form submissions
+- **Implementation**: 
+  - Added Flask-WTF dependency for CSRF protection
+  - Configurable via DISABLE_CSRF_FOR_API environment variable
+  - Disabled by default for API-only mode (CORS handles cross-origin)
+  - Can be enabled for production deployments with web forms
+  - Provides protection against cross-site request forgery attacks
+- **Impact**: Enhanced security for web form submissions
+- **Related**: `app.py:csrf`, `requirements.txt`
+
 ---
 
 ## Issue Reporting
@@ -421,16 +434,25 @@ Use appropriate template when filing:
 
 ## Changelog
 
-### 2025-12-09 (Latest - Major Features & Security Updates)
+### 2025-12-09 (Latest - Major Features, Security & Documentation)
 - ✅ RESOLVED: Neuron death network disconnection - implemented automatic reconnection
 - ✅ RESOLVED: Progress indicator inaccuracy - added time tracking and estimation
-- ✅ RESOLVED: Rate limiting - comprehensive DoS protection
+- ✅ RESOLVED: Rate limiting - comprehensive DoS protection with Flask-Limiter
 - ✅ RESOLVED: Pickle security vulnerability - replaced with secure NPY format
+- ✅ ADDED: CSRF protection - Flask-WTF with environment variable control
 - ✅ ADDED: Hodgkin-Huxley neuron model - biophysically realistic ion channel model
 - ✅ ADDED: Raster plot visualization - spike time display with filtering
 - ✅ ADDED: PSTH (peri-stimulus time histogram) - stimulus-aligned analysis
 - ✅ ADDED: Spike train correlation - temporal relationship detection
-- ✅ UPDATED: TODO.md and ISSUES.md to reflect 15+ completed items
+- ✅ ADDED: MATHEMATICAL_MODEL.md - 7.4KB comprehensive mathematical documentation
+  - All 3 neuron models with equations (LIF, Izhikevich, HH)
+  - Synaptic transmission and plasticity rules
+  - Network dynamics and statistical analysis
+- ✅ ADDED: ALGORITHMS.md - 17KB detailed algorithm documentation
+  - Core simulation loop with complexity analysis
+  - Optimization techniques (sparse matrices, time-indexed buffers)
+  - Performance analysis and scalability metrics
+- ✅ UPDATED: TODO.md and ISSUES.md to reflect 18+ completed items
 - All tests passing: 21 knowledge_db tests, 31 neuron_models tests
 - Type hints verified throughout codebase
 
