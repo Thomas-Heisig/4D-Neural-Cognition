@@ -842,7 +842,8 @@ class NetworkMotifDetector:
             # Add synapse (if not duplicate)
             try:
                 randomized.add_synapse(pre_id, post_id, weight=0.1)
-            except:
-                pass  # Ignore duplicates
+            except (ValueError, KeyError):
+                # Ignore duplicates or invalid neuron IDs
+                pass
         
         return randomized
