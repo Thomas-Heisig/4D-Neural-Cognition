@@ -404,11 +404,154 @@ def simulation_step():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+def _validate_run_parameters(data: dict) -> Tuple[bool, Optional[str], int]:
+    """Validate simulation run parameters.
+    
+    Args:
+        data: Request data dictionary
+        
+    Returns:
+        Tuple of (is_valid, error_message, n_steps)
+    """
+    n_steps = data.get("steps", 100)
+    
+    if not isinstance(n_steps, int) or n_steps <= 0:
+        return False, "Steps must be a positive integer", 0
+    
+    if n_steps > 100000:
+        return False, "Steps cannot exceed 100000 to prevent memory exhaustion", 0
+    
+    return True, None, n_steps
+
+
+def _run_simulation_loop(
+    n_steps: int,
+    max_history_steps: int = 100,
+) -> Tuple[dict, list]:
+    """Run the main simulation loop.
+    
+    Args:
+        n_steps: Number of steps to run
+        max_history_steps: Maximum number of step details to keep
+        
+    Returns:
+        Tuple of (results_dict, recent_steps_list)
+    """
+    global current_simulation, current_model, is_training
+    
+    import time
+    
+    results = {
+        "total_spikes": 0,
+        "total_deaths": 0,
+        "total_births": 0,
+        "final_neurons": 0,
+        "final_synapses": 0,
+    }
+    
+    recent_steps = []
+    step_times = []
+    
+    for step in range(n_steps):
+        step_start = time.time()
+        
+        # Check training flag under lock to avoid race conditions
+        with simulation_lock:
+            if not is_training:
+                logger.info("Training stopped by user")
+                break
+            stats = current_simulation.step()
+            current_step = current_model.current_step
+        
+        # Update results
+        results["total_spikes"] += len(stats["spikes"])
+        results["total_deaths"] += stats["deaths"]
+        results["total_births"] += stats["births"]
+        
+        # Auto-checkpoint at regular intervals
+        if current_step % CHECKPOINT_INTERVAL == 0:
+            checkpoint_path = save_checkpoint(current_model, current_step)
+            if checkpoint_path:
+                logger.info(f"Auto-checkpoint saved at step {current_step}")
+        
+        # Track step time and emit progress
+        step_time = time.time() - step_start
+        step_times.append(step_time)
+        if len(step_times) > 50:  # Keep last 50 steps for moving average
+            step_times.pop(0)
+        
+        if (step + 1) % 10 == 0:
+            step_info = _compute_progress_info(
+                step, n_steps, step_times, stats, current_model
+            )
+            
+            recent_steps.append(step_info)
+            if len(recent_steps) > max_history_steps:
+                recent_steps.pop(0)
+            
+            # Send progress via SocketIO
+            socketio.emit("training_progress", step_info)
+            logger.info(
+                f"Step {step + 1}/{n_steps} ({step_info['progress_percent']:.1f}%): "
+                f"{len(stats['spikes'])} spikes, "
+                f"~{step_info['estimated_remaining_seconds']:.0f}s remaining"
+            )
+    
+    # Add final state
+    results["final_neurons"] = len(current_model.neurons)
+    results["final_synapses"] = len(current_model.synapses)
+    results["recent_steps"] = recent_steps
+    
+    return results, recent_steps
+
+
+def _compute_progress_info(
+    step: int,
+    total_steps: int,
+    step_times: list,
+    stats: dict,
+    model: BrainModel,
+) -> dict:
+    """Compute progress information for a simulation step.
+    
+    Args:
+        step: Current step number (0-indexed)
+        total_steps: Total number of steps to run
+        step_times: List of recent step execution times
+        stats: Statistics from current step
+        model: The brain model
+        
+    Returns:
+        Dictionary with progress information
+    """
+    avg_step_time = sum(step_times) / len(step_times)
+    remaining_steps = total_steps - (step + 1)
+    estimated_remaining_time = avg_step_time * remaining_steps
+    progress_percent = ((step + 1) / total_steps) * 100
+    
+    return {
+        "step": step + 1,
+        "total_steps": total_steps,
+        "progress_percent": round(progress_percent, 1),
+        "estimated_remaining_seconds": round(estimated_remaining_time, 1),
+        "spikes": len(stats["spikes"]),
+        "neurons": len(model.neurons),
+        "synapses": len(model.synapses),
+    }
+
+
 @app.route("/api/simulation/run", methods=["POST"])
 @limiter.limit("10 per minute")  # Limit intensive simulation runs
 def run_simulation():
-    """Run simulation for multiple steps."""
-    global current_simulation, is_training
+    """Run simulation for multiple steps.
+    
+    This endpoint has been refactored to use helper functions for better
+    maintainability. The main logic is split into:
+    - Parameter validation (_validate_run_parameters)
+    - Simulation loop execution (_run_simulation_loop)
+    - Progress computation (_compute_progress_info)
+    """
+    global is_training
 
     if current_simulation is None:
         return jsonify({"status": "error", "message": "No simulation initialized"}), 400
@@ -426,91 +569,23 @@ def run_simulation():
 
     try:
         data = request.json
-        n_steps = data.get("steps", 100)
-
-        # Validate n_steps to prevent resource exhaustion
-        if not isinstance(n_steps, int) or n_steps <= 0:
-            raise ValueError("Steps must be a positive integer")
-        if n_steps > 100000:
-            raise ValueError("Steps cannot exceed 100000 to prevent memory exhaustion")
+        
+        # Validate parameters
+        is_valid, error_msg, n_steps = _validate_run_parameters(data)
+        if not is_valid:
+            raise ValueError(error_msg)
 
         logger.info(f"Running simulation for {n_steps} steps")
 
-        results = {"total_spikes": 0, "total_deaths": 0, "total_births": 0, "final_neurons": 0, "final_synapses": 0}
-
-        # Memory leak fix: Only keep last 100 step details instead of all
-        # For very long simulations, we don't need every intermediate step
-        max_history_steps = 100
-        recent_steps = []
-        
-        # Time tracking for progress estimation
-        import time
-        start_time = time.time()
-        step_times = []
-
-        for step in range(n_steps):
-            step_start = time.time()
-            
-            # Check training flag under lock to avoid race conditions
-            with simulation_lock:
-                if not is_training:
-                    logger.info("Training stopped by user")
-                    break
-                stats = current_simulation.step()
-                current_step = current_model.current_step
-
-            results["total_spikes"] += len(stats["spikes"])
-            results["total_deaths"] += stats["deaths"]
-            results["total_births"] += stats["births"]
-
-            # Automatic checkpoint at regular intervals for recovery
-            if current_step % CHECKPOINT_INTERVAL == 0:
-                checkpoint_path = save_checkpoint(current_model, current_step)
-                if checkpoint_path:
-                    logger.info(f"Auto-checkpoint saved at step {current_step}")
-
-            # Track step time for progress estimation
-            step_time = time.time() - step_start
-            step_times.append(step_time)
-            if len(step_times) > 50:  # Keep last 50 steps for moving average
-                step_times.pop(0)
-
-            if (step + 1) % 10 == 0:
-                # Calculate time estimates
-                avg_step_time = sum(step_times) / len(step_times)
-                remaining_steps = n_steps - (step + 1)
-                estimated_remaining_time = avg_step_time * remaining_steps
-                progress_percent = ((step + 1) / n_steps) * 100
-                
-                step_info = {
-                    "step": step + 1,
-                    "total_steps": n_steps,
-                    "progress_percent": round(progress_percent, 1),
-                    "estimated_remaining_seconds": round(estimated_remaining_time, 1),
-                    "spikes": len(stats["spikes"]),
-                    "neurons": len(current_model.neurons),
-                    "synapses": len(current_model.synapses),
-                }
-
-                # Only keep recent history to prevent memory leak
-                recent_steps.append(step_info)
-                if len(recent_steps) > max_history_steps:
-                    recent_steps.pop(0)
-
-                # Send progress via SocketIO
-                socketio.emit("training_progress", step_info)
-                logger.info(f"Step {step + 1}/{n_steps} ({progress_percent:.1f}%): {len(stats['spikes'])} spikes, ~{estimated_remaining_time:.0f}s remaining")
-
-        # Add final state to results
-        results["final_neurons"] = len(current_model.neurons)
-        results["final_synapses"] = len(current_model.synapses)
-        results["recent_steps"] = recent_steps
+        # Run the simulation loop
+        results, recent_steps = _run_simulation_loop(n_steps)
 
         with simulation_lock:
             is_training = False
+        
         logger.info(f"Simulation complete: {results['total_spikes']} total spikes")
-
         return jsonify({"status": "success", "results": results})
+        
     except ValueError as e:
         with simulation_lock:
             is_training = False
