@@ -417,3 +417,214 @@ def calculate_class_metrics(confusion_matrix: np.ndarray) -> Dict[int, Dict[str,
         }
     
     return class_metrics
+
+
+def plot_raster(
+    spike_times: Dict[int, List[int]],
+    time_window: Optional[Tuple[int, int]] = None,
+    neuron_ids: Optional[List[int]] = None,
+    title: str = "Raster Plot",
+    save_path: Optional[str] = None
+) -> Dict[str, Any]:
+    """Create a raster plot showing spike times for multiple neurons.
+    
+    A raster plot displays each neuron's spike times as vertical marks,
+    with one row per neuron.
+    
+    Args:
+        spike_times: Dictionary mapping neuron_id to list of spike times
+        time_window: Optional (start_time, end_time) tuple to limit display
+        neuron_ids: Optional list of neuron IDs to include (default: all)
+        title: Plot title
+        save_path: Optional path to save figure
+        
+    Returns:
+        Dictionary with plot data for rendering
+    """
+    if not spike_times:
+        return {"error": "No spike times provided"}
+    
+    # Filter neurons if specified
+    if neuron_ids is not None:
+        spike_times = {nid: times for nid, times in spike_times.items() if nid in neuron_ids}
+    
+    if not spike_times:
+        return {"error": "No neurons in specified list"}
+    
+    # Prepare spike events
+    events = []
+    for neuron_id, times in spike_times.items():
+        for t in times:
+            # Filter by time window if specified
+            if time_window is None or (time_window[0] <= t <= time_window[1]):
+                events.append((t, neuron_id))
+    
+    if not events:
+        return {"error": "No spikes in specified time window"}
+    
+    # Sort by neuron ID for better visualization
+    events.sort(key=lambda x: (x[1], x[0]))
+    
+    plot_data = {
+        "type": "raster",
+        "events": events,
+        "title": title,
+        "xlabel": "Time (ms)",
+        "ylabel": "Neuron ID",
+        "num_neurons": len(spike_times),
+        "time_range": time_window if time_window else (min(e[0] for e in events), max(e[0] for e in events)),
+    }
+    
+    if save_path:
+        plot_data["save_path"] = save_path
+    
+    return plot_data
+
+
+def plot_psth(
+    spike_times: Dict[int, List[int]],
+    stimulus_times: List[int],
+    pre_window: int = 50,
+    post_window: int = 200,
+    bin_size: int = 10,
+    neuron_ids: Optional[List[int]] = None,
+    title: str = "Peri-Stimulus Time Histogram (PSTH)",
+    save_path: Optional[str] = None
+) -> Dict[str, Any]:
+    """Create a Peri-Stimulus Time Histogram (PSTH).
+    
+    PSTH shows the average firing rate of neurons aligned to stimulus onset.
+    Useful for understanding neural responses to stimuli.
+    
+    Args:
+        spike_times: Dictionary mapping neuron_id to list of spike times
+        stimulus_times: List of stimulus onset times
+        pre_window: Time before stimulus to include (ms)
+        post_window: Time after stimulus to include (ms)
+        bin_size: Bin width for histogram (ms)
+        neuron_ids: Optional list of neuron IDs to include (default: all)
+        title: Plot title
+        save_path: Optional path to save figure
+        
+    Returns:
+        Dictionary with plot data for rendering
+    """
+    if not spike_times or not stimulus_times:
+        return {"error": "No spike times or stimulus times provided"}
+    
+    # Filter neurons if specified
+    if neuron_ids is not None:
+        spike_times = {nid: times for nid, times in spike_times.items() if nid in neuron_ids}
+    
+    if not spike_times:
+        return {"error": "No neurons in specified list"}
+    
+    # Time bins relative to stimulus
+    time_bins = np.arange(-pre_window, post_window + bin_size, bin_size)
+    bin_centers = time_bins[:-1] + bin_size / 2
+    
+    # Collect spikes aligned to each stimulus
+    all_aligned_spikes = []
+    for stim_time in stimulus_times:
+        for neuron_id, times in spike_times.items():
+            for spike_time in times:
+                relative_time = spike_time - stim_time
+                if -pre_window <= relative_time < post_window:
+                    all_aligned_spikes.append(relative_time)
+    
+    if not all_aligned_spikes:
+        return {"error": "No spikes in PSTH window"}
+    
+    # Calculate histogram
+    counts, _ = np.histogram(all_aligned_spikes, bins=time_bins)
+    
+    # Convert to firing rate (spikes per second per neuron per trial)
+    num_neurons = len(spike_times)
+    num_trials = len(stimulus_times)
+    bin_size_sec = bin_size / 1000.0
+    firing_rates = counts / (num_neurons * num_trials * bin_size_sec)
+    
+    plot_data = {
+        "type": "psth",
+        "bin_centers": bin_centers.tolist(),
+        "firing_rates": firing_rates.tolist(),
+        "title": title,
+        "xlabel": "Time relative to stimulus (ms)",
+        "ylabel": "Firing Rate (Hz)",
+        "pre_window": pre_window,
+        "post_window": post_window,
+        "bin_size": bin_size,
+        "num_neurons": num_neurons,
+        "num_trials": num_trials,
+    }
+    
+    if save_path:
+        plot_data["save_path"] = save_path
+    
+    return plot_data
+
+
+def plot_spike_train_correlation(
+    spike_times_1: List[int],
+    spike_times_2: List[int],
+    max_lag: int = 100,
+    bin_size: int = 1,
+    title: str = "Cross-Correlation",
+    save_path: Optional[str] = None
+) -> Dict[str, Any]:
+    """Calculate and plot cross-correlation between two spike trains.
+    
+    Cross-correlation measures temporal relationships between spike trains,
+    useful for detecting synchrony and causal relationships.
+    
+    Args:
+        spike_times_1: First spike train (list of spike times)
+        spike_times_2: Second spike train (list of spike times)
+        max_lag: Maximum time lag to compute (ms)
+        bin_size: Bin size for spike binning (ms)
+        title: Plot title
+        save_path: Optional path to save figure
+        
+    Returns:
+        Dictionary with plot data for rendering
+    """
+    if not spike_times_1 or not spike_times_2:
+        return {"error": "Insufficient spike data"}
+    
+    # Determine time range
+    all_times = spike_times_1 + spike_times_2
+    min_time = min(all_times)
+    max_time = max(all_times)
+    
+    # Create binned spike trains
+    bins = np.arange(min_time, max_time + bin_size, bin_size)
+    train_1, _ = np.histogram(spike_times_1, bins=bins)
+    train_2, _ = np.histogram(spike_times_2, bins=bins)
+    
+    # Compute cross-correlation
+    max_lag_bins = int(max_lag / bin_size)
+    correlation = np.correlate(train_1 - np.mean(train_1), train_2 - np.mean(train_2), mode='full')
+    
+    # Extract relevant lag range
+    center = len(correlation) // 2
+    correlation = correlation[center - max_lag_bins:center + max_lag_bins + 1]
+    lags = np.arange(-max_lag, max_lag + bin_size, bin_size)[:len(correlation)]
+    
+    # Normalize
+    correlation = correlation / (np.std(train_1) * np.std(train_2) * len(train_1))
+    
+    plot_data = {
+        "type": "cross_correlation",
+        "lags": lags.tolist(),
+        "correlation": correlation.tolist(),
+        "title": title,
+        "xlabel": "Time Lag (ms)",
+        "ylabel": "Cross-Correlation",
+        "max_lag": max_lag,
+        "bin_size": bin_size,
+    }
+    
+    if save_path:
+        plot_data["save_path"] = save_path
+    
+    return plot_data

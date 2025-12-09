@@ -52,12 +52,18 @@ class TestKnowledgeEntry:
         assert entry_dict["id"] == 1
         assert entry_dict["category"] == "sequence"
         assert "data_blob" in entry_dict
-        assert isinstance(entry_dict["data_blob"], bytes)
+        # Now using base64-encoded string instead of raw bytes
+        assert isinstance(entry_dict["data_blob"], str)
 
     def test_knowledge_entry_from_dict(self):
         """Test creating entry from dictionary."""
         data = np.array([5, 6, 7, 8])
-        data_blob = pickle.dumps(data)
+        # Use the new secure serialization method
+        from io import BytesIO
+        import base64
+        buffer = BytesIO()
+        np.save(buffer, data, allow_pickle=False)
+        data_blob = base64.b64encode(buffer.getvalue()).decode('utf-8')
 
         entry_dict = {
             "id": 2,

@@ -109,6 +109,89 @@ def update_izhikevich_neuron(
     return spiked, new_v, new_u
 
 
+def update_hodgkin_huxley_neuron(
+    neuron: Neuron,
+    synaptic_input: float,
+    dt: float = 0.01
+) -> Tuple[bool, float, float, float, float]:
+    """Update neuron using Hodgkin-Huxley model.
+    
+    The Hodgkin-Huxley model is a biophysically realistic model that describes
+    the ionic mechanisms underlying the initiation and propagation of action potentials.
+    
+    Args:
+        neuron: Neuron to update
+        synaptic_input: Total synaptic input current (μA/cm²)
+        dt: Time step size (ms), should be small (0.01-0.1 ms)
+        
+    Returns:
+        Tuple of (spiked: bool, new_v: float, new_m: float, new_h: float, new_n: float)
+    """
+    params = neuron.params
+    
+    # Get or initialize gating variables
+    m = params.get("hh_m", 0.05)  # Sodium activation
+    h = params.get("hh_h", 0.6)   # Sodium inactivation
+    n = params.get("hh_n", 0.32)  # Potassium activation
+    
+    # HH parameters
+    C_m = params.get("hh_C_m", 1.0)     # Membrane capacitance (μF/cm²)
+    g_Na = params.get("hh_g_Na", 120.0) # Sodium conductance (mS/cm²)
+    g_K = params.get("hh_g_K", 36.0)    # Potassium conductance (mS/cm²)
+    g_L = params.get("hh_g_L", 0.3)     # Leak conductance (mS/cm²)
+    E_Na = params.get("hh_E_Na", 50.0)  # Sodium reversal potential (mV)
+    E_K = params.get("hh_E_K", -77.0)   # Potassium reversal potential (mV)
+    E_L = params.get("hh_E_L", -54.4)   # Leak reversal potential (mV)
+    
+    v = neuron.v_membrane
+    
+    # Alpha and beta rate functions for gating variables
+    # Sodium activation (m)
+    alpha_m = 0.1 * (v + 40.0) / (1.0 - np.exp(-(v + 40.0) / 10.0)) if v != -40.0 else 1.0
+    beta_m = 4.0 * np.exp(-(v + 65.0) / 18.0)
+    
+    # Sodium inactivation (h)
+    alpha_h = 0.07 * np.exp(-(v + 65.0) / 20.0)
+    beta_h = 1.0 / (1.0 + np.exp(-(v + 35.0) / 10.0))
+    
+    # Potassium activation (n)
+    alpha_n = 0.01 * (v + 55.0) / (1.0 - np.exp(-(v + 55.0) / 10.0)) if v != -55.0 else 0.1
+    beta_n = 0.125 * np.exp(-(v + 65.0) / 80.0)
+    
+    # Update gating variables using Euler method
+    dm = (alpha_m * (1 - m) - beta_m * m) * dt
+    dh = (alpha_h * (1 - h) - beta_h * h) * dt
+    dn = (alpha_n * (1 - n) - beta_n * n) * dt
+    
+    new_m = m + dm
+    new_h = h + dh
+    new_n = n + dn
+    
+    # Calculate ionic currents
+    I_Na = g_Na * (new_m ** 3) * new_h * (v - E_Na)
+    I_K = g_K * (new_n ** 4) * (v - E_K)
+    I_L = g_L * (v - E_L)
+    
+    total_input = synaptic_input + neuron.external_input
+    
+    # Update membrane potential
+    dv = ((total_input - I_Na - I_K - I_L) / C_m) * dt
+    new_v = v + dv
+    
+    # Detect spike (crossing threshold from below)
+    v_threshold = params.get("v_threshold", 0.0)
+    was_below = v < v_threshold
+    is_above = new_v >= v_threshold
+    spiked = was_below and is_above
+    
+    # Store gating variables back in params for next iteration
+    params["hh_m"] = new_m
+    params["hh_h"] = new_h
+    params["hh_n"] = new_n
+    
+    return spiked, new_v, new_m, new_h, new_n
+
+
 def get_izhikevich_parameters(
     neuron_type: str,
     params: Dict = None
@@ -186,7 +269,7 @@ def update_neuron(
     Args:
         neuron: Neuron to update
         synaptic_input: Total synaptic input
-        dt: Time step
+        dt: Time step (should be 0.01-0.1 for Hodgkin-Huxley, 1.0 for others)
         
     Returns:
         True if neuron spiked
@@ -195,6 +278,10 @@ def update_neuron(
         spiked, new_v, new_u = update_izhikevich_neuron(neuron, synaptic_input, dt)
         neuron.v_membrane = new_v
         neuron.u_recovery = new_u
+    elif neuron.model_type == "hodgkin_huxley":
+        spiked, new_v, new_m, new_h, new_n = update_hodgkin_huxley_neuron(neuron, synaptic_input, dt)
+        neuron.v_membrane = new_v
+        # Gating variables are stored in params by the function
     else:
         # Default to LIF
         spiked, new_v = update_lif_neuron(neuron, synaptic_input, dt)
