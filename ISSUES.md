@@ -247,13 +247,18 @@ This document tracks known bugs, limitations, and technical debt in the project.
 - **Effort**: Low
 - **Plan**: Continue standardization across remaining modules
 
-#### Large Functions
-- **Location**: `simulation.py:step()`, `app.py` routes
-- **Issue**: Functions >100 lines, multiple responsibilities
-- **Impact**: Hard to test, maintain, and understand
-- **Priority**: Medium
-- **Effort**: Medium
-- **Plan**: Refactor into smaller functions
+#### Large Functions (IMPROVED)
+- **Status**: 🚧 Partially Resolved (December 9, 2025)
+- **Location**: `app.py` routes improved, `simulation.py` remaining
+- **Resolution**: Refactored `app.py:run_simulation()`
+  - Reduced from 117 lines to 51 lines main function
+  - Extracted 3 helper functions for better organization
+  - `_validate_run_parameters()` - Parameter validation
+  - `_run_simulation_loop()` - Main execution loop
+  - `_compute_progress_info()` - Progress calculation
+- **Remaining**: `simulation.py:step()` could benefit from similar refactoring
+- **Priority**: Low (reduced from Medium)
+- **Impact**: Significantly improved maintainability in app.py
 
 #### Global State in Web App
 - **Location**: `app.py`

@@ -400,6 +400,7 @@ The following sections contain features planned for future releases (v1.2+):
   - [x] Temporal sequence learning (basic & advanced with working memory)
   - [x] Multi-modal integration (basic & advanced with motor output & analysis)
   - [x] Digital sense applications (integrated in advanced examples)
+  - [x] Advanced memory example (long-term memory, attention, phase space, motifs) (Dec 9, 2025)
 
 - [ ] **Scientific Documentation**
   - Mathematical model description
