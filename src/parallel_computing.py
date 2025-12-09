@@ -76,7 +76,8 @@ class ParallelSimulationEngine:
         self,
         n_processes: Optional[int] = None,
         partition_strategy: str = 'spatial',
-        load_balancing: bool = True
+        load_balancing: bool = True,
+        verbose: bool = False
     ):
         """Initialize parallel simulation engine.
         
@@ -84,13 +85,16 @@ class ParallelSimulationEngine:
             n_processes: Number of parallel processes (default: number of CPU cores)
             partition_strategy: How to partition neurons ('spatial', 'random', 'area-based')
             load_balancing: Whether to enable dynamic load balancing
+            verbose: Whether to print initialization messages
         """
         self.n_processes = n_processes or cpu_count()
         self.partition_strategy = partition_strategy
         self.load_balancing = load_balancing
         self.partitions: List[SpatialPartition] = []
+        self.verbose = verbose
         
-        print(f"Parallel computing initialized with {self.n_processes} processes")
+        if self.verbose:
+            print(f"Parallel computing initialized with {self.n_processes} processes")
     
     def create_spatial_partitions(
         self,
@@ -386,7 +390,8 @@ class ParallelSimulator:
 def benchmark_parallel_scaling(
     model: BrainModel,
     n_steps: int = 100,
-    process_counts: Optional[List[int]] = None
+    process_counts: Optional[List[int]] = None,
+    verbose: bool = True
 ) -> Dict[str, Any]:
     """Benchmark parallel scaling characteristics.
     
@@ -396,6 +401,7 @@ def benchmark_parallel_scaling(
         model: Brain model to benchmark
         n_steps: Number of simulation steps
         process_counts: List of process counts to test (default: [1, 2, 4, 8, ...])
+        verbose: Whether to print progress messages
         
     Returns:
         Dictionary with benchmark results:
@@ -427,7 +433,8 @@ def benchmark_parallel_scaling(
     baseline_time = None
     
     for n_proc in process_counts:
-        print(f"Benchmarking with {n_proc} processes...")
+        if verbose:
+            print(f"Benchmarking with {n_proc} processes...")
         
         # Create parallel simulator
         sim = ParallelSimulator(model, n_processes=n_proc)
@@ -451,6 +458,7 @@ def benchmark_parallel_scaling(
         results['speedups'].append(speedup)
         results['efficiencies'].append(efficiency)
         
-        print(f"  Time: {elapsed:.2f}s, Speedup: {speedup:.2f}x, Efficiency: {efficiency:.1%}")
+        if verbose:
+            print(f"  Time: {elapsed:.2f}s, Speedup: {speedup:.2f}x, Efficiency: {efficiency:.1%}")
     
     return results

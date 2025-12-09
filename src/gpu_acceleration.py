@@ -47,8 +47,6 @@ class GPUAccelerator:
                 cp.cuda.Device(device_id).use()
                 self.device_name = cp.cuda.Device().name.decode('utf-8')
                 self.device_memory = cp.cuda.Device().mem_info[1]  # Total memory
-                print(f"GPU acceleration enabled: {self.device_name} "
-                      f"({self.device_memory / 1e9:.1f} GB)")
             except Exception as e:
                 warnings.warn(f"Failed to initialize GPU: {e}. Falling back to CPU.")
                 self.use_gpu = False

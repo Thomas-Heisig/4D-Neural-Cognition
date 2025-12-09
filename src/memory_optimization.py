@@ -82,7 +82,7 @@ class MemoryMappedModel:
         self,
         neurons: Dict[int, Neuron],
         chunk_size: int = 1000,
-        compression: str = 'gzip'
+        compression: Optional[str] = 'gzip'
     ) -> None:
         """Store neurons in memory-mapped file.
         
@@ -90,7 +90,14 @@ class MemoryMappedModel:
             neurons: Dictionary of neurons
             chunk_size: HDF5 chunk size for optimal access
             compression: Compression algorithm ('gzip', 'lzf', None)
+        
+        Raises:
+            ValueError: If compression algorithm is not supported
         """
+        # Validate compression parameter
+        valid_compression = ['gzip', 'lzf', None]
+        if compression not in valid_compression:
+            raise ValueError(f"Compression must be one of {valid_compression}, got {compression}")
         if self.h5file is None:
             raise RuntimeError("File not opened")
         
@@ -444,19 +451,30 @@ class MemoryProfiler:
             'synapses_diff_mb': (snap2.synapses_bytes - snap1.synapses_bytes) / (1024 ** 2)
         }
     
-    def print_report(self) -> None:
-        """Print a memory usage report."""
-        print("\nMemory Usage Report")
-        print("=" * 60)
+    def get_report(self) -> str:
+        """Get a memory usage report as a formatted string.
+        
+        Returns:
+            Formatted memory usage report
+        """
+        lines = []
+        lines.append("\nMemory Usage Report")
+        lines.append("=" * 60)
         
         for label, stats in self.snapshots:
             mb = stats.to_mb()
-            print(f"\n{label}:")
-            print(f"  Total:        {mb['total_mb']:>10.2f} MB")
-            print(f"  Neurons:      {mb['neurons_mb']:>10.2f} MB")
-            print(f"  Synapses:     {mb['synapses_mb']:>10.2f} MB")
-            print(f"  Spike History:{mb['spike_history_mb']:>10.2f} MB")
-            print(f"  Other:        {mb['other_mb']:>10.2f} MB")
+            lines.append(f"\n{label}:")
+            lines.append(f"  Total:        {mb['total_mb']:>10.2f} MB")
+            lines.append(f"  Neurons:      {mb['neurons_mb']:>10.2f} MB")
+            lines.append(f"  Synapses:     {mb['synapses_mb']:>10.2f} MB")
+            lines.append(f"  Spike History:{mb['spike_history_mb']:>10.2f} MB")
+            lines.append(f"  Other:        {mb['other_mb']:>10.2f} MB")
+        
+        return '\n'.join(lines)
+    
+    def print_report(self) -> None:
+        """Print a memory usage report."""
+        print(self.get_report())
 
 
 def create_memory_mapped_model(filepath: str, mode: str = 'r+') -> MemoryMappedModel:

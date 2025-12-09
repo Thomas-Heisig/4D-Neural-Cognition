@@ -139,6 +139,24 @@ class TestMemoryMappedModel:
             if os.path.exists(filepath):
                 os.remove(filepath)
     
+    def test_store_neurons_invalid_compression(self):
+        """Test storing neurons with invalid compression."""
+        with tempfile.NamedTemporaryFile(suffix='.h5', delete=False) as tmp:
+            filepath = tmp.name
+        
+        try:
+            neurons = {0: Neuron(id=0, x=5, y=5, z=2, w=1)}
+            
+            model = MemoryMappedModel(filepath, mode='w')
+            
+            with pytest.raises(ValueError):
+                model.store_neurons(neurons, compression='invalid')
+            
+            model.close()
+        finally:
+            if os.path.exists(filepath):
+                os.remove(filepath)
+    
     def test_factory_function(self):
         """Test factory function."""
         with tempfile.NamedTemporaryFile(suffix='.h5', delete=False) as tmp:
@@ -401,6 +419,17 @@ class TestMemoryProfiler:
         captured = capsys.readouterr()
         assert 'Memory Usage Report' in captured.out
         assert 'test' in captured.out
+    
+    def test_get_report(self, simple_model):
+        """Test getting memory report as string."""
+        profiler = MemoryProfiler()
+        profiler.take_snapshot('test', simple_model)
+        
+        report = profiler.get_report()
+        
+        assert isinstance(report, str)
+        assert 'Memory Usage Report' in report
+        assert 'test' in report
 
 
 class TestOptimizeModelMemory:
