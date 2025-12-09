@@ -303,6 +303,12 @@ class CorticalArea:
     z_range: Tuple[int, int] = (0, 30)
     w_range: Tuple[int, int] = (0, 10)
     
+    # Layer boundary thresholds (configurable)
+    LAYER_1_THRESHOLD: float = 0.1
+    LAYER_23_THRESHOLD: float = 0.35
+    LAYER_4_THRESHOLD: float = 0.5
+    LAYER_5_THRESHOLD: float = 0.75
+    
     def __post_init__(self):
         """Initialize layers."""
         if not self.layers:
@@ -326,14 +332,14 @@ class CorticalArea:
         z_min, z_max = self.z_range
         z_normalized = (z - z_min) / (z_max - z_min)
         
-        # Layer boundaries (approximate)
-        if z_normalized < 0.1:
+        # Layer boundaries (approximate, configurable)
+        if z_normalized < self.LAYER_1_THRESHOLD:
             return 1
-        elif z_normalized < 0.35:
+        elif z_normalized < self.LAYER_23_THRESHOLD:
             return 2  # 2/3
-        elif z_normalized < 0.5:
+        elif z_normalized < self.LAYER_4_THRESHOLD:
             return 4
-        elif z_normalized < 0.75:
+        elif z_normalized < self.LAYER_5_THRESHOLD:
             return 5
         else:
             return 6

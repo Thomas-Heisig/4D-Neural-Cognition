@@ -64,9 +64,12 @@ class SleepWakeRegulation:
     wake_promoting: float = 0.5  # Orexin, NE, ACh, histamine
     sleep_promoting: float = 0.5  # GABA, adenosine
     
-    # Transition thresholds
+    # Transition thresholds (configurable)
     wake_to_sleep_threshold: float = 0.7
     sleep_to_wake_threshold: float = 0.3
+    
+    # Configuration constants
+    SLEEP_PRESSURE_THRESHOLD: float = 0.5  # For N2->N3 transition
     
     # REM regulation
     rem_pressure: float = 0.0
@@ -139,7 +142,7 @@ class SleepWakeRegulation:
         
         elif self.current_stage == SleepStage.N2:
             if self.time_in_stage > 1000:
-                if self.sleep_pressure > 0.5:
+                if self.sleep_pressure > self.SLEEP_PRESSURE_THRESHOLD:
                     return SleepStage.N3
                 elif self.rem_pressure > 0.7:
                     return SleepStage.REM

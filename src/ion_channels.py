@@ -16,6 +16,9 @@ from dataclasses import dataclass, field
 from typing import Dict, Optional
 import numpy as np
 
+# Constants
+SINGULARITY_THRESHOLD = 1e-6  # Threshold to avoid division by zero in rate functions
+
 
 @dataclass
 class VoltageGatedChannel:
@@ -66,7 +69,7 @@ class SodiumChannel(VoltageGatedChannel):
     
     def alpha_m(self, v: float) -> float:
         """Activation rate constant."""
-        if abs(v + 40.0) < 1e-6:
+        if abs(v + 40.0) < SINGULARITY_THRESHOLD:
             return 1.0
         return 0.1 * (v + 40.0) / (1.0 - np.exp(-(v + 40.0) / 10.0))
     
@@ -117,7 +120,7 @@ class PotassiumChannel(VoltageGatedChannel):
     
     def alpha_n(self, v: float) -> float:
         """Activation rate constant."""
-        if abs(v + 55.0) < 1e-6:
+        if abs(v + 55.0) < SINGULARITY_THRESHOLD:
             return 0.1
         return 0.01 * (v + 55.0) / (1.0 - np.exp(-(v + 55.0) / 10.0))
     
