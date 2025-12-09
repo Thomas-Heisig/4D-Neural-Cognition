@@ -332,11 +332,12 @@ The following sections contain features planned for future releases (v1.2+):
   - [x] Population dynamics (mean field, oscillations, dimensionality)
   - [ ] Information theory metrics (partial implementation)
 
-- [ ] **Visualization Tools**
-  - Raster plots
-  - PSTHs (peri-stimulus time histograms)
-  - Phase space plots
-  - Network motif detection
+- [x] **Visualization Tools** (Dec 2025)
+  - [x] Raster plots - `plot_raster()` with time window and neuron filtering
+  - [x] PSTHs (peri-stimulus time histograms) - `plot_psth()` with stimulus alignment
+  - [x] Spike train correlation - `plot_spike_train_correlation()` for synchrony detection
+  - [ ] Phase space plots
+  - [ ] Network motif detection
 
 - [ ] **Model Comparison**
   - Compare different configurations
