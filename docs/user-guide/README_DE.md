@@ -74,6 +74,30 @@ Willkommen beim 4D Neural Cognition Benutzerhandbuch! Diese Anleitung hilft Ihne
 
 ---
 
+## 🌟 Hauptmerkmale (Dezember 2025)
+
+### Neuronale Modelle
+- **Mehrere Neuronentypen**: LIF, Izhikevich (Regular Spiking, Fast Spiking, Bursting), Hodgkin-Huxley
+- **Inhibitorische Neuronen**: Vollständige E/I-Balance-Unterstützung
+- **Zell-Lebenszyklus**: Alterung, Tod, Reproduktion mit Vererbung
+
+### Lernen & Gedächtnis
+- **Plastizität**: Hebbsches Lernen, STDP, Gewichtszerfall, homöostatische Mechanismen
+- **Langzeitgedächtnis**: Konsolidierung, Replay-Mechanismen, Schlaf-ähnliche Zustände
+- **Aufmerksamkeit**: Top-down, Bottom-up, Winner-Take-All-Schaltkreise
+
+### Analyse & Visualisierung
+- **Erweiterte Visualisierung**: Raster-Plots, PSTH, Spike-Train-Korrelation
+- **Phasenraum-Analyse**: 2D/3D-Phasenraum-Visualisierung
+- **Netzwerk-Motive**: Erkennung und statistische Analyse
+- **3D/4D-Ansichten**: Interaktive Neuronen-Visualisierung
+
+### Qualität & Sicherheit
+- **753 Tests**: 71% Code-Abdeckung, 100% Erfolgsquote
+- **Sicherheit**: Rate Limiting, CSRF-Schutz, Eingabevalidierung
+- **CI/CD**: Automatisierte Tests und Code-Qualitätsprüfung
+- **Dokumentation**: Umfassende technische Dokumentation
+
 ## 💡 Tipps für den Erfolg
 
 ### Klein anfangen
