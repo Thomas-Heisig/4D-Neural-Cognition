@@ -21,7 +21,7 @@ class TaskResult:
     stability: float = 0.0
     additional_metrics: Dict[str, float] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize additional_metrics dict if not provided."""
         if self.additional_metrics is None:
             self.additional_metrics = {}
@@ -34,7 +34,7 @@ class Environment(ABC):
     can interact with. Similar to OpenAI Gym interface.
     """
 
-    def __init__(self, seed: int = None):
+    def __init__(self, seed: int = None) -> None:
         """Initialize the environment.
 
         Args:
@@ -97,7 +97,7 @@ class Task(ABC):
     A task wraps an environment and provides evaluation metrics.
     """
 
-    def __init__(self, seed: int = None):
+    def __init__(self, seed: int = None) -> None:
         """Initialize the task.
 
         Args:
@@ -372,7 +372,7 @@ class TemporalSequenceTask(Task):
     demonstration and can be extended with actual prediction logic.
     """
 
-    def __init__(self, sequence_length: int = 5, vocabulary_size: int = 8, seed: int = None):
+    def __init__(self, sequence_length: int = 5, vocabulary_size: int = 8, seed: int = None) -> None:
         """Initialize temporal sequence task.
 
         Args:
@@ -483,7 +483,7 @@ class TemporalSequenceTask(Task):
 class TemporalSequenceEnvironment(Environment):
     """Environment for temporal sequence task."""
 
-    def __init__(self, sequence_length: int = 5, vocabulary_size: int = 8, seed: int = None):
+    def __init__(self, sequence_length: int = 5, vocabulary_size: int = 8, seed: int = None) -> None:
         """Initialize temporal sequence environment.
 
         Args:
@@ -554,7 +554,7 @@ class SensorimotorControlTask(Task):
         max_angle: float = np.pi / 4,
         control_interval: int = 10,
         seed: int = None
-    ):
+    ) -> None:
         """Initialize sensorimotor control task.
         
         Args:
@@ -673,7 +673,7 @@ class SensorimotorControlTask(Task):
 class SensorimotorControlEnvironment(Environment):
     """Environment for pendulum control task."""
 
-    def __init__(self, max_angle: float = np.pi / 4, seed: int = None):
+    def __init__(self, max_angle: float = np.pi / 4, seed: int = None) -> None:
         """Initialize pendulum environment.
         
         Args:
@@ -777,7 +777,7 @@ class MultiModalIntegrationTask(Task):
         num_classes: int = 4,
         modality_noise: float = 0.2,
         seed: int = None
-    ):
+    ) -> None:
         """Initialize multi-modal integration task.
         
         Args:
@@ -890,7 +890,7 @@ class MultiModalIntegrationEnvironment(Environment):
         num_classes: int = 4,
         modality_noise: float = 0.2,
         seed: int = None
-    ):
+    ) -> None:
         """Initialize multi-modal environment.
         
         Args:
@@ -974,7 +974,7 @@ class ContinuousLearningTask(Task):
         num_phases: int = 3,
         steps_per_phase: int = 200,
         seed: int = None
-    ):
+    ) -> None:
         """Initialize continuous learning task.
         
         Args:
@@ -1088,7 +1088,7 @@ class ContinuousLearningEnvironment(Environment):
         num_phases: int = 3,
         steps_per_phase: int = 200,
         seed: int = None
-    ):
+    ) -> None:
         """Initialize continuous learning environment.
         
         Args:
@@ -1178,7 +1178,7 @@ class TransferLearningTask(Task):
         target_classes: int = 4,
         similarity: float = 0.7,
         seed: int = None
-    ):
+    ) -> None:
         """Initialize transfer learning task.
         
         Args:
@@ -1305,7 +1305,7 @@ class TransferLearningEnvironment(Environment):
         target_classes: int = 4,
         similarity: float = 0.7,
         seed: int = None
-    ):
+    ) -> None:
         """Initialize transfer learning environment.
         
         Args:
