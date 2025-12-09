@@ -8,6 +8,12 @@ flask-limiter>=3.0.0
 flask-wtf>=1.0.0
 pytest>=7.0.0
 pytest-cov>=4.0.0
+pyyaml>=5.0.0
+
+# Optional dependencies for performance optimization
+# JAX for GPU/TPU acceleration (uncomment if needed):
+# jax>=0.4.0
+# jaxlib>=0.4.0
 
 # Optional dependencies for performance optimization
 # GPU acceleration (uncomment if you have CUDA):

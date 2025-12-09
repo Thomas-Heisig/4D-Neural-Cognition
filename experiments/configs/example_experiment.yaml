@@ -1,0 +1,88 @@
+# Example experiment configuration for 4D Neural Cognition
+# This demonstrates the unified configuration and experiment management system
+
+experiment:
+  name: "4d_attention_study"
+  description: "Study of attention mechanisms in 4D neural networks"
+  version: "1.0"
+  author: "Research Team"
+  tags:
+    - "attention"
+    - "4d-networks"
+    - "cognitive-modeling"
+  
+  # Network configuration
+  network_config:
+    lattice_shape: [10, 10, 10, 5]  # x, y, z, w dimensions
+    
+    neuron_model:
+      model_type: "lif"
+      tau_m: 10.0
+      v_rest: -65.0
+      v_reset: -65.0
+      v_threshold: -50.0
+    
+    plasticity:
+      learning_rate: 0.01
+      weight_decay: 0.0001
+      stdp_enabled: true
+      stdp_params:
+        tau_plus: 20.0
+        tau_minus: 20.0
+        a_plus: 0.01
+        a_minus: 0.012
+    
+    homeostatic_plasticity:
+      enabled: true
+      target_rate: 5.0
+      synaptic_scaling: true
+      intrinsic_excitability: true
+    
+    short_term_plasticity:
+      enabled: true
+      default_type: "balanced"  # balanced, facilitating, or depressing
+    
+    attention:
+      bottom_up_enabled: true
+      top_down_enabled: true
+      winner_take_all_enabled: true
+      k_winners: 3
+    
+    density: 0.2  # 20% of lattice positions filled
+    connection_probability: 0.05
+  
+  # Variables to sweep
+  variables:
+    - name: "network_size"
+      path: "lattice_shape"
+      values:
+        - [5, 5, 5, 3]   # small
+        - [10, 10, 10, 5]  # medium
+        - [15, 15, 15, 7]  # large
+    
+    - name: "learning_rule"
+      path: "plasticity.learning_rate"
+      values: [0.001, 0.01, 0.1]
+    
+    - name: "attention_type"
+      path: "attention.k_winners"
+      values: [1, 3, 5]
+  
+  # Metrics to track
+  metrics:
+    - "convergence_time"
+    - "pattern_recall_accuracy"
+    - "energy_efficiency"
+    - "spike_rate_mean"
+    - "spike_rate_std"
+    - "attention_accuracy"
+    - "working_memory_capacity"
+  
+  # Export settings
+  export_formats:
+    - "json"
+    - "hdf5"
+    - "csv"
+  
+  # Reproducibility
+  seed: 42
