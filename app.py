@@ -18,6 +18,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_wtf.csrf import CSRFProtect
 
 # Ensure logs directory exists BEFORE configuring logging
 os.makedirs("logs", exist_ok=True)
@@ -59,6 +60,18 @@ limiter = Limiter(
     default_limits=["200 per day", "50 per hour"],
     storage_uri="memory://"
 )
+
+# CSRF protection for form submissions
+# Note: CSRF is disabled for API endpoints when using CORS
+# For production with forms, enable CSRF and use tokens in templates
+csrf = CSRFProtect()
+# Only enable CSRF if not in API-only mode
+# For this demo app with CORS, we exempt API routes
+if not os.environ.get("DISABLE_CSRF_FOR_API", "true").lower() == "true":
+    csrf.init_app(app)
+else:
+    # In API mode, CSRF is handled via other mechanisms (Origin checks, API keys, etc.)
+    logger.info("CSRF protection disabled for API-only mode. Enable for production with web forms.")
 
 # Global state
 current_model = None
