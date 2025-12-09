@@ -13,6 +13,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Configuration constants for reconnection behavior
+RECONNECTION_MAX_DISTANCE = 5.0  # Maximum 4D Euclidean distance for nearby neurons
+
 
 def mutate_params(params: dict, rng: np.random.Generator, std: float = 0.05) -> dict:
     """Apply random mutations to neuron parameters.
@@ -161,7 +164,6 @@ def _attempt_reconnection(
         return
 
     # Get nearby neurons within a reasonable distance
-    max_distance = 5.0  # Maximum 4D Euclidean distance
     nearby_neurons = []
 
     for candidate in model.neurons.values():
@@ -174,7 +176,7 @@ def _attempt_reconnection(
             + (neuron.z - candidate.z) ** 2
             + (neuron.w - candidate.w) ** 2
         )
-        if distance <= max_distance:
+        if distance <= RECONNECTION_MAX_DISTANCE:
             nearby_neurons.append((candidate, distance))
 
     if not nearby_neurons:

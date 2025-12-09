@@ -147,6 +147,7 @@ def update_hodgkin_huxley_neuron(
     
     # Alpha and beta rate functions for gating variables
     # Sodium activation (m)
+    # Using L'Hôpital's rule: lim(x→0) a*x/(1-e^-x) = a*1.0 where a=0.1
     alpha_m = 0.1 * (v + 40.0) / (1.0 - np.exp(-(v + 40.0) / 10.0)) if v != -40.0 else 1.0
     beta_m = 4.0 * np.exp(-(v + 65.0) / 18.0)
     
@@ -155,7 +156,8 @@ def update_hodgkin_huxley_neuron(
     beta_h = 1.0 / (1.0 + np.exp(-(v + 35.0) / 10.0))
     
     # Potassium activation (n)
-    alpha_n = 0.01 * (v + 55.0) / (1.0 - np.exp(-(v + 55.0) / 10.0)) if v != -55.0 else 0.1
+    # Using L'Hôpital's rule: lim(x→0) a*x/(1-e^-x) = a*1.0 where a=0.01
+    alpha_n = 0.01 * (v + 55.0) / (1.0 - np.exp(-(v + 55.0) / 10.0)) if v != -55.0 else 0.01
     beta_n = 0.125 * np.exp(-(v + 65.0) / 80.0)
     
     # Update gating variables using Euler method
