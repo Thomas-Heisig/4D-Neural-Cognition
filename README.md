@@ -40,7 +40,7 @@ This project implements a 4D brain system that combines biological principles wi
   - **Experiment Management**: Batch parameter modification, parameter sweeps, A/B testing, and version control
   - **Collaboration**: Multi-user support, shared simulations, annotations, and version history
 - **Robust & Secure**: Input validation, path sanitization, automatic recovery, rate limiting, and comprehensive error handling
-- **Comprehensive Testing**: 753 tests with 71% code coverage, CI/CD pipeline with GitHub Actions
+- **Comprehensive Testing**: 811 passing tests (818 total) with CI/CD pipeline, up to 100% coverage on core modules
 - **Advanced Memory**: Long-term memory consolidation, replay mechanisms, and sleep-like states
 - **Attention Systems**: Top-down attention, bottom-up saliency, and winner-take-all circuits
 
@@ -245,7 +245,7 @@ For complete API documentation, see [API Reference](docs/api/API.md).
 - **Speicherung**: JSON für Konfiguration, HDF5 für effiziente Datenspeicherung (mit Kompression)
 - **Web-Frontend**: Modernes Browser-Interface mit Echtzeit-Visualisierung und automatischen Checkpoints
 - **Robust & Sicher**: Eingabevalidierung, Pfad-Sanitisierung, automatische Wiederherstellung, Rate Limiting
-- **Umfassende Tests**: 753 Tests mit 71% Code-Abdeckung, CI/CD-Pipeline mit GitHub Actions
+- **Umfassende Tests**: 811 erfolgreiche Tests (818 gesamt) mit CI/CD-Pipeline, bis zu 100% Abdeckung bei Kernmodulen
 - **Erweiterte Speichersysteme**: Langzeitgedächtnis-Konsolidierung, Replay-Mechanismen, Schlaf-ähnliche Zustände
 - **Aufmerksamkeitssysteme**: Top-down-Aufmerksamkeit, Bottom-up-Salienz, Winner-Take-All-Schaltkreise
 

@@ -24,6 +24,7 @@ This document tracks known bugs, limitations, and technical debt in the project.
 - **Security**: All 5 security concerns addressed
 - **Technical Debt**: Significantly reduced, only minor items remaining
 - **Documentation**: Complete and up-to-date
+- **Tests**: 811 passing, 7 skipped (818 total)
 
 **🎯 Focus Areas:**
 Most "issues" are now architectural decisions or future enhancements rather than bugs. The system is stable and production-ready.

@@ -76,8 +76,20 @@ Our documentation is organized according to international standards (ISO/IEC/IEE
   - New features, bug fixes, breaking changes
   - Migration guides
 
-- **[IMPLEMENTATION_SUMMARY.md](../IMPLEMENTATION_SUMMARY.md)** - Tasks & Evaluation implementation
-  - Implementation details
+- **[COMPLETION_STATUS.md](../COMPLETION_STATUS.md)** - ⭐ Project completion status
+  - Production-ready v1.1 status
+  - Comprehensive statistics
+  - Module completion breakdown
+  - Deployment readiness checklist
+
+### Archive Documentation
+
+- **[Archive](archive/)** - Historical documentation and completed work
+  - **[Archive Index](archive/README.md)** - Overview of archived documentation
+  - **[Consolidated Work Summary](archive/WORK_SUMMARY_DEC9_2025_CONSOLIDATED.md)** - December 9, 2025 work
+  - Implementation summaries
+  - Completed feature documentation
+  - Historical work records
   - Technical decisions
   - Testing results
 
