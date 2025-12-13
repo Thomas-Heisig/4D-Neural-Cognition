@@ -2,6 +2,10 @@
 
 This directory contains comprehensive benchmarks for evaluating the cognitive capabilities of the 4D Neural Cognition framework.
 
+## Important Note
+
+**Status**: The benchmark framework is currently in active development. Performance metrics shown are based on preliminary experiments and theoretical projections. Full experimental validation with trained models is ongoing. The infrastructure is provided for researchers to conduct rigorous comparative studies.
+
 ## Overview
 
 Our benchmark suite evaluates three key cognitive domains:

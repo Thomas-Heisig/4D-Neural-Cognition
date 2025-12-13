@@ -160,8 +160,15 @@ class CognitiveExperiment:
             "additional_metrics": {}
         }
         
-        # Placeholder for actual task execution
-        # This will be implemented when task modules are complete
+        # TODO: Implement actual task execution with neural network
+        # This currently returns simulated results for demonstration.
+        # Full implementation requires:
+        # 1. Training the network on the task
+        # 2. Running inference for each trial
+        # 3. Computing actual accuracy metrics
+        # See docs/benchmarks/README.md for integration guide
+        
+        # Placeholder results (simulated based on expected performance)
         if self.task == "spatial_reasoning":
             results["reasoning_score"] = np.random.uniform(0.75, 0.95)
             results["accuracy"] = np.random.uniform(0.80, 0.90)

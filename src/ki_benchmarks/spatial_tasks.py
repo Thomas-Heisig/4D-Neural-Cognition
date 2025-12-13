@@ -175,6 +175,11 @@ class SpatialReasoningTask(Task):
             
         Returns:
             Task results with spatial reasoning performance
+            
+        Note:
+            This is a baseline implementation. Integration with actual neural
+            network models requires implementing a policy network that maps
+            observations to actions. See docs/benchmarks/README.md for details.
         """
         successes = 0
         total_steps = 0
@@ -186,8 +191,9 @@ class SpatialReasoningTask(Task):
             steps = 0
             
             while not done and steps < 100:
-                # Get action from model (placeholder - actual implementation 
-                # would use model's output)
+                # TODO: Integrate with actual model
+                # action = model.get_action(observation)
+                # Placeholder: random exploration policy
                 action = self.rng.uniform(-1, 1, size=2)
                 
                 observation, reward, done, info = self.env.step(action)

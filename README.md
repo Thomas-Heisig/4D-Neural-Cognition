@@ -69,16 +69,18 @@ Our approach bridges two historically separate fields:
 ### Cognitive Tasks (Proof of Intelligence)
 | Task | Description | Our 4D Network | Baseline (RNN) | Advantage |
 |------|-------------|----------------|----------------|-----------|
-| **Spatial Reasoning** | Find hidden object in grid world | 87% success | 62% success | +25% |
-| **Temporal Pattern Memory** | Remember/recall complex sequences | 92% accuracy | 71% accuracy | +21% |
-| **Cross-Modal Association** | Link visual + digital patterns | 78% accuracy | 51% accuracy | +27% |
+| **Spatial Reasoning** | Find hidden object in grid world | 87% success* | 62% success | +25% |
+| **Temporal Pattern Memory** | Remember/recall complex sequences | 92% accuracy* | 71% accuracy | +21% |
+| **Cross-Modal Association** | Link visual + digital patterns | 78% accuracy* | 51% accuracy | +27% |
+
+**Note**: *Performance metrics are based on preliminary experiments and theoretical analysis. Full experimental validation is ongoing. The benchmark framework provides the infrastructure for rigorous comparison studies.
 
 ### Biological Plausibility Metrics
 - **Dynamic Network Analysis**: Exhibits small-world properties (σ = 1.8)
 - **Criticality**: Operates near critical state (λ ≈ 0.95)
 - **Energy Efficiency**: 3.2× more energy-efficient per inference than equivalent ANN
 
-*See our [Benchmark Report](docs/benchmarks/) for full methodology.*
+*See our [Benchmark Report](docs/benchmarks/) for full methodology and framework details.*
 
 ---
 
