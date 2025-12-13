@@ -357,11 +357,20 @@ def update_config():
                 continue
                 
             if key in current_model.config:
-                # Basic type validation
-                if key == 'dimensions' and not isinstance(value, int):
-                    return jsonify({"status": "error", "message": f"Invalid type for {key}"}), 400
-                if key == 'lattice_shape' and not isinstance(value, list):
-                    return jsonify({"status": "error", "message": f"Invalid type for {key}"}), 400
+                # Type and range validation
+                if key == 'dimensions':
+                    if not isinstance(value, int):
+                        return jsonify({"status": "error", "message": f"Invalid type for {key}"}), 400
+                    if value not in [3, 4]:
+                        return jsonify({"status": "error", "message": "Dimensions must be 3 or 4"}), 400
+                        
+                if key == 'lattice_shape':
+                    if not isinstance(value, list):
+                        return jsonify({"status": "error", "message": f"Invalid type for {key}"}), 400
+                    if len(value) != 4:
+                        return jsonify({"status": "error", "message": "Lattice shape must have 4 elements"}), 400
+                    if not all(isinstance(x, int) and x > 0 for x in value):
+                        return jsonify({"status": "error", "message": "Lattice shape values must be positive integers"}), 400
                     
                 current_model.config[key] = value
                 logger.info(f"Updated config {key}")

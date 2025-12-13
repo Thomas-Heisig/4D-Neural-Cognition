@@ -4,9 +4,9 @@
 // Constants
 const PAGE_SIZE = 50;
 const MONITORING_INTERVAL_MS = 2000;
-const MIN_MEMBRANE_POTENTIAL = -80;
-const MAX_MEMBRANE_POTENTIAL = -30;
-const NORMALIZATION_RANGE = 50;
+const MIN_MEMBRANE_POTENTIAL = -80;  // Lower bound of typical membrane potential range (mV)
+const MAX_MEMBRANE_POTENTIAL = -30;  // Upper bound of typical membrane potential range (mV)
+const NORMALIZATION_RANGE = 50;      // Range for normalizing membrane potentials for visualization
 
 // Global state
 let socket = null;
