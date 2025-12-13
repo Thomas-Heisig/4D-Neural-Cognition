@@ -842,6 +842,17 @@ tbody tr:hover {
     margin-bottom: 0.5rem;
 }
 
+/* Mobile menu toggle button */
+.mobile-menu-toggle {
+    display: none;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
     .dashboard-container {
@@ -852,7 +863,36 @@ tbody tr:hover {
     }
     
     .sidebar {
+        position: fixed;
+        left: -250px;
+        top: var(--navbar-height);
+        height: calc(100vh - var(--navbar-height));
+        z-index: 1000;
+        transition: left 0.3s ease;
+    }
+    
+    .sidebar.mobile-open {
+        left: 0;
+    }
+    
+    .mobile-menu-toggle {
+        display: block;
+    }
+    
+    /* Overlay when sidebar is open */
+    .sidebar-overlay {
         display: none;
+        position: fixed;
+        top: var(--navbar-height);
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+    }
+    
+    .sidebar-overlay.active {
+        display: block;
     }
     
     :root {

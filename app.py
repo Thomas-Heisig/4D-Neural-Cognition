@@ -344,11 +344,27 @@ def update_config():
         if not data:
             return jsonify({"status": "error", "message": "No data provided"}), 400
 
-        # Update configuration
+        # Validate data types and ranges
+        allowed_config_keys = {
+            'lattice_shape', 'dimensions', 'neuron_model', 'plasticity',
+            'cell_lifecycle', 'neuromodulation', 'senses', 'areas'
+        }
+        
+        # Update configuration with validation
         for key, value in data.items():
+            if key not in allowed_config_keys:
+                logger.warning(f"Attempted to update disallowed config key: {key}")
+                continue
+                
             if key in current_model.config:
+                # Basic type validation
+                if key == 'dimensions' and not isinstance(value, int):
+                    return jsonify({"status": "error", "message": f"Invalid type for {key}"}), 400
+                if key == 'lattice_shape' and not isinstance(value, list):
+                    return jsonify({"status": "error", "message": f"Invalid type for {key}"}), 400
+                    
                 current_model.config[key] = value
-                logger.info(f"Updated config {key} = {value}")
+                logger.info(f"Updated config {key}")
 
         return jsonify({"status": "success", "message": "Configuration updated. Restart simulation to apply changes."})
     except Exception as e:
@@ -497,11 +513,15 @@ def get_areas_info():
         for area in areas:
             # Count neurons in this area
             coord_ranges = area.get("coord_ranges", {})
+            x_range = coord_ranges.get("x", [0, 0])
+            y_range = coord_ranges.get("y", [0, 0])
+            z_range = coord_ranges.get("z", [0, 0])
+            
             neuron_count = sum(
                 1 for n in current_model.neurons.values()
-                if (coord_ranges.get("x", [0, 0])[0] <= n.x <= coord_ranges.get("x", [0, 0])[1] and
-                    coord_ranges.get("y", [0, 0])[0] <= n.y <= coord_ranges.get("y", [0, 0])[1] and
-                    coord_ranges.get("z", [0, 0])[0] <= n.z <= coord_ranges.get("z", [0, 0])[1])
+                if (x_range[0] <= n.x <= x_range[1] and
+                    y_range[0] <= n.y <= y_range[1] and
+                    z_range[0] <= n.z <= z_range[1])
             )
             
             areas_info.append({

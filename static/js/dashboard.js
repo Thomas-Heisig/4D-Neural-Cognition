@@ -1,13 +1,19 @@
 // Dashboard JavaScript
 // Manages the comprehensive dashboard interface
 
+// Constants
+const PAGE_SIZE = 50;
+const MONITORING_INTERVAL_MS = 2000;
+const MIN_MEMBRANE_POTENTIAL = -80;
+const MAX_MEMBRANE_POTENTIAL = -30;
+const NORMALIZATION_RANGE = 50;
+
 // Global state
 let socket = null;
 let currentSection = 'overview';
 let charts = {};
 let neuronPage = 0;
 let synapsePage = 0;
-const pageSize = 50;
 let monitoringInterval = null;
 let isMonitoring = false;
 
@@ -19,6 +25,31 @@ document.addEventListener('DOMContentLoaded', () => {
     loadOverview();
     setupEventListeners();
 });
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    cleanup();
+});
+
+// Cleanup function to prevent memory leaks
+function cleanup() {
+    if (monitoringInterval) {
+        clearInterval(monitoringInterval);
+        monitoringInterval = null;
+    }
+    
+    if (socket) {
+        socket.disconnect();
+    }
+    
+    // Clear any charts
+    Object.values(charts).forEach(chart => {
+        if (chart && typeof chart.destroy === 'function') {
+            chart.destroy();
+        }
+    });
+    charts = {};
+}
 
 // Socket.IO connection
 function initializeSocket() {
@@ -69,8 +100,40 @@ function initializeSidebar() {
             // Update active state
             sidebarBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            
+            // Close mobile menu after selection
+            closeMobileSidebar();
         });
     });
+    
+    // Mobile menu toggle
+    const menuToggle = document.getElementById('mobileMenuToggle');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('active');
+        });
+    }
+    
+    if (overlay) {
+        overlay.addEventListener('click', closeMobileSidebar);
+    }
+}
+
+// Close mobile sidebar
+function closeMobileSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebar) {
+        sidebar.classList.remove('mobile-open');
+    }
+    if (overlay) {
+        overlay.classList.remove('active');
+    }
 }
 
 // Show specific section
@@ -391,8 +454,8 @@ async function loadNeurons(page) {
     neuronPage = page;
     
     try {
-        const offset = page * pageSize;
-        const response = await fetch(`/api/neurons/details?limit=${pageSize}&offset=${offset}`);
+        const offset = page * PAGE_SIZE;
+        const response = await fetch(`/api/neurons/details?limit=${PAGE_SIZE}&offset=${offset}`);
         const data = await response.json();
         
         if (data.status === 'success') {
@@ -426,8 +489,8 @@ async function loadSynapses(page) {
     synapsePage = page;
     
     try {
-        const offset = page * pageSize;
-        const response = await fetch(`/api/synapses/details?limit=${pageSize}&offset=${offset}`);
+        const offset = page * PAGE_SIZE;
+        const response = await fetch(`/api/synapses/details?limit=${PAGE_SIZE}&offset=${offset}`);
         const data = await response.json();
         
         if (data.status === 'success') {
@@ -506,7 +569,7 @@ function toggleMonitoring() {
 }
 
 function startMonitoring() {
-    // Update every 2 seconds
+    // Update at configured interval
     monitoringInterval = setInterval(async () => {
         try {
             const response = await fetch('/api/stats/network');
@@ -520,7 +583,7 @@ function startMonitoring() {
         } catch (error) {
             console.error('Monitoring error:', error);
         }
-    }, 2000);
+    }, MONITORING_INTERVAL_MS);
 }
 
 function stopMonitoring() {
@@ -776,10 +839,28 @@ async function sendSenseInput() {
         const senseType = document.getElementById('senseTypeSelect').value;
         const inputData = document.getElementById('senseInput').value;
         
+        // Validate input is not empty
+        if (!inputData || inputData.trim() === '') {
+            addLog('warning', 'Eingabedaten dürfen nicht leer sein');
+            return;
+        }
+        
+        // Validate input length (max 10KB for security)
+        if (inputData.length > 10240) {
+            addLog('error', 'Eingabedaten zu groß (max 10KB)');
+            return;
+        }
+        
         let parsedData;
         try {
             parsedData = JSON.parse(inputData);
+            // Validate parsed data structure
+            if (Array.isArray(parsedData) && parsedData.length > 1000) {
+                addLog('error', 'Array zu groß (max 1000 Elemente)');
+                return;
+            }
         } catch {
+            // If not JSON, treat as text (already validated for length)
             parsedData = inputData;
         }
         
@@ -842,7 +923,7 @@ function drawHeatmap(canvasId, data) {
     for (let i = 0; i < size; i++) {
         for (let j = 0; j < size; j++) {
             const value = data[i][j];
-            const normalized = (value + 80) / 50; // Normalize from -80 to -30 mV range
+            const normalized = (value - MIN_MEMBRANE_POTENTIAL) / NORMALIZATION_RANGE;
             const color = Math.floor(normalized * 255);
             
             ctx.fillStyle = `rgb(${color}, 0, ${255 - color})`;
