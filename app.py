@@ -921,7 +921,7 @@ def get_neurons_visualization():
                     "v_membrane": neuron.v_membrane,
                     "health": neuron.health,
                     "age": neuron.age,
-                    "activity": 1.0 if abs(neuron.v_membrane - neuron.v_rest) > 10 else 0.0,
+                    "activity": 1.0 if abs(neuron.v_membrane - (-65.0)) > 10 else 0.0,  # -65.0 is typical resting potential
                 }
             )
 
