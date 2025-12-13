@@ -128,17 +128,21 @@ class SelfPerceptionStream:
         Args:
             self_model_update: Latest self-perception snapshot
         """
-        # This is a placeholder for self-other boundary detection
-        # Full implementation would use agency detection, sensorimotor
-        # contingencies, and prediction error analysis
+        # TODO: Implement full self-other boundary detection
+        # This would use:
+        # 1. Agency detection (comparing motor intentions with sensory outcomes)
+        # 2. Sensorimotor contingencies (predictable sensory changes from actions)
+        # 3. Prediction error analysis (unexpected vs expected sensory feedback)
+        # 4. Temporal binding (linking actions to effects across time)
         
         intentions = self_model_update.get('intentions', {})
         executed = self_model_update.get('executed_actions', {})
         
-        # Simple consistency check
+        # Placeholder: Simple consistency check
+        # Future: Calculate prediction error between intentions and outcomes
         if intentions and executed:
-            # Calculate how well intentions match execution
-            # (simplified metric)
+            # Would calculate: error = |intended - actual|
+            # Track error distribution to identify self vs environment
             pass
     
     def get_self_awareness_metric(self) -> Dict:

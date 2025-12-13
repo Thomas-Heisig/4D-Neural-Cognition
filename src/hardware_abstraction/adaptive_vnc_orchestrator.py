@@ -140,8 +140,9 @@ class AdaptiveVNCOrchestrator:
         self.performance_log.append(snapshot)
         
         # Keep only recent history
-        if len(self.performance_log) > 1000:
-            self.performance_log = self.performance_log[-1000:]
+        MAX_PERFORMANCE_LOG_SIZE = 1000
+        if len(self.performance_log) > MAX_PERFORMANCE_LOG_SIZE:
+            self.performance_log = self.performance_log[-MAX_PERFORMANCE_LOG_SIZE:]
         
         return {
             "monitored": True,

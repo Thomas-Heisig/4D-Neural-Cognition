@@ -83,6 +83,10 @@ class VirtualBody:
         orientation: Current orientation (quaternion)
     """
     
+    # Muscle dynamics constants
+    FATIGUE_ACCUMULATION_RATE = 0.001  # Fatigue per activation unit
+    FATIGUE_RECOVERY_RATE = 0.01       # Recovery per timestep
+    
     def __init__(
         self,
         body_type: str = "humanoid",
@@ -222,7 +226,7 @@ class VirtualBody:
                 
                 # Update muscle state
                 muscle['current_activation'] = activation
-                muscle['fatigue'] = min(1.0, muscle['fatigue'] + 0.001 * activation)
+                muscle['fatigue'] = min(1.0, muscle['fatigue'] + self.FATIGUE_ACCUMULATION_RATE * activation)
         
         # Update body position based on joint configuration (simplified)
         self._update_physics()
@@ -279,7 +283,7 @@ class VirtualBody:
         
         # Recover from fatigue
         for muscle in self.muscles.values():
-            muscle['fatigue'] = max(0.0, muscle['fatigue'] - 0.01)
+            muscle['fatigue'] = max(0.0, muscle['fatigue'] - self.FATIGUE_RECOVERY_RATE)
     
     def get_kinematic_feedback(self) -> Dict:
         """Get kinematic feedback for self-observation.
