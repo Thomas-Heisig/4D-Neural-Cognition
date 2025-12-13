@@ -95,21 +95,19 @@ class VirtualProcessingUnit:
     def gather_inputs(self, global_clock_cycle: int) -> dict:
         """Gather all inputs for neurons in this slice.
         
+        Note: This method is currently a placeholder. Input gathering is handled
+        by the simulation's lif_step method. In a future vectorized implementation,
+        this would collect all inputs as NumPy arrays for batch processing.
+        
         Args:
             global_clock_cycle: Current global clock cycle
             
         Returns:
-            Dictionary mapping neuron IDs to their input currents
+            Dictionary mapping neuron IDs to their input currents (currently unused)
         """
-        inputs = {}
-        
-        for neuron_id in self.neuron_batch:
-            # Start with external input
-            neuron = self._model.neurons.get(neuron_id)
-            if neuron is not None:
-                inputs[neuron_id] = neuron.external_input
-        
-        return inputs
+        # TODO: Implement vectorized input gathering for batch processing
+        # This would collect all synaptic and external inputs as arrays
+        return {}
     
     def process_cycle(self, global_clock_cycle: int) -> dict:
         """Process one complete clock cycle for all neurons in this VPU.
@@ -129,10 +127,13 @@ class VirtualProcessingUnit:
         import time
         start_time = time.time()
         
-        # Step 1: Gather inputs
-        inputs = self.gather_inputs(global_clock_cycle)
+        # Step 1: Gather inputs (currently handled by simulation's lif_step)
+        # TODO: Implement true vectorized batch processing using NumPy/CuPy
+        # For now, we iterate through neurons (parallel at VPU level, not neuron level)
         
-        # Step 2: Process all neurons in batch (vectorized)
+        # Step 2: Process all neurons in batch
+        # Note: True vectorization would process all neurons simultaneously using array operations
+        # Current implementation provides parallelism at VPU level (multiple VPUs run concurrently)
         spikes = []
         for neuron_id in self.neuron_batch:
             if self._simulation is not None:

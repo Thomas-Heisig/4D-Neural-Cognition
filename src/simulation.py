@@ -523,8 +523,8 @@ class Simulation:
         # Advance simulation time
         self.model.current_step += 1
         
-        # Adaptive load balancing every 1000 cycles
-        if cycle_result["cycle"] > 0 and cycle_result["cycle"] % 1000 == 0:
+        # Adaptive load balancing every 1000 cycles (skip first cycle)
+        if cycle_result["cycle"] > 0 and (cycle_result["cycle"] + 1) % 1000 == 0:
             self.virtual_clock.rebalance_partitions()
         
         return stats
