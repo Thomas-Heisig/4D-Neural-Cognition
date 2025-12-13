@@ -74,6 +74,9 @@
                 <button class="sidebar-btn" data-section="visualization">
                     <span class="icon">🎨</span> Visualisierung
                 </button>
+                <button class="sidebar-btn" data-section="vnc">
+                    <span class="icon">⚙️</span> VNC Monitor
+                </button>
                 <button class="sidebar-btn" data-section="logs">
                     <span class="icon">📋</span> Protokolle
                 </button>
@@ -310,6 +313,48 @@
                                 <label>Norepinephrin Baseline:</label>
                                 <input type="number" id="norepinephrineBaseline" value="0.5" step="0.1">
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Virtual Neuromorphic Clock (VNC) Settings -->
+                    <div class="settings-group">
+                        <h3>⚙️ Virtual Neuromorphic Clock (VNC)</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label>
+                                    <input type="checkbox" id="vncEnabled"> VNC Modus aktivieren
+                                </label>
+                            </div>
+                            <div class="form-field">
+                                <label>Taktfrequenz (MHz):</label>
+                                <input type="number" id="vncClockFrequency" value="20.0" step="0.1" min="0.1" max="1000.0">
+                            </div>
+                            <div class="form-field">
+                                <label>Partitionierungs-Strategie:</label>
+                                <select id="vncPartitionStrategy">
+                                    <option value="w_slice">W-Slice (Standard)</option>
+                                    <option value="z_slice">Z-Slice</option>
+                                    <option value="adaptive">Adaptiv</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label>Anzahl VPUs:</label>
+                                <input type="number" id="vncNumVPUs" value="64" step="1" min="1" max="256" readonly>
+                                <small>Automatisch basierend auf Partitionierung</small>
+                            </div>
+                            <div class="form-field">
+                                <label>Max. Worker Threads:</label>
+                                <input type="number" id="vncMaxWorkers" value="" placeholder="Auto (= VPUs)">
+                            </div>
+                            <div class="form-field">
+                                <label>
+                                    <input type="checkbox" id="vncLoadBalancing" checked> Adaptives Load-Balancing
+                                </label>
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            <p><strong>ℹ️ Info:</strong> Der Virtual Neuromorphic Clock (VNC) Modus ermöglicht massiv-parallele Verarbeitung von Neuronen durch Verteilung auf virtuelle Processing Units (VPUs). Dies kann die Performance bei großen Netzwerken deutlich verbessern.</p>
+                            <p>Die Taktfrequenz ist einstellbar und bestimmt die virtuelle Geschwindigkeit der Verarbeitung. Höhere Frequenzen bedeuten schnellere Zyklen, aber nicht unbedingt bessere Echtzeit-Performance.</p>
                         </div>
                     </div>
                 </div>
@@ -653,6 +698,114 @@
                     </div>
                 </div>
                 <button id="refreshHeatmaps" class="btn-primary">🔄 Heatmaps aktualisieren</button>
+            </section>
+
+            <!-- VNC Monitor Section -->
+            <section id="vnc-section" class="content-section">
+                <div class="section-header">
+                    <h2>⚙️ Virtual Neuromorphic Clock Monitor</h2>
+                    <button id="refreshVNC" class="btn-refresh">🔄 Aktualisieren</button>
+                </div>
+
+                <div id="vncNotEnabled" class="info-box warning" style="display: none;">
+                    <p><strong>⚠️ VNC nicht aktiviert:</strong> Der Virtual Neuromorphic Clock Modus ist derzeit nicht aktiviert. Aktivieren Sie VNC in den Einstellungen, um diese Funktionen zu nutzen.</p>
+                </div>
+
+                <div id="vncContent" style="display: none;">
+                    <!-- Global Clock Statistics -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">⏰</div>
+                            <div class="stat-content">
+                                <div class="stat-label">Aktuelle Taktrate</div>
+                                <div class="stat-value" id="vncClockRate">0.0 MHz</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🔄</div>
+                            <div class="stat-content">
+                                <div class="stat-label">Gesamt Zyklen</div>
+                                <div class="stat-value" id="vncTotalCycles">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">⚡</div>
+                            <div class="stat-content">
+                                <div class="stat-label">Neuronen/Sekunde</div>
+                                <div class="stat-value" id="vncNeuronsPerSec">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📊</div>
+                            <div class="stat-content">
+                                <div class="stat-label">Aktive VPUs</div>
+                                <div class="stat-value" id="vncActiveVPUs">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Chart -->
+                    <div class="chart-container">
+                        <h3>🚀 VNC Performance</h3>
+                        <canvas id="vncPerformanceChart"></canvas>
+                    </div>
+
+                    <!-- VPU Status Table -->
+                    <div class="table-section">
+                        <h3>📊 VPU Status</h3>
+                        <div class="table-container">
+                            <table id="vpuTable">
+                                <thead>
+                                    <tr>
+                                        <th>VPU ID</th>
+                                        <th>Neuronen</th>
+                                        <th>Zyklen</th>
+                                        <th>Spikes</th>
+                                        <th>Ø Zeit (ms)</th>
+                                        <th>Neuronen/s</th>
+                                        <th>Last</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vpuTableBody">
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- VNC Configuration Info -->
+                    <div class="info-panel">
+                        <h3>ℹ️ VNC Konfiguration</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <strong>Konfigurierte Frequenz:</strong>
+                                <span id="vncConfigFreq">20.0 MHz</span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Effektive Frequenz:</strong>
+                                <span id="vncEffectiveFreq">0.0 Hz</span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Partitionierungs-Strategie:</strong>
+                                <span id="vncPartitionInfo">W-Slice</span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Load-Balancing:</strong>
+                                <span id="vncLoadBalancingInfo">Aktiviert</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VNC Controls -->
+                    <div class="control-panel">
+                        <h3>🎮 VNC Steuerung</h3>
+                        <div class="button-group">
+                            <button id="vncResetStats" class="btn-secondary">🔄 Statistiken zurücksetzen</button>
+                            <button id="vncRebalance" class="btn-secondary">⚖️ Load-Balancing ausführen</button>
+                            <button id="vncExportStats" class="btn-primary">📊 Statistiken exportieren</button>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- Export Section -->

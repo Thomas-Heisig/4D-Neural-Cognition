@@ -1,6 +1,6 @@
 """Main simulation loop for 4D Neural Cognition."""
 
-from typing import Callable, Union
+from typing import Callable, Optional, Union
 
 import numpy as np
 
@@ -9,11 +9,23 @@ try:
     from .cell_lifecycle import maybe_kill_and_reproduce, update_health_and_age
     from .plasticity import apply_weight_decay, hebbian_update
     from .time_indexed_spikes import TimeIndexedSpikeBuffer, SpikeHistoryAdapter
+    from .hardware_abstraction.virtual_clock import GlobalVirtualClock
+    from .hardware_abstraction.virtual_processing_unit import VirtualProcessingUnit
+    from .hardware_abstraction.slice_partitioner import SlicePartitioner
 except ImportError:
     from brain_model import BrainModel
     from cell_lifecycle import maybe_kill_and_reproduce, update_health_and_age
     from plasticity import apply_weight_decay, hebbian_update
     from time_indexed_spikes import TimeIndexedSpikeBuffer, SpikeHistoryAdapter
+    try:
+        from hardware_abstraction.virtual_clock import GlobalVirtualClock
+        from hardware_abstraction.virtual_processing_unit import VirtualProcessingUnit
+        from hardware_abstraction.slice_partitioner import SlicePartitioner
+    except ImportError:
+        # VNC not available, will be None
+        GlobalVirtualClock = None
+        VirtualProcessingUnit = None
+        SlicePartitioner = None
 
 
 class Simulation:
@@ -24,6 +36,8 @@ class Simulation:
         model: BrainModel,
         seed: int = None,
         use_time_indexed_spikes: bool = False,
+        use_vnc: bool = False,
+        vnc_clock_frequency: float = 20e6,
     ):
         """Initialize the simulation.
 
@@ -31,10 +45,13 @@ class Simulation:
             model: The brain model to simulate.
             seed: Random seed for reproducibility.
             use_time_indexed_spikes: If True, use time-indexed spike buffer for O(1) lookups
+            use_vnc: If True, use Virtual Neuromorphic Clock for parallel processing
+            vnc_clock_frequency: Virtual clock frequency in Hz (default: 20 MHz)
         """
         self.model = model
         self.rng = np.random.default_rng(seed)
         self.use_time_indexed_spikes = use_time_indexed_spikes
+        self.use_vnc = use_vnc
         
         # Initialize spike storage
         if use_time_indexed_spikes:
@@ -45,6 +62,15 @@ class Simulation:
             self.spike_history: dict[int, list[int]] = {}
         
         self._callbacks: list[Callable] = []
+        
+        # Virtual Neuromorphic Clock system
+        self.virtual_clock: Optional[GlobalVirtualClock] = None
+        self.vnc_clock_frequency = vnc_clock_frequency
+        if use_vnc and GlobalVirtualClock is not None:
+            self._initialize_vnc()
+        elif use_vnc:
+            import logging
+            logging.warning("VNC requested but hardware_abstraction module not available")
 
     def add_callback(self, callback: Callable) -> None:
         """Add a callback function to be called each step.
@@ -352,6 +378,11 @@ class Simulation:
         Returns:
             List of statistics dictionaries for each step.
         """
+        # Use VNC mode if enabled
+        if self.use_vnc and self.virtual_clock is not None:
+            return self._run_vnc(n_steps, verbose)
+        
+        # Standard mode
         all_stats = []
 
         for i in range(n_steps):
@@ -367,3 +398,193 @@ class Simulation:
                 )
 
         return all_stats
+    
+    def _initialize_vnc(self) -> None:
+        """Initialize the Virtual Neuromorphic Clock system."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        if GlobalVirtualClock is None or SlicePartitioner is None or VirtualProcessingUnit is None:
+            logger.error("VNC modules not available")
+            return
+        
+        # Create virtual clock
+        self.virtual_clock = GlobalVirtualClock(
+            frequency_hz=self.vnc_clock_frequency
+        )
+        
+        # Determine lattice shape from model
+        lattice_shape = self._get_lattice_shape()
+        
+        # Partition the lattice into slices
+        partitions = SlicePartitioner.partition_by_w_slice(lattice_shape)
+        
+        # Create VPUs for each partition
+        for i, partition in enumerate(partitions):
+            vpu = VirtualProcessingUnit(vpu_id=i, clock_speed_hz=self.vnc_clock_frequency)
+            vpu.assign_slice(partition)
+            vpu.initialize_batch(self.model, self)
+            self.virtual_clock.add_vpu(vpu)
+        
+        logger.info(
+            f"Initialized VNC with {len(partitions)} VPUs at "
+            f"{self.vnc_clock_frequency/1e6:.1f} MHz"
+        )
+    
+    def _get_lattice_shape(self) -> tuple:
+        """Get the shape of the 4D lattice from the model.
+        
+        Returns:
+            4-tuple (x_size, y_size, z_size, w_size)
+        """
+        if not self.model.neurons:
+            # Default shape if no neurons
+            return (10, 10, 10, 10)
+        
+        # Find bounds from existing neurons
+        # Note: neurons have x, y, z, w attributes directly
+        x_coords = [neuron.x for neuron in self.model.neurons.values()]
+        y_coords = [neuron.y for neuron in self.model.neurons.values()]
+        z_coords = [neuron.z for neuron in self.model.neurons.values()]
+        w_coords = [neuron.w for neuron in self.model.neurons.values()]
+        
+        return (
+            max(x_coords) + 1 if x_coords else 10,
+            max(y_coords) + 1 if y_coords else 10,
+            max(z_coords) + 1 if z_coords else 10,
+            max(w_coords) + 1 if w_coords else 10,
+        )
+    
+    def step_vnc(self) -> dict:
+        """Run one simulation step using the Virtual Neuromorphic Clock.
+        
+        This method uses the VNC system for parallel processing of neurons.
+        All VPUs execute in parallel, synchronized by the global clock.
+        
+        Returns:
+            Dictionary with step statistics
+        """
+        if self.virtual_clock is None:
+            raise RuntimeError("VNC not initialized. Set use_vnc=True in constructor.")
+        
+        # Run one global clock cycle
+        cycle_result = self.virtual_clock.run_cycle()
+        
+        # Apply plasticity and cell lifecycle (done globally after VPU processing)
+        stats = {
+            "step": self.model.current_step,
+            "spikes": [],
+            "deaths": 0,
+            "births": 0,
+            "vnc_stats": cycle_result,
+        }
+        
+        # Collect spikes from spike history
+        if self.use_time_indexed_spikes:
+            # Get spikes from this cycle
+            for neuron_id in self.model.neurons.keys():
+                if self._spike_buffer.did_spike_at(neuron_id, self.model.current_step):
+                    stats["spikes"].append(neuron_id)
+        else:
+            # Get spikes from this step
+            for neuron_id, spike_times in self.spike_history.items():
+                if self.model.current_step in spike_times:
+                    stats["spikes"].append(neuron_id)
+        
+        # Phase 2: Synaptic plasticity
+        spike_set = set(stats["spikes"])
+        for synapse in self.model.synapses:
+            pre_spiked = synapse.pre_id in spike_set
+            post_spiked = synapse.post_id in spike_set
+            hebbian_update(synapse, pre_spiked, post_spiked, self.model)
+            apply_weight_decay(synapse, self.model)
+        
+        # Phase 3: Cell lifecycle
+        neuron_ids = list(self.model.neurons.keys())
+        for neuron_id in neuron_ids:
+            neuron = self.model.neurons.get(neuron_id)
+            if neuron is None:
+                continue
+            
+            update_health_and_age(neuron, self.model)
+            old_id = neuron.id
+            new_neuron = maybe_kill_and_reproduce(neuron, self.model, self.rng)
+            
+            if new_neuron is None:
+                stats["deaths"] += 1
+            elif new_neuron.id != old_id:
+                stats["deaths"] += 1
+                stats["births"] += 1
+        
+        # Execute callbacks
+        for callback in self._callbacks:
+            callback(self, self.model.current_step)
+        
+        # Advance simulation time
+        self.model.current_step += 1
+        
+        # Adaptive load balancing every 1000 cycles (skip first cycle)
+        if cycle_result["cycle"] > 0 and (cycle_result["cycle"] + 1) % 1000 == 0:
+            self.virtual_clock.rebalance_partitions()
+        
+        return stats
+    
+    def _run_vnc(self, n_steps: int, verbose: bool = False) -> list[dict]:
+        """Run multiple simulation steps using VNC mode.
+        
+        Args:
+            n_steps: Number of steps to run
+            verbose: Whether to print progress
+            
+        Returns:
+            List of statistics dictionaries for each step
+        """
+        all_stats = []
+        
+        def progress_callback(cycle_result):
+            if verbose and (cycle_result["cycle"] + 1) % 100 == 0:
+                print(
+                    f"VNC Cycle {cycle_result['cycle'] + 1}/{n_steps}: "
+                    f"{cycle_result['neurons_processed']} neurons, "
+                    f"{cycle_result['spikes']} spikes, "
+                    f"{cycle_result['time_ms']:.2f}ms"
+                )
+        
+        for i in range(n_steps):
+            stats = self.step_vnc()
+            all_stats.append(stats)
+            
+            if verbose and (i + 1) % 100 == 0:
+                vnc_stats = stats.get("vnc_stats", {})
+                print(
+                    f"Step {i + 1}/{n_steps}: "
+                    f"{len(stats['spikes'])} spikes, "
+                    f"{stats['deaths']} deaths, "
+                    f"{stats['births']} births "
+                    f"[VNC: {vnc_stats.get('neurons_processed', 0)} neurons, "
+                    f"{vnc_stats.get('time_ms', 0):.2f}ms]"
+                )
+        
+        return all_stats
+    
+    def get_vnc_statistics(self) -> Optional[dict]:
+        """Get Virtual Neuromorphic Clock statistics.
+        
+        Returns:
+            Dictionary with VNC performance metrics, or None if VNC not enabled
+        """
+        if self.virtual_clock is None:
+            return None
+        
+        return self.virtual_clock.get_statistics()
+    
+    def get_vpu_statistics(self) -> Optional[list]:
+        """Get statistics for all Virtual Processing Units.
+        
+        Returns:
+            List of VPU statistics dictionaries, or None if VNC not enabled
+        """
+        if self.virtual_clock is None:
+            return None
+        
+        return self.virtual_clock.get_vpu_statistics()
