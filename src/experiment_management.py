@@ -9,6 +9,8 @@ import yaml
 import datetime
 import hashlib
 import os
+import subprocess
+import sqlite3
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass, field, asdict
@@ -449,3 +451,392 @@ def generate_sweep_configs(
         sweep.add_parameter(param_path, values)
     
     return sweep.generate_configs()
+
+
+def get_git_commit() -> Optional[str]:
+    """Get current git commit hash.
+    
+    Returns:
+        Git commit hash or None if not in a git repository
+    
+    Note:
+        This function uses subprocess to call git commands with fixed arguments
+        (no user input), which is safe. It runs in the current working directory
+        and will fail gracefully if not in a git repository.
+    """
+    try:
+        result = subprocess.run(
+            ['git', 'rev-parse', 'HEAD'],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=5,
+            cwd=os.getcwd()  # Explicit working directory
+        )
+        return result.stdout.strip()
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+        return None
+
+
+def get_git_status() -> Optional[Dict[str, Any]]:
+    """Get git repository status.
+    
+    Returns:
+        Dictionary with git status information or None
+    
+    Note:
+        This function uses subprocess to call git commands with fixed arguments
+        (no user input), which is safe. All commands have timeouts.
+    """
+    try:
+        # Get commit hash
+        commit = get_git_commit()
+        if commit is None:
+            return None
+        
+        # Check for uncommitted changes
+        result = subprocess.run(
+            ['git', 'diff', '--quiet'],
+            timeout=5,
+            cwd=os.getcwd()
+        )
+        has_uncommitted = result.returncode != 0
+        
+        # Get branch name
+        result = subprocess.run(
+            ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=5,
+            cwd=os.getcwd()
+        )
+        branch = result.stdout.strip()
+        
+        return {
+            'commit': commit,
+            'branch': branch,
+            'has_uncommitted_changes': has_uncommitted
+        }
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+        return None
+
+
+class ExperimentDatabase:
+    """SQLite database for experiment tracking."""
+    
+    def __init__(self, db_path: str = "experiments/experiments.db"):
+        """Initialize experiment database.
+        
+        Args:
+            db_path: Path to SQLite database file
+        """
+        self.db_path = db_path
+        os.makedirs(os.path.dirname(db_path) or '.', exist_ok=True)
+        self._create_tables()
+    
+    def _create_tables(self):
+        """Create database tables if they don't exist."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # Experiments table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS experiments (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT,
+                timestamp TEXT NOT NULL,
+                git_commit TEXT,
+                git_branch TEXT,
+                has_uncommitted_changes INTEGER,
+                author TEXT,
+                config_json TEXT NOT NULL
+            )
+        """)
+        
+        # Runs table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS runs (
+                id TEXT PRIMARY KEY,
+                experiment_id TEXT NOT NULL,
+                timestamp TEXT NOT NULL,
+                seed INTEGER,
+                status TEXT,
+                duration_seconds REAL,
+                error TEXT,
+                config_json TEXT NOT NULL,
+                metrics_json TEXT,
+                FOREIGN KEY (experiment_id) REFERENCES experiments(id)
+            )
+        """)
+        
+        # Metrics table (for time-series data)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS metrics (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id TEXT NOT NULL,
+                step INTEGER,
+                metric_name TEXT NOT NULL,
+                metric_value REAL,
+                timestamp TEXT,
+                FOREIGN KEY (run_id) REFERENCES runs(id)
+            )
+        """)
+        
+        conn.commit()
+        conn.close()
+    
+    def add_experiment(
+        self,
+        exp_id: str,
+        name: str,
+        config: Dict[str, Any],
+        description: str = "",
+        author: str = ""
+    ) -> None:
+        """Add a new experiment to database.
+        
+        Args:
+            exp_id: Unique experiment ID
+            name: Experiment name
+            config: Experiment configuration
+            description: Experiment description
+            author: Author name
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # Get git information
+        git_status = get_git_status()
+        
+        cursor.execute("""
+            INSERT INTO experiments 
+            (id, name, description, timestamp, git_commit, git_branch, 
+             has_uncommitted_changes, author, config_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            exp_id,
+            name,
+            description,
+            datetime.datetime.now().isoformat(),
+            git_status['commit'] if git_status else None,
+            git_status['branch'] if git_status else None,
+            git_status['has_uncommitted_changes'] if git_status else None,
+            author,
+            json.dumps(config)
+        ))
+        
+        conn.commit()
+        conn.close()
+    
+    def add_run(
+        self,
+        run_id: str,
+        experiment_id: str,
+        config: Dict[str, Any],
+        seed: Optional[int] = None
+    ) -> None:
+        """Add a new run to database.
+        
+        Args:
+            run_id: Unique run ID
+            experiment_id: Associated experiment ID
+            config: Run configuration
+            seed: Random seed used
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            INSERT INTO runs 
+            (id, experiment_id, timestamp, seed, status, config_json)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            run_id,
+            experiment_id,
+            datetime.datetime.now().isoformat(),
+            seed,
+            "running",
+            json.dumps(config)
+        ))
+        
+        conn.commit()
+        conn.close()
+    
+    def update_run(
+        self,
+        run_id: str,
+        status: str = None,
+        duration: float = None,
+        error: str = None,
+        metrics: Dict[str, Any] = None
+    ) -> None:
+        """Update run information.
+        
+        Args:
+            run_id: Run ID to update
+            status: New status
+            duration: Duration in seconds
+            error: Error message if failed
+            metrics: Final metrics dictionary
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        updates = []
+        params = []
+        
+        if status is not None:
+            updates.append("status = ?")
+            params.append(status)
+        if duration is not None:
+            updates.append("duration_seconds = ?")
+            params.append(duration)
+        if error is not None:
+            updates.append("error = ?")
+            params.append(error)
+        if metrics is not None:
+            updates.append("metrics_json = ?")
+            params.append(json.dumps(metrics))
+        
+        if updates:
+            params.append(run_id)
+            query = f"UPDATE runs SET {', '.join(updates)} WHERE id = ?"
+            cursor.execute(query, params)
+        
+        conn.commit()
+        conn.close()
+    
+    def add_metric(
+        self,
+        run_id: str,
+        step: int,
+        metric_name: str,
+        metric_value: float
+    ) -> None:
+        """Add a metric data point.
+        
+        Args:
+            run_id: Run ID
+            step: Simulation step
+            metric_name: Name of metric
+            metric_value: Value of metric
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            INSERT INTO metrics (run_id, step, metric_name, metric_value, timestamp)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            run_id,
+            step,
+            metric_name,
+            metric_value,
+            datetime.datetime.now().isoformat()
+        ))
+        
+        conn.commit()
+        conn.close()
+    
+    def get_experiment(self, exp_id: str) -> Optional[Dict[str, Any]]:
+        """Get experiment information.
+        
+        Args:
+            exp_id: Experiment ID
+            
+        Returns:
+            Dictionary with experiment info or None
+        """
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM experiments WHERE id = ?", (exp_id,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        if row:
+            result = dict(row)
+            result['config'] = json.loads(result['config_json'])
+            del result['config_json']
+            return result
+        return None
+    
+    def get_runs(
+        self,
+        experiment_id: Optional[str] = None,
+        status: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Get runs, optionally filtered.
+        
+        Args:
+            experiment_id: Filter by experiment
+            status: Filter by status
+            
+        Returns:
+            List of run dictionaries
+        """
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        query = "SELECT * FROM runs WHERE 1=1"
+        params = []
+        
+        if experiment_id:
+            query += " AND experiment_id = ?"
+            params.append(experiment_id)
+        if status:
+            query += " AND status = ?"
+            params.append(status)
+        
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        conn.close()
+        
+        results = []
+        for row in rows:
+            result = dict(row)
+            result['config'] = json.loads(result['config_json'])
+            del result['config_json']
+            if result['metrics_json']:
+                result['metrics'] = json.loads(result['metrics_json'])
+                del result['metrics_json']
+            results.append(result)
+        
+        return results
+    
+    def get_metrics(
+        self,
+        run_id: str,
+        metric_name: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Get metric time series data.
+        
+        Args:
+            run_id: Run ID
+            metric_name: Optional metric name filter
+            
+        Returns:
+            List of metric data points
+        """
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        query = "SELECT * FROM metrics WHERE run_id = ?"
+        params = [run_id]
+        
+        if metric_name:
+            query += " AND metric_name = ?"
+            params.append(metric_name)
+        
+        query += " ORDER BY step"
+        
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        conn.close()
+        
+        return [dict(row) for row in rows]
