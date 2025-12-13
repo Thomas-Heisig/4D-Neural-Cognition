@@ -23,6 +23,19 @@ from .learning_systems import (
     create_default_learning_systems,
 )
 
+# Import new modules (optional imports to avoid hard dependencies)
+try:
+    from .model_comparison import ModelComparator, AblationStudy, ModelResult
+    _model_comparison_available = True
+except ImportError:
+    _model_comparison_available = False
+
+try:
+    from .video_export import VideoExporter, SimulationRecorder
+    _video_export_available = True
+except ImportError:
+    _video_export_available = False
+
 __all__ = [
     "BrainModel",
     "Neuron",
@@ -54,3 +67,10 @@ __all__ = [
     "MetaLearning",
     "create_default_learning_systems",
 ]
+
+# Add optional exports if available
+if _model_comparison_available:
+    __all__.extend(["ModelComparator", "AblationStudy", "ModelResult"])
+
+if _video_export_available:
+    __all__.extend(["VideoExporter", "SimulationRecorder"])

@@ -314,19 +314,50 @@ class ContinuousController:
 
 
 class ReinforcementLearningIntegrator:
-    """Integration with reinforcement learning for motor control."""
+    """Integration with reinforcement learning for motor control.
+    
+    Supports multiple RL algorithms:
+    - TD Learning (Temporal Difference)
+    - Q-Learning
+    - Policy Gradient
+    - Actor-Critic
+    """
 
-    def __init__(self, learning_rate: float = 0.01, discount_factor: float = 0.99):
+    def __init__(
+        self, 
+        learning_rate: float = 0.01, 
+        discount_factor: float = 0.99,
+        algorithm: str = "td",
+        num_actions: int = 10
+    ):
         """Initialize RL integrator.
 
         Args:
             learning_rate: Learning rate for value updates.
             discount_factor: Discount factor for future rewards.
+            algorithm: RL algorithm to use ('td', 'qlearning', 'policy_gradient', 'actor_critic').
+            num_actions: Number of possible actions (for Q-learning).
         """
         self.learning_rate = learning_rate
         self.discount_factor = discount_factor
+        self.algorithm = algorithm
+        self.num_actions = num_actions
         self.value_estimates: Dict[str, float] = {}
         self.reward_history: List[float] = []
+        
+        # Q-learning specific
+        self.q_table: Dict[Tuple[str, int], float] = {}
+        self.epsilon = 0.1  # Exploration rate
+        
+        # Policy gradient specific
+        self.policy_params: Dict[str, np.ndarray] = {}
+        self.baseline: float = 0.0  # For variance reduction
+        
+        # Actor-critic specific
+        self.actor_params: Dict[str, np.ndarray] = {}
+        self.critic_values: Dict[str, float] = {}
+        self.actor_lr = learning_rate * 0.5
+        self.critic_lr = learning_rate
 
     def update_values(
         self,
@@ -360,6 +391,169 @@ class ReinforcementLearningIntegrator:
         # Record reward
         self.reward_history.append(reward)
 
+    def update_q_value(
+        self,
+        state_key: str,
+        action: int,
+        reward: float,
+        next_state_key: str,
+        done: bool = False
+    ) -> float:
+        """Update Q-value using Q-learning algorithm.
+        
+        Args:
+            state_key: Current state identifier.
+            action: Action taken.
+            reward: Reward received.
+            next_state_key: Next state identifier.
+            done: Whether episode is done.
+            
+        Returns:
+            TD error for this update.
+        """
+        # Get current Q-value
+        state_action = (state_key, action)
+        current_q = self.q_table.get(state_action, 0.0)
+        
+        # Get max Q-value for next state
+        if not done:
+            next_q_values = [
+                self.q_table.get((next_state_key, a), 0.0) 
+                for a in range(self.num_actions)
+            ]
+            max_next_q = max(next_q_values) if next_q_values else 0.0
+        else:
+            max_next_q = 0.0
+        
+        # Q-learning update: Q(s,a) = Q(s,a) + α[r + γ*max_a'(Q(s',a')) - Q(s,a)]
+        td_error = reward + self.discount_factor * max_next_q - current_q
+        new_q = current_q + self.learning_rate * td_error
+        self.q_table[state_action] = new_q
+        
+        # Record reward
+        self.reward_history.append(reward)
+        
+        return td_error
+
+    def select_action(
+        self,
+        state_key: str,
+        num_actions: int,
+        exploration: bool = True
+    ) -> int:
+        """Select action using epsilon-greedy policy for Q-learning.
+        
+        Args:
+            state_key: Current state identifier.
+            num_actions: Number of available actions.
+            exploration: Whether to use exploration.
+            
+        Returns:
+            Selected action index.
+        """
+        if exploration and np.random.random() < self.epsilon:
+            # Explore: random action
+            return np.random.randint(0, num_actions)
+        else:
+            # Exploit: best action according to Q-values
+            q_values = [
+                self.q_table.get((state_key, a), 0.0) 
+                for a in range(num_actions)
+            ]
+            return int(np.argmax(q_values))
+
+    def update_policy_gradient(
+        self,
+        state_key: str,
+        action: int,
+        reward: float,
+        state_features: Optional[np.ndarray] = None
+    ) -> None:
+        """Update policy using policy gradient method (REINFORCE).
+        
+        Args:
+            state_key: State identifier.
+            action: Action taken.
+            reward: Reward received.
+            state_features: Optional state feature vector.
+        """
+        if state_features is None:
+            # Use simple one-hot encoding if no features provided
+            state_features = np.zeros(10)
+            state_features[hash(state_key) % 10] = 1.0
+        
+        # Initialize policy parameters if needed
+        if state_key not in self.policy_params:
+            self.policy_params[state_key] = np.random.randn(len(state_features))
+        
+        # Compute advantage (reward - baseline)
+        advantage = reward - self.baseline
+        
+        # Update baseline with exponential moving average
+        self.baseline = 0.9 * self.baseline + 0.1 * reward
+        
+        # Policy gradient: ∇θ log π(a|s) * advantage
+        # For simplicity, use linear policy approximation
+        policy_logits = self.policy_params[state_key]
+        action_prob = np.exp(policy_logits[action % len(policy_logits)])
+        action_prob /= np.sum(np.exp(policy_logits))
+        
+        # Gradient update (simplified)
+        gradient = state_features * advantage
+        self.policy_params[state_key] += self.learning_rate * gradient
+        
+        # Record reward
+        self.reward_history.append(reward)
+
+    def update_actor_critic(
+        self,
+        state_key: str,
+        action: int,
+        reward: float,
+        next_state_key: str,
+        state_features: Optional[np.ndarray] = None,
+        done: bool = False
+    ) -> Tuple[float, float]:
+        """Update both actor (policy) and critic (value) using actor-critic.
+        
+        Args:
+            state_key: Current state identifier.
+            action: Action taken.
+            reward: Reward received.
+            next_state_key: Next state identifier.
+            state_features: Optional state feature vector.
+            done: Whether episode is done.
+            
+        Returns:
+            Tuple of (critic_loss, actor_loss).
+        """
+        if state_features is None:
+            state_features = np.zeros(10)
+            state_features[hash(state_key) % 10] = 1.0
+        
+        # Initialize parameters if needed
+        if state_key not in self.actor_params:
+            self.actor_params[state_key] = np.random.randn(len(state_features)) * 0.01
+        
+        # Critic update: TD error
+        current_value = self.critic_values.get(state_key, 0.0)
+        if not done:
+            next_value = self.critic_values.get(next_state_key, 0.0)
+        else:
+            next_value = 0.0
+        
+        td_error = reward + self.discount_factor * next_value - current_value
+        self.critic_values[state_key] = current_value + self.critic_lr * td_error
+        
+        # Actor update: policy gradient with advantage = TD error
+        actor_gradient = state_features * td_error
+        self.actor_params[state_key] += self.actor_lr * actor_gradient
+        
+        # Record reward
+        self.reward_history.append(reward)
+        
+        return (abs(td_error), abs(np.mean(actor_gradient)))
+
     def get_value(self, state_key: str) -> float:
         """Get value estimate for a state.
 
@@ -369,7 +563,22 @@ class ReinforcementLearningIntegrator:
         Returns:
             Value estimate.
         """
-        return self.value_estimates.get(state_key, 0.0)
+        if self.algorithm == "actor_critic":
+            return self.critic_values.get(state_key, 0.0)
+        else:
+            return self.value_estimates.get(state_key, 0.0)
+
+    def get_q_value(self, state_key: str, action: int) -> float:
+        """Get Q-value for state-action pair.
+        
+        Args:
+            state_key: State identifier.
+            action: Action index.
+            
+        Returns:
+            Q-value estimate.
+        """
+        return self.q_table.get((state_key, action), 0.0)
 
     def get_average_reward(self, window: int = 100) -> float:
         """Get average reward over recent history.
@@ -390,6 +599,11 @@ class ReinforcementLearningIntegrator:
         """Reset learning state."""
         self.value_estimates.clear()
         self.reward_history.clear()
+        self.q_table.clear()
+        self.policy_params.clear()
+        self.actor_params.clear()
+        self.critic_values.clear()
+        self.baseline = 0.0
 
 
 def extract_motor_commands(
