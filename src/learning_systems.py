@@ -309,7 +309,7 @@ class UnsupervisedLearning(LearningSystem):
                 except (ValueError, TypeError):
                     pass
         
-        # Handle strings (edit distance approximation)
+        # Handle strings (character-based similarity with length difference penalty)
         if isinstance(data1, str) and isinstance(data2, str):
             # Simple character-level similarity
             if data1 == data2:
@@ -317,9 +317,13 @@ class UnsupervisedLearning(LearningSystem):
             max_len = max(len(data1), len(data2))
             if max_len == 0:
                 return 0.0
-            # Count matching positions
+            # Count matching positions and penalize length differences
+            min_len = min(len(data1), len(data2))
             matches = sum(c1 == c2 for c1, c2 in zip(data1, data2))
-            return 1.0 - (matches / max_len)
+            # Normalized distance: positions + length difference
+            position_diff = 1.0 - (matches / max_len)
+            length_diff = abs(len(data1) - len(data2)) / max_len
+            return (position_diff + length_diff) / 2.0
         
         # Handle same type generic comparison
         if type(data1) == type(data2):
