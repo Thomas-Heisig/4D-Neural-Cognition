@@ -20,6 +20,11 @@ try:
     CV2_AVAILABLE = True
 except ImportError:
     CV2_AVAILABLE = False
+    import logging
+    logging.debug(
+        "OpenCV (cv2) not available. Video export features will be unavailable. "
+        "Install with: pip install opencv-python"
+    )
 
 
 class VideoExporter:
@@ -74,19 +79,19 @@ class VideoExporter:
             "frames": []
         }
     
-    def add_frame(self, frame: np.ndarray) -> None:
+    def add_frame(self, frame: np.ndarray, color_format: str = "RGB") -> None:
         """Add a frame to the video.
         
         Args:
-            frame: Frame as numpy array (height, width, 3) in RGB or BGR format.
+            frame: Frame as numpy array (height, width, 3).
+            color_format: Input color format, either "RGB" or "BGR" (default: "RGB").
         """
         if frame.shape[:2][::-1] != self.resolution:
             # Resize frame to match resolution
             frame = cv2.resize(frame, self.resolution)
         
         # Ensure frame is in BGR format (OpenCV default)
-        if frame.shape[2] == 3:
-            # Assume RGB, convert to BGR
+        if frame.shape[2] == 3 and color_format == "RGB":
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         
         self.writer.write(frame)

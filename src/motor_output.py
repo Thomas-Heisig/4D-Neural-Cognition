@@ -327,7 +327,8 @@ class ReinforcementLearningIntegrator:
         self, 
         learning_rate: float = 0.01, 
         discount_factor: float = 0.99,
-        algorithm: str = "td"
+        algorithm: str = "td",
+        num_actions: int = 10
     ):
         """Initialize RL integrator.
 
@@ -335,10 +336,12 @@ class ReinforcementLearningIntegrator:
             learning_rate: Learning rate for value updates.
             discount_factor: Discount factor for future rewards.
             algorithm: RL algorithm to use ('td', 'qlearning', 'policy_gradient', 'actor_critic').
+            num_actions: Number of possible actions (for Q-learning).
         """
         self.learning_rate = learning_rate
         self.discount_factor = discount_factor
         self.algorithm = algorithm
+        self.num_actions = num_actions
         self.value_estimates: Dict[str, float] = {}
         self.reward_history: List[float] = []
         
@@ -416,7 +419,7 @@ class ReinforcementLearningIntegrator:
         if not done:
             next_q_values = [
                 self.q_table.get((next_state_key, a), 0.0) 
-                for a in range(10)  # Assume max 10 actions
+                for a in range(self.num_actions)
             ]
             max_next_q = max(next_q_values) if next_q_values else 0.0
         else:

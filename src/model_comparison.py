@@ -130,10 +130,10 @@ class ModelComparator:
         else:
             return {"error": f"Unknown test type: {test_type}"}
         
-        # Calculate effect size (Cohen's d)
+        # Calculate effect size (Cohen's d) with unbiased variance
         mean1 = np.mean(model1_runs)
         mean2 = np.mean(model2_runs)
-        pooled_std = np.sqrt((np.var(model1_runs) + np.var(model2_runs)) / 2)
+        pooled_std = np.sqrt((np.var(model1_runs, ddof=1) + np.var(model2_runs, ddof=1)) / 2)
         
         if pooled_std > 0:
             cohens_d = (mean1 - mean2) / pooled_std
