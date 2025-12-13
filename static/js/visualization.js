@@ -42,10 +42,15 @@ class NeuralVisualization {
             return;
         }
         
-        // Add orbit controls
-        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
-        this.controls.enableDamping = true;
-        this.controls.dampingFactor = 0.05;
+        // Add orbit controls - check if OrbitControls exists
+        if (typeof THREE.OrbitControls !== 'undefined') {
+            this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+            this.controls.enableDamping = true;
+            this.controls.dampingFactor = 0.05;
+        } else {
+            console.warn('OrbitControls not available. Camera control will be limited.');
+            // Basic manual controls could be added here as fallback
+        }
         
         // Add lights
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
