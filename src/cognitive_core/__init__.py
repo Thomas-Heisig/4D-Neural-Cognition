@@ -78,6 +78,21 @@ class CognitiveExperiment:
                 "v_reset": -75.0,
                 "v_threshold": -50.0
             },
+            "cell_lifecycle": {
+                "max_age": 100000,
+                "health_decay_rate": 0.0001,
+                "reproduction_threshold": 0.8,
+                "mutation_rate": 0.01
+            },
+            "plasticity": {
+                "learning_rate": 0.01,
+                "stdp_enabled": True,
+                "homeostatic_enabled": True
+            },
+            "senses": {
+                "vision": {"input_size": [20, 20]},
+                "digital": {"input_size": [10]}
+            },
             "areas": self._create_area_config()
         }
         
