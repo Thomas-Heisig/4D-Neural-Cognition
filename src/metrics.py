@@ -111,6 +111,173 @@ def calculate_spike_rate_entropy(spike_history: List[List[int]]) -> float:
     return calculate_entropy(counts)
 
 
+def calculate_conditional_entropy(
+    x_values: List[int], 
+    y_values: List[int]
+) -> float:
+    """Calculate conditional entropy H(Y|X).
+    
+    Measures the uncertainty in Y given that we know X.
+    H(Y|X) = H(X,Y) - H(X)
+    
+    Args:
+        x_values: First variable observations (condition).
+        y_values: Second variable observations (target).
+        
+    Returns:
+        Conditional entropy in bits.
+    """
+    if len(x_values) != len(y_values) or len(x_values) == 0:
+        return 0.0
+    
+    n = len(x_values)
+    
+    # Count joint and marginal occurrences
+    joint_counts = Counter(zip(x_values, y_values))
+    x_counts = Counter(x_values)
+    
+    # H(Y|X) = -Σ p(x,y) * log2(p(y|x))
+    conditional_entropy = 0.0
+    for (x, y), joint_count in joint_counts.items():
+        p_xy = joint_count / n
+        p_x = x_counts[x] / n
+        p_y_given_x = joint_count / x_counts[x]  # p(y|x) = p(x,y) / p(x)
+        
+        if p_y_given_x > 0:
+            conditional_entropy -= p_xy * np.log2(p_y_given_x)
+    
+    return float(conditional_entropy)
+
+
+def calculate_transfer_entropy(
+    source: List[int],
+    target: List[int],
+    target_history: int = 1
+) -> float:
+    """Calculate transfer entropy from source to target.
+    
+    Transfer entropy measures the amount of information transferred from
+    source to target, accounting for the target's own history.
+    TE(S→T) = I(T_future; S_past | T_past)
+    
+    Args:
+        source: Source signal values.
+        target: Target signal values.
+        target_history: Number of past time steps of target to condition on.
+        
+    Returns:
+        Transfer entropy in bits.
+    """
+    if len(source) != len(target) or len(source) < target_history + 2:
+        return 0.0
+    
+    # Build time-shifted sequences
+    # T_future = target[t+1]
+    # T_past = target[t-history:t]
+    # S_past = source[t]
+    
+    n = len(target) - target_history - 1
+    
+    # Collect joint observations
+    observations = []
+    for t in range(target_history, len(target) - 1):
+        t_future = target[t + 1]
+        t_past = tuple(target[t - target_history + 1: t + 1])
+        s_past = source[t]
+        observations.append((t_future, t_past, s_past))
+    
+    if not observations:
+        return 0.0
+    
+    # Count occurrences
+    joint_counts = Counter(observations)
+    t_future_t_past_counts = Counter([(obs[0], obs[1]) for obs in observations])
+    t_past_s_past_counts = Counter([(obs[1], obs[2]) for obs in observations])
+    t_past_counts = Counter([obs[1] for obs in observations])
+    
+    # TE = Σ p(t_f, t_p, s_p) * log2(p(t_f|t_p,s_p) / p(t_f|t_p))
+    te = 0.0
+    for (t_f, t_p, s_p), count in joint_counts.items():
+        p_joint = count / n
+        p_t_f_t_p = t_future_t_past_counts[(t_f, t_p)] / n
+        p_t_p_s_p = t_past_s_past_counts[(t_p, s_p)] / n
+        p_t_p = t_past_counts[t_p] / n
+        
+        if p_joint > 0 and p_t_p_s_p > 0 and p_t_f_t_p > 0 and p_t_p > 0:
+            # p(t_f|t_p,s_p) = p(t_f,t_p,s_p) / p(t_p,s_p)
+            p_cond_with_s = p_joint / p_t_p_s_p
+            # p(t_f|t_p) = p(t_f,t_p) / p(t_p)
+            p_cond_without_s = p_t_f_t_p / p_t_p
+            
+            te += p_joint * np.log2(p_cond_with_s / p_cond_without_s)
+    
+    return float(te)
+
+
+def calculate_information_gain(
+    prior_counts: List[int],
+    posterior_counts_per_class: List[List[int]]
+) -> float:
+    """Calculate information gain (reduction in entropy).
+    
+    Information gain = H(prior) - Σ p(class) * H(posterior|class)
+    Used to measure how much information a feature provides about the target.
+    
+    Args:
+        prior_counts: Counts before split.
+        posterior_counts_per_class: List of count lists, one per class after split.
+        
+    Returns:
+        Information gain in bits.
+    """
+    # Calculate prior entropy
+    prior_entropy = calculate_entropy(prior_counts)
+    
+    # Calculate weighted posterior entropy
+    total_samples = sum(prior_counts)
+    if total_samples == 0:
+        return 0.0
+    
+    weighted_posterior_entropy = 0.0
+    for class_counts in posterior_counts_per_class:
+        class_size = sum(class_counts)
+        if class_size > 0:
+            class_entropy = calculate_entropy(class_counts)
+            weight = class_size / total_samples
+            weighted_posterior_entropy += weight * class_entropy
+    
+    information_gain = prior_entropy - weighted_posterior_entropy
+    return float(information_gain)
+
+
+def calculate_joint_entropy(x_values: List[int], y_values: List[int]) -> float:
+    """Calculate joint entropy H(X,Y).
+    
+    Measures the uncertainty in the joint distribution of X and Y.
+    
+    Args:
+        x_values: First variable observations.
+        y_values: Second variable observations.
+        
+    Returns:
+        Joint entropy in bits.
+    """
+    if len(x_values) != len(y_values) or len(x_values) == 0:
+        return 0.0
+    
+    n = len(x_values)
+    joint_counts = Counter(zip(x_values, y_values))
+    
+    # H(X,Y) = -Σ p(x,y) * log2(p(x,y))
+    joint_entropy = 0.0
+    for count in joint_counts.values():
+        if count > 0:
+            p = count / n
+            joint_entropy -= p * np.log2(p)
+    
+    return float(joint_entropy)
+
+
 def calculate_network_stability(activity_history: List[float], window_size: int = 10) -> Dict[str, float]:
     """Calculate stability metrics for network activity.
 
