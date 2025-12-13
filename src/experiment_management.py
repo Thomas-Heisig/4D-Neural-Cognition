@@ -458,6 +458,11 @@ def get_git_commit() -> Optional[str]:
     
     Returns:
         Git commit hash or None if not in a git repository
+    
+    Note:
+        This function uses subprocess to call git commands with fixed arguments
+        (no user input), which is safe. It runs in the current working directory
+        and will fail gracefully if not in a git repository.
     """
     try:
         result = subprocess.run(
@@ -465,7 +470,8 @@ def get_git_commit() -> Optional[str]:
             capture_output=True,
             text=True,
             check=True,
-            timeout=5
+            timeout=5,
+            cwd=os.getcwd()  # Explicit working directory
         )
         return result.stdout.strip()
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
@@ -477,6 +483,10 @@ def get_git_status() -> Optional[Dict[str, Any]]:
     
     Returns:
         Dictionary with git status information or None
+    
+    Note:
+        This function uses subprocess to call git commands with fixed arguments
+        (no user input), which is safe. All commands have timeouts.
     """
     try:
         # Get commit hash
@@ -487,7 +497,8 @@ def get_git_status() -> Optional[Dict[str, Any]]:
         # Check for uncommitted changes
         result = subprocess.run(
             ['git', 'diff', '--quiet'],
-            timeout=5
+            timeout=5,
+            cwd=os.getcwd()
         )
         has_uncommitted = result.returncode != 0
         
@@ -497,7 +508,8 @@ def get_git_status() -> Optional[Dict[str, Any]]:
             capture_output=True,
             text=True,
             check=True,
-            timeout=5
+            timeout=5,
+            cwd=os.getcwd()
         )
         branch = result.stdout.strip()
         

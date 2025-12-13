@@ -72,7 +72,6 @@ class NeuronModelValidator:
                 }
             },
             "cell_lifecycle": {"enabled": False},
-            "senses": {},
             "plasticity": {"enabled": False},
             "senses": {},
             "areas": [{
@@ -327,9 +326,7 @@ class NeuronModelValidator:
         for current in currents:
             model = BrainModel(config=config)
             sim = Simulation(model, seed=42)
-            neuron_obj = model.add_neuron(0, 0, 0, 0)
-            neuron = neuron_obj  # Keep reference
-            neuron_id = neuron_obj.id
+            neuron = model.add_neuron(0, 0, 0, 0)
             neuron_id = neuron.id
             
             spike_count = 0

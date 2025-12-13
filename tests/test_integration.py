@@ -433,7 +433,10 @@ class TestCoreStepInteractions:
         initial_neuron_count = len(model.neurons)
         initial_synapse_count = len(model.synapses)
         # Track synapses by (pre_id, post_id) tuple as identifier
-        initial_weights = {(s.pre_id, s.post_id): s.weight for s in model.synapses[:10]} if len(model.synapses) >= 10 else {}
+        if len(model.synapses) >= 10:
+            initial_weights = {(s.pre_id, s.post_id): s.weight for s in model.synapses[:10]}
+        else:
+            initial_weights = {}
         
         # Run with strong sensory input to trigger activity
         vision_input = np.ones((10, 10)) * 15.0  # Strong input
