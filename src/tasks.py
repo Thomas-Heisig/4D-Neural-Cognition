@@ -191,6 +191,48 @@ class PatternClassificationTask(Task):
             f"Pattern size: {self.pattern_size}, noise: {self.noise_level}"
         )
 
+    def _decode_output_from_firing_rates(self, simulation, num_classes: int, 
+                                          observation_window: int = 10) -> Optional[int]:
+        """Decode output class from neural firing rates.
+        
+        Uses firing rates of neurons to determine predicted class. This looks at
+        recent spike history and assigns neurons to output classes based on their
+        position, then uses winner-takes-all to determine the prediction.
+        
+        Args:
+            simulation: The simulation to decode output from
+            num_classes: Number of output classes
+            observation_window: Number of recent timesteps to consider
+            
+        Returns:
+            Predicted class (0 to num_classes-1) or None if no activity
+        """
+        model = simulation.model
+        
+        # Count recent spikes per neuron
+        spike_counts = {}
+        for neuron_id, times in simulation.spike_history.items():
+            if neuron_id in model.neurons:
+                # Count spikes in recent observation window
+                recent_spikes = sum(1 for t in times if t >= simulation.current_step - observation_window)
+                if recent_spikes > 0:
+                    spike_counts[neuron_id] = recent_spikes
+        
+        if not spike_counts:
+            return None
+        
+        # Assign neurons to output classes based on neuron ID modulo num_classes
+        # This creates a distributed output representation
+        class_firing_rates = [0.0] * num_classes
+        for neuron_id, count in spike_counts.items():
+            class_idx = neuron_id % num_classes
+            class_firing_rates[class_idx] += count
+        
+        # Winner-takes-all: class with highest firing rate
+        predicted_class = int(np.argmax(class_firing_rates))
+        
+        return predicted_class
+    
     def evaluate(self, simulation, num_episodes: int = 10, max_steps: int = 100) -> TaskResult:
         """Evaluate simulation on pattern classification.
 
@@ -225,17 +267,18 @@ class PatternClassificationTask(Task):
             for step in range(max_steps):
                 stats = simulation.step()
 
-                # NOTE: This is a simplified placeholder implementation
-                # Real implementation would need:
-                # 1. Dedicated output layer neurons (one per class)
-                # 2. Decode prediction from output layer spike rates
-                # 3. Winner-takes-all or rate-coded classification
-                # For now, we use random prediction to demonstrate the framework
+                # Decode output from neural firing rates using winner-takes-all
+                # Output is decoded from distributed neural activity
                 if len(stats["spikes"]) > 0 and first_response_step is None:
                     first_response_step = step
-                    # PLACEHOLDER: Random prediction for demonstration
-                    # TODO: Replace with actual output layer decoding
-                    predicted_class = self.rng.integers(0, self.num_classes)
+                    # Decode prediction from neural firing rates
+                    predicted_class = self._decode_output_from_firing_rates(
+                        simulation, self.num_classes, observation_window=10
+                    )
+                    
+                    # Fallback to random if no clear output
+                    if predicted_class is None:
+                        predicted_class = self.rng.integers(0, self.num_classes)
 
             # Evaluate response
             if predicted_class == target_class:
@@ -406,6 +449,47 @@ class TemporalSequenceTask(Task):
             f"from vocabulary of {self.vocabulary_size} elements"
         )
 
+    def _predict_next_element(self, simulation, vocabulary_size: int, 
+                              observation_window: int = 10) -> Optional[int]:
+        """Predict next sequence element from neural activity.
+        
+        Uses recent firing patterns to predict the next element in the sequence.
+        Neurons are assigned to vocabulary elements and the element with highest
+        associated firing rate is predicted.
+        
+        Args:
+            simulation: The simulation to decode output from
+            vocabulary_size: Size of the vocabulary
+            observation_window: Number of recent timesteps to consider
+            
+        Returns:
+            Predicted element (0 to vocabulary_size-1) or None if no activity
+        """
+        model = simulation.model
+        
+        # Count recent spikes per neuron
+        spike_counts = {}
+        for neuron_id, times in simulation.spike_history.items():
+            if neuron_id in model.neurons:
+                # Count spikes in recent observation window
+                recent_spikes = sum(1 for t in times if t >= simulation.current_step - observation_window)
+                if recent_spikes > 0:
+                    spike_counts[neuron_id] = recent_spikes
+        
+        if not spike_counts:
+            return None
+        
+        # Assign neurons to vocabulary elements based on neuron ID
+        element_scores = [0.0] * vocabulary_size
+        for neuron_id, count in spike_counts.items():
+            element_idx = neuron_id % vocabulary_size
+            element_scores[element_idx] += count
+        
+        # Return element with highest score
+        predicted_element = int(np.argmax(element_scores))
+        
+        return predicted_element
+    
     def evaluate(self, simulation, num_episodes: int = 20, max_steps: int = 200) -> TaskResult:
         """Evaluate simulation on sequence prediction.
 
@@ -425,10 +509,12 @@ class TemporalSequenceTask(Task):
         correct_predictions = 0
         total_predictions = 0
         total_reward = 0.0
+        previous_element = None
 
         for episode in range(num_episodes):
             observation, info = self.env.reset()
             done = False
+            previous_element = None
 
             while not done and total_predictions < max_steps:
                 # Feed current element via digital sense
@@ -438,23 +524,32 @@ class TemporalSequenceTask(Task):
                 for _ in range(10):  # Process current input
                     simulation.step()
 
+                # Predict next element based on neural activity
+                if previous_element is not None:
+                    predicted_next = self._predict_next_element(
+                        simulation, self.vocabulary_size, observation_window=10
+                    )
+                    
+                    # Fallback if no clear prediction
+                    if predicted_next is None:
+                        predicted_next = self.rng.integers(0, self.vocabulary_size)
+                    
+                    # Get actual next element from info
+                    current_element = info.get("current_element", 0)
+                    
+                    # Compare prediction with actual next element
+                    prediction_correct = (predicted_next == current_element)
+                    
+                    if prediction_correct:
+                        correct_predictions += 1
+                    
+                    total_predictions += 1
+
+                # Store current element for next prediction
+                previous_element = info.get("current_element", 0)
+
                 # Get next observation
                 observation, reward, done, info = self.env.step()
-
-                # NOTE: This is a simplified placeholder implementation
-                # Real implementation would need:
-                # 1. Dedicated output neurons for predictions
-                # 2. Compare predicted next element with actual next element
-                # 3. Track prediction accuracy over sequence
-                # For now, we use random evaluation to demonstrate the framework
-                # PLACEHOLDER: Random evaluation for demonstration
-                # TODO: Replace with actual prediction comparison
-                prediction_correct = self.rng.random() < 0.5
-
-                if prediction_correct:
-                    correct_predictions += 1
-
-                total_predictions += 1
                 total_reward += reward
 
         accuracy = correct_predictions / total_predictions if total_predictions > 0 else 0.0

@@ -271,33 +271,150 @@ class SupervisedLearning(LearningSystem):
 class UnsupervisedLearning(LearningSystem):
     """Unsupervised learning - pattern recognition without labels.
     
-    Note: This is a simplified placeholder implementation using hash-based clustering.
-    For production use, implement proper clustering algorithms like k-means or DBSCAN.
+    Implements similarity-based clustering using distance metrics to group
+    similar patterns together. Supports both numeric and non-numeric data.
     """
     
     def __init__(self, config: Optional[Dict] = None):
         super().__init__("Unsupervised Learning", LearningCategory.MACHINE, config)
         self.clusters: Dict[int, List[Any]] = {}
+        self.cluster_centroids: Dict[int, Any] = {}
         self.num_clusters = self.config.get("num_clusters", 5)
+        self.distance_threshold = self.config.get("distance_threshold", 1.0)
+        
+    def _compute_distance(self, data1: Any, data2: Any) -> float:
+        """Compute distance between two data points.
+        
+        Args:
+            data1: First data point (can be numeric array, string, or other)
+            data2: Second data point
+            
+        Returns:
+            Distance metric (lower = more similar)
+        """
+        # Handle numpy arrays
+        if isinstance(data1, np.ndarray) and isinstance(data2, np.ndarray):
+            if data1.shape == data2.shape:
+                return float(np.linalg.norm(data1 - data2))
+            else:
+                return float('inf')
+        
+        # Handle lists of numbers
+        if isinstance(data1, (list, tuple)) and isinstance(data2, (list, tuple)):
+            if len(data1) == len(data2):
+                try:
+                    arr1 = np.array(data1, dtype=float)
+                    arr2 = np.array(data2, dtype=float)
+                    return float(np.linalg.norm(arr1 - arr2))
+                except (ValueError, TypeError):
+                    pass
+        
+        # Handle strings (edit distance approximation)
+        if isinstance(data1, str) and isinstance(data2, str):
+            # Simple character-level similarity
+            if data1 == data2:
+                return 0.0
+            max_len = max(len(data1), len(data2))
+            if max_len == 0:
+                return 0.0
+            # Count matching positions
+            matches = sum(c1 == c2 for c1, c2 in zip(data1, data2))
+            return 1.0 - (matches / max_len)
+        
+        # Handle same type generic comparison
+        if type(data1) == type(data2):
+            return 0.0 if data1 == data2 else 1.0
+        
+        # Different types = maximum distance
+        return float('inf')
+    
+    def _find_nearest_cluster(self, input_data: Any) -> Optional[int]:
+        """Find the nearest cluster for the given data point.
+        
+        Args:
+            input_data: Data point to cluster
+            
+        Returns:
+            Cluster ID of nearest cluster, or None if no suitable cluster
+        """
+        if not self.cluster_centroids:
+            return None
+        
+        min_distance = float('inf')
+        nearest_cluster = None
+        
+        for cluster_id, centroid in self.cluster_centroids.items():
+            distance = self._compute_distance(input_data, centroid)
+            if distance < min_distance:
+                min_distance = distance
+                nearest_cluster = cluster_id
+        
+        # Only assign if within threshold
+        if min_distance <= self.distance_threshold:
+            return nearest_cluster
+        return None
+    
+    def _update_centroid(self, cluster_id: int) -> None:
+        """Update the centroid for a given cluster.
+        
+        Args:
+            cluster_id: ID of cluster to update
+        """
+        if cluster_id not in self.clusters or not self.clusters[cluster_id]:
+            return
+        
+        cluster_data = self.clusters[cluster_id]
+        
+        # For numeric arrays, compute mean
+        if all(isinstance(d, np.ndarray) for d in cluster_data):
+            try:
+                self.cluster_centroids[cluster_id] = np.mean(cluster_data, axis=0)
+                return
+            except (ValueError, TypeError):
+                pass
+        
+        # For lists of numbers, compute mean
+        if all(isinstance(d, (list, tuple)) for d in cluster_data):
+            try:
+                arr = np.array(cluster_data, dtype=float)
+                self.cluster_centroids[cluster_id] = arr.mean(axis=0).tolist()
+                return
+            except (ValueError, TypeError):
+                pass
+        
+        # For other types, use the most recent item as centroid
+        self.cluster_centroids[cluster_id] = cluster_data[-1]
         
     def learn(self, context: LearningContext, data: Any) -> LearningResult:
-        """Discover patterns in unlabeled data.
+        """Discover patterns in unlabeled data using similarity-based clustering.
         
-        This is a simplified implementation using hash-based assignment.
-        For production use, replace with proper clustering algorithms that
-        consider data similarity (e.g., k-means, DBSCAN, hierarchical clustering).
+        Assigns data to nearest cluster based on distance metric. Creates new
+        clusters when no suitable cluster exists.
         """
         if not isinstance(data, dict) or "input" not in data:
             return LearningResult(success=False, feedback="Invalid data format")
             
         input_data = data["input"]
-        # Hash-based assignment (simplified placeholder)
-        # TODO: Replace with similarity-based clustering for production use
-        cluster_id = hash(str(input_data)) % self.num_clusters
         
-        if cluster_id not in self.clusters:
-            self.clusters[cluster_id] = []
+        # Find nearest cluster
+        cluster_id = self._find_nearest_cluster(input_data)
+        
+        # Create new cluster if needed and we haven't reached max clusters
+        if cluster_id is None:
+            if len(self.clusters) < self.num_clusters:
+                cluster_id = len(self.clusters)
+                self.clusters[cluster_id] = []
+                self.cluster_centroids[cluster_id] = input_data
+            else:
+                # Force assignment to nearest cluster even if beyond threshold
+                cluster_id = min(
+                    self.cluster_centroids.keys(),
+                    key=lambda cid: self._compute_distance(input_data, self.cluster_centroids[cid])
+                )
+        
+        # Add to cluster and update centroid
         self.clusters[cluster_id].append(input_data)
+        self._update_centroid(cluster_id)
         
         total_patterns = sum(len(c) for c in self.clusters.values())
         
@@ -306,7 +423,7 @@ class UnsupervisedLearning(LearningSystem):
             learning_delta=1.0 / max(1, total_patterns),
             updated_parameters={"clusters": {k: len(v) for k, v in self.clusters.items()}},
             metrics={"total_patterns": total_patterns, "num_clusters": len(self.clusters)},
-            feedback=f"Pattern assigned to cluster {cluster_id}"
+            feedback=f"Pattern assigned to cluster {cluster_id} using similarity-based clustering"
         )
         self.learning_history.append(result)
         return result
