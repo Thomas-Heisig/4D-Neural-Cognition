@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # Main application
+  app:
+    build:
+      context: .
+      target: production
+    container_name: 4d-neural-cognition
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./experiments:/app/experiments
+      - ./logs:/app/logs
+      - ./checkpoints:/app/checkpoints
+      - ./data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+      - FLASK_ENV=production
+    restart: unless-stopped
+    networks:
+      - neural-net
+
+  # Development environment with hot-reload
+  dev:
+    build:
+      context: .
+      target: development
+    container_name: 4d-neural-dev
+    ports:
+      - "5001:5000"
+      - "8888:8888"
+    volumes:
+      - .:/app
+      - /app/__pycache__
+      - /app/.pytest_cache
+    environment:
+      - PYTHONUNBUFFERED=1
+      - FLASK_ENV=development
+    command: python app.py
+    networks:
+      - neural-net
+    profiles:
+      - dev
+
+  # Jupyter notebook for analysis
+  jupyter:
+    build:
+      context: .
+      target: development
+    container_name: 4d-neural-jupyter
+    ports:
+      - "8889:8888"
+    volumes:
+      - .:/app
+      - ./experiments:/app/experiments
+      - ./data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root
+    networks:
+      - neural-net
+    profiles:
+      - analysis
+
+  # Testing service
+  test:
+    build:
+      context: .
+      target: development
+    container_name: 4d-neural-test
+    volumes:
+      - .:/app
+    command: pytest tests/ -v --cov=src --cov-report=html
+    networks:
+      - neural-net
+    profiles:
+      - test
+
+networks:
+  neural-net:
+    driver: bridge

@@ -1,0 +1,103 @@
+{
+  "lattice_shape": [
+    20,
+    20,
+    20,
+    5
+  ],
+  "neuron_model": {
+    "model_type": "LIF",
+    "params_default": {
+      "v_rest": -65.0,
+      "v_threshold": -50.0,
+      "v_reset": -70.0,
+      "tau_m": 20.0,
+      "refractory_period": 5
+    }
+  },
+  "cell_lifecycle": {
+    "enabled": true,
+    "enable_death": false,
+    "enable_reproduction": false,
+    "max_age": 100000,
+    "health_decay_per_step": 0.0001
+  },
+  "plasticity": {
+    "enabled": true,
+    "learning_rate": 0.01,
+    "weight_min": 0.0,
+    "weight_max": 1.0,
+    "weight_decay": 0.001
+  },
+  "senses": {
+    "vision": {
+      "areal": "V1",
+      "enabled": true
+    }
+  },
+  "areas": [
+    {
+      "name": "V1",
+      "coord_ranges": {
+        "x": [
+          0,
+          9
+        ],
+        "y": [
+          0,
+          9
+        ],
+        "z": [
+          0,
+          4
+        ],
+        "w": [
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "name": "V2",
+      "coord_ranges": {
+        "x": [
+          10,
+          19
+        ],
+        "y": [
+          0,
+          9
+        ],
+        "z": [
+          5,
+          9
+        ],
+        "w": [
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "name": "IT",
+      "coord_ranges": {
+        "x": [
+          0,
+          19
+        ],
+        "y": [
+          10,
+          19
+        ],
+        "z": [
+          10,
+          14
+        ],
+        "w": [
+          4,
+          4
+        ]
+      }
+    }
+  ]
+}

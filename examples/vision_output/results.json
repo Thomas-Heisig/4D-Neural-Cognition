@@ -1,0 +1,26 @@
+{
+  "vertical": {
+    "mean_spikes": 0.0,
+    "std_spikes": 0.0,
+    "max_spikes": 0,
+    "min_spikes": 0
+  },
+  "horizontal": {
+    "mean_spikes": 0.0,
+    "std_spikes": 0.0,
+    "max_spikes": 0,
+    "min_spikes": 0
+  },
+  "diagonal": {
+    "mean_spikes": 0.0,
+    "std_spikes": 0.0,
+    "max_spikes": 0,
+    "min_spikes": 0
+  },
+  "cross": {
+    "mean_spikes": 0.0,
+    "std_spikes": 0.0,
+    "max_spikes": 0,
+    "min_spikes": 0
+  }
+}
