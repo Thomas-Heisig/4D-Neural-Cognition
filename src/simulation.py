@@ -442,11 +442,11 @@ class Simulation:
             return (10, 10, 10, 10)
         
         # Find bounds from existing neurons
-        positions = [neuron.position for neuron in self.model.neurons.values()]
-        x_coords = [p[0] for p in positions]
-        y_coords = [p[1] for p in positions]
-        z_coords = [p[2] for p in positions]
-        w_coords = [p[3] for p in positions]
+        # Note: neurons have x, y, z, w attributes directly
+        x_coords = [neuron.x for neuron in self.model.neurons.values()]
+        y_coords = [neuron.y for neuron in self.model.neurons.values()]
+        z_coords = [neuron.z for neuron in self.model.neurons.values()]
+        w_coords = [neuron.w for neuron in self.model.neurons.values()]
         
         return (
             max(x_coords) + 1 if x_coords else 10,

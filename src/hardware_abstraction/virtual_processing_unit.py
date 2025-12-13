@@ -79,7 +79,7 @@ class VirtualProcessingUnit:
             
             # Find neurons in this slice
             for neuron_id, neuron in model.neurons.items():
-                x, y, z, w = neuron.position
+                x, y, z, w = neuron.x, neuron.y, neuron.z, neuron.w
                 if (x_min <= x <= x_max and 
                     y_min <= y <= y_max and 
                     z_min <= z <= z_max and 

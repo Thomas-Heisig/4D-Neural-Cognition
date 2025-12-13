@@ -1237,6 +1237,158 @@ def get_connections_visualization():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+@app.route("/api/vnc/status", methods=["GET"])
+def get_vnc_status():
+    """Get Virtual Neuromorphic Clock status and statistics."""
+    global current_simulation
+    
+    if current_simulation is None:
+        return jsonify({"status": "error", "message": "No simulation initialized"}), 400
+    
+    try:
+        # Check if VNC is enabled
+        if not hasattr(current_simulation, 'use_vnc') or not current_simulation.use_vnc:
+            return jsonify({
+                "status": "success",
+                "vnc_enabled": False,
+                "message": "VNC not enabled"
+            })
+        
+        # Get VNC statistics
+        vnc_stats = current_simulation.get_vnc_statistics()
+        vpu_stats = current_simulation.get_vpu_statistics()
+        
+        if vnc_stats is None:
+            return jsonify({
+                "status": "success",
+                "vnc_enabled": True,
+                "vnc_initialized": False,
+                "message": "VNC enabled but not initialized"
+            })
+        
+        return jsonify({
+            "status": "success",
+            "vnc_enabled": True,
+            "vnc_initialized": True,
+            "global_stats": vnc_stats,
+            "vpu_stats": vpu_stats if vpu_stats else []
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to get VNC status: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/vnc/config", methods=["GET", "POST"])
+def vnc_config():
+    """Get or update VNC configuration."""
+    global current_simulation, current_model
+    
+    if request.method == "GET":
+        # Return current VNC configuration
+        if current_simulation is None:
+            return jsonify({"status": "error", "message": "No simulation initialized"}), 400
+        
+        try:
+            config = {
+                "vnc_enabled": getattr(current_simulation, 'use_vnc', False),
+                "clock_frequency": getattr(current_simulation, 'vnc_clock_frequency', 20e6),
+                "num_vpus": 0,
+            }
+            
+            if current_simulation.virtual_clock is not None:
+                config["num_vpus"] = len(current_simulation.virtual_clock.vpus)
+            
+            return jsonify({"status": "success", "config": config})
+            
+        except Exception as e:
+            logger.error(f"Failed to get VNC config: {str(e)}")
+            return jsonify({"status": "error", "message": str(e)}), 500
+    
+    else:  # POST - Update configuration
+        if current_model is None:
+            return jsonify({"status": "error", "message": "No model initialized"}), 400
+        
+        try:
+            data = request.json
+            vnc_enabled = data.get("vnc_enabled", False)
+            clock_frequency = float(data.get("clock_frequency", 20e6))
+            
+            # Validate clock frequency
+            if clock_frequency <= 0 or clock_frequency > 1e9:
+                return jsonify({
+                    "status": "error",
+                    "message": "Clock frequency must be between 0 and 1 GHz"
+                }), 400
+            
+            # Create new simulation with VNC settings
+            with simulation_lock:
+                current_simulation = Simulation(
+                    current_model,
+                    seed=42,
+                    use_vnc=vnc_enabled,
+                    vnc_clock_frequency=clock_frequency
+                )
+            
+            logger.info(f"VNC configuration updated: enabled={vnc_enabled}, freq={clock_frequency/1e6:.1f} MHz")
+            
+            return jsonify({
+                "status": "success",
+                "message": "VNC configuration updated",
+                "config": {
+                    "vnc_enabled": vnc_enabled,
+                    "clock_frequency": clock_frequency,
+                    "num_vpus": len(current_simulation.virtual_clock.vpus) if current_simulation.virtual_clock else 0
+                }
+            })
+            
+        except Exception as e:
+            logger.error(f"Failed to update VNC config: {str(e)}")
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/vnc/reset", methods=["POST"])
+def reset_vnc_stats():
+    """Reset VNC statistics."""
+    global current_simulation
+    
+    if current_simulation is None:
+        return jsonify({"status": "error", "message": "No simulation initialized"}), 400
+    
+    try:
+        if current_simulation.virtual_clock is not None:
+            current_simulation.virtual_clock.reset()
+            logger.info("VNC statistics reset")
+            return jsonify({"status": "success", "message": "VNC statistics reset"})
+        else:
+            return jsonify({"status": "error", "message": "VNC not initialized"}), 400
+            
+    except Exception as e:
+        logger.error(f"Failed to reset VNC stats: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/vnc/rebalance", methods=["POST"])
+def trigger_vnc_rebalance():
+    """Trigger VNC load rebalancing."""
+    global current_simulation
+    
+    if current_simulation is None:
+        return jsonify({"status": "error", "message": "No simulation initialized"}), 400
+    
+    try:
+        if current_simulation.virtual_clock is not None:
+            current_simulation.virtual_clock.rebalance_partitions()
+            logger.info("VNC load rebalancing triggered")
+            return jsonify({"status": "success", "message": "Load rebalancing triggered"})
+        else:
+            return jsonify({"status": "error", "message": "VNC not initialized"}), 400
+            
+    except Exception as e:
+        logger.error(f"Failed to trigger rebalance: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 @socketio.on("register_user")
 def handle_register_user(data):
     """Handle user registration for collaboration."""
