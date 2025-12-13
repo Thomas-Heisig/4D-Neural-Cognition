@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Code TODO Resolution** (December 13, 2025)
+  - **Similarity-based Clustering**: Replaced hash-based placeholder in `learning_systems.py`
+    - Distance metric-based clustering with support for arrays, lists, and strings
+    - Centroid tracking and automatic cluster assignment
+    - Configurable distance threshold for cluster membership
+  - **Neural Output Decoding**: Implemented actual output layer decoding in `tasks.py`
+    - `_decode_output_from_firing_rates()` for PatternClassificationTask
+    - Distributed neural representation with winner-takes-all
+    - Decodes predictions from spike counts in observation window
+  - **Sequence Prediction**: Implemented prediction evaluation in TemporalSequenceTask
+    - `_predict_next_element()` method for sequence prediction
+    - Compares neural predictions with actual sequence elements
+    - Tracks prediction accuracy throughout sequences
+
+### Changed
+
+- **CI/CD Optimization** (December 13, 2025)
+  - Restricted OS testing to Ubuntu-latest and Windows-latest only (removed macOS)
+  - Updated to test only Python 3.12 (latest stable version)
+  - Reduced test matrix from 15 combinations to 2 for faster CI runs
+  - Maintains quality while optimizing resource usage
+
 - **Major System Updates** (December 9, 2025)
   - **Long-term Memory Systems**:
     - MemoryConsolidation class for transferring patterns to long-term storage
