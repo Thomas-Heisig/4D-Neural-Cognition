@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4D Neural Cognition - Comprehensive Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+    <!-- Note: Integrity hashes removed for compatibility. For production, verify hashes from official CDN sources or use local copies -->
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Top Navigation Bar -->
+        <nav class="top-navbar">
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" title="Menü öffnen/schließen">☰</button>
+            <div class="nav-brand">
+                <h1>🧠 4D Neural Cognition</h1>
+                <span class="version">v1.0 Dashboard</span>
+            </div>
+            <div class="nav-links">
+                <a href="/" class="nav-link">Einfach</a>
+                <a href="/advanced" class="nav-link">Erweitert</a>
+                <a href="/dashboard" class="nav-link active">Dashboard</a>
+            </div>
+            <div class="nav-status">
+                <span id="connectionStatus" class="status-indicator">●</span>
+                <span id="connectionText">Verbindung...</span>
+            </div>
+        </nav>
+
+        <!-- Mobile Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h3>📊 Übersicht</h3>
+                <button class="sidebar-btn active" data-section="overview">
+                    <span class="icon">📈</span> Systemstatus
+                </button>
+                <button class="sidebar-btn" data-section="settings">
+                    <span class="icon">⚙️</span> Einstellungen
+                </button>
+                <button class="sidebar-btn" data-section="network">
+                    <span class="icon">🕸️</span> Netzwerk
+                </button>
+                <button class="sidebar-btn" data-section="monitoring">
+                    <span class="icon">📡</span> Überwachung
+                </button>
+            </div>
+            
+            <div class="sidebar-section">
+                <h3>🎮 Steuerung</h3>
+                <button class="sidebar-btn" data-section="simulation">
+                    <span class="icon">▶️</span> Simulation
+                </button>
+                <button class="sidebar-btn" data-section="neurons">
+                    <span class="icon">⚡</span> Neuronen
+                </button>
+                <button class="sidebar-btn" data-section="synapses">
+                    <span class="icon">🔗</span> Synapsen
+                </button>
+                <button class="sidebar-btn" data-section="senses">
+                    <span class="icon">👁️</span> Sinne
+                </button>
+            </div>
+            
+            <div class="sidebar-section">
+                <h3>🔬 Analyse</h3>
+                <button class="sidebar-btn" data-section="analytics">
+                    <span class="icon">📊</span> Statistiken
+                </button>
+                <button class="sidebar-btn" data-section="visualization">
+                    <span class="icon">🎨</span> Visualisierung
+                </button>
+                <button class="sidebar-btn" data-section="logs">
+                    <span class="icon">📋</span> Protokolle
+                </button>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>💾 Daten</h3>
+                <button class="sidebar-btn" data-section="storage">
+                    <span class="icon">💾</span> Speichern/Laden
+                </button>
+                <button class="sidebar-btn" data-section="export">
+                    <span class="icon">📤</span> Export/Import
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Overview Section -->
+            <section id="overview-section" class="content-section active">
+                <div class="section-header">
+                    <h2>📈 Systemstatus</h2>
+                    <button id="refreshOverview" class="btn-refresh">🔄 Aktualisieren</button>
+                </div>
+                
+                <div class="cards-grid">
+                    <div class="info-card">
+                        <h3>🧠 Modell</h3>
+                        <div id="modelStatus" class="card-content">
+                            <p>Noch nicht initialisiert</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-card">
+                        <h3>⚡ Neuronen</h3>
+                        <div id="neuronStatus" class="card-content">
+                            <p class="stat-label">Gesamt:</p>
+                            <p class="stat-value" id="totalNeurons">0</p>
+                            <p class="stat-label">Durchschnittliches Membranpotential:</p>
+                            <p class="stat-value" id="avgMembrane">N/A</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-card">
+                        <h3>🔗 Synapsen</h3>
+                        <div id="synapseStatus" class="card-content">
+                            <p class="stat-label">Gesamt:</p>
+                            <p class="stat-value" id="totalSynapses">0</p>
+                            <p class="stat-label">Durchschnittliches Gewicht:</p>
+                            <p class="stat-value" id="avgWeight">N/A</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-card">
+                        <h3>📊 Simulation</h3>
+                        <div id="simulationStatus" class="card-content">
+                            <p class="stat-label">Aktueller Schritt:</p>
+                            <p class="stat-value" id="currentStep">0</p>
+                            <p class="stat-label">Status:</p>
+                            <p class="stat-value" id="simStatus">Gestoppt</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3>Netzwerkaktivität</h3>
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Synapsengewichte</h3>
+                        <canvas id="weightsChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings-section" class="content-section">
+                <div class="section-header">
+                    <h2>⚙️ Einstellungen</h2>
+                    <div class="header-actions">
+                        <button id="loadConfig" class="btn-secondary">📥 Laden</button>
+                        <button id="saveConfig" class="btn-primary">💾 Speichern</button>
+                        <button id="resetConfig" class="btn-danger">🔄 Zurücksetzen</button>
+                    </div>
+                </div>
+
+                <div class="settings-container">
+                    <!-- Model Configuration -->
+                    <div class="settings-group">
+                        <h3>🧠 Modell Konfiguration</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label>Gitter Form (x, y, z, w):</label>
+                                <input type="text" id="latticeShape" placeholder="20,20,20,20">
+                            </div>
+                            <div class="form-field">
+                                <label>Dimensions:</label>
+                                <input type="number" id="dimensions" value="4" min="3" max="4">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Neuron Model Settings -->
+                    <div class="settings-group">
+                        <h3>⚡ Neuron Modell</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label>Modell Typ:</label>
+                                <select id="neuronModelType">
+                                    <option value="LIF">LIF (Leaky Integrate-and-Fire)</option>
+                                    <option value="Izhikevich">Izhikevich</option>
+                                    <option value="HH">Hodgkin-Huxley</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label>Tau m (ms):</label>
+                                <input type="number" id="tauM" value="20.0" step="0.1">
+                            </div>
+                            <div class="form-field">
+                                <label>V Resting (mV):</label>
+                                <input type="number" id="vRest" value="-65.0" step="0.1">
+                            </div>
+                            <div class="form-field">
+                                <label>V Reset (mV):</label>
+                                <input type="number" id="vReset" value="-70.0" step="0.1">
+                            </div>
+                            <div class="form-field">
+                                <label>V Threshold (mV):</label>
+                                <input type="number" id="vThreshold" value="-50.0" step="0.1">
+                            </div>
+                            <div class="form-field">
+                                <label>Refractory Period (ms):</label>
+                                <input type="number" id="refractoryPeriod" value="5.0" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Plasticity Settings -->
+                    <div class="settings-group">
+                        <h3>🔄 Plastizität</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label>Lernregel:</label>
+                                <select id="plasticityRule">
+                                    <option value="hebb_like">Hebb-like</option>
+                                    <option value="stdp">STDP</option>
+                                    <option value="bcm">BCM</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label>Lernrate:</label>
+                                <input type="number" id="learningRate" value="0.001" step="0.0001">
+                            </div>
+                            <div class="form-field">
+                                <label>Gewicht Min:</label>
+                                <input type="number" id="weightMin" value="-1.0" step="0.1">
+                            </div>
+                            <div class="form-field">
+                                <label>Gewicht Max:</label>
+                                <input type="number" id="weightMax" value="1.0" step="0.1">
+                            </div>
+                            <div class="form-field">
+                                <label>Gewicht Decay:</label>
+                                <input type="number" id="weightDecay" value="0.00001" step="0.00001">
+                            </div>
+                            <div class="form-field">
+                                <label>
+                                    <input type="checkbox" id="homeostatic"> Homöostatisch aktivieren
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cell Lifecycle Settings -->
+                    <div class="settings-group">
+                        <h3>🔬 Zell-Lebenszyklus</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label>
+                                    <input type="checkbox" id="enableDeath" checked> Tod aktivieren
+                                </label>
+                            </div>
+                            <div class="form-field">
+                                <label>
+                                    <input type="checkbox" id="enableReproduction" checked> Reproduktion aktivieren
+                                </label>
+                            </div>
+                            <div class="form-field">
+                                <label>Max. Alter:</label>
+                                <input type="number" id="maxAge" value="100000" step="1000">
+                            </div>
+                            <div class="form-field">
+                                <label>Gesundheits-Verfall pro Schritt:</label>
+                                <input type="number" id="healthDecay" value="0.0001" step="0.00001">
+                            </div>
+                            <div class="form-field">
+                                <label>Mutations-Standardabweichung (Parameter):</label>
+                                <input type="number" id="mutationStdParams" value="0.05" step="0.01">
+                            </div>
+                            <div class="form-field">
+                                <label>Mutations-Standardabweichung (Gewichte):</label>
+                                <input type="number" id="mutationStdWeights" value="0.02" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Neuromodulation Settings -->
+                    <div class="settings-group">
+                        <h3>🧪 Neuromodulation</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label>
+                                    <input type="checkbox" id="neuromodulationEnabled" checked> Neuromodulation aktivieren
+                                </label>
+                            </div>
+                            <div class="form-field">
+                                <label>Dopamin Baseline:</label>
+                                <input type="number" id="dopamineBaseline" value="0.5" step="0.1">
+                            </div>
+                            <div class="form-field">
+                                <label>Dopamin Decay Rate:</label>
+                                <input type="number" id="dopamineDecay" value="0.1" step="0.01">
+                            </div>
+                            <div class="form-field">
+                                <label>Serotonin Baseline:</label>
+                                <input type="number" id="serotoninBaseline" value="0.5" step="0.1">
+                            </div>
+                            <div class="form-field">
+                                <label>Serotonin Decay Rate:</label>
+                                <input type="number" id="serotoninDecay" value="0.1" step="0.01">
+                            </div>
+                            <div class="form-field">
+                                <label>Norepinephrin Baseline:</label>
+                                <input type="number" id="norepinephrineBaseline" value="0.5" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-footer">
+                    <button id="applySettings" class="btn-primary btn-large">✅ Einstellungen anwenden</button>
+                </div>
+            </section>
+
+            <!-- Network Section -->
+            <section id="network-section" class="content-section">
+                <div class="section-header">
+                    <h2>🕸️ Netzwerk Details</h2>
+                    <button id="refreshNetwork" class="btn-refresh">🔄 Aktualisieren</button>
+                </div>
+
+                <div class="tabs-container">
+                    <div class="tabs-header">
+                        <button class="tab-btn active" data-tab="neurons-tab">Neuronen</button>
+                        <button class="tab-btn" data-tab="synapses-tab">Synapsen</button>
+                        <button class="tab-btn" data-tab="areas-tab">Bereiche</button>
+                    </div>
+
+                    <div class="tab-content active" id="neurons-tab">
+                        <div class="table-controls">
+                            <input type="text" id="neuronSearch" placeholder="Neuronen suchen...">
+                            <select id="neuronFilter">
+                                <option value="all">Alle</option>
+                                <option value="excitatory">Erregend</option>
+                                <option value="inhibitory">Hemmend</option>
+                            </select>
+                            <span id="neuronCount">0 Neuronen</span>
+                        </div>
+                        <div class="table-container">
+                            <table id="neuronsTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Position (x,y,z,w)</th>
+                                        <th>V Membrane</th>
+                                        <th>Gesundheit</th>
+                                        <th>Alter</th>
+                                        <th>Typ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="neuronsTableBody">
+                                    <tr><td colspan="6">Lade Neuronen...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pagination">
+                            <button id="neuronsPrev" class="btn-secondary">← Zurück</button>
+                            <span id="neuronsPage">Seite 1</span>
+                            <button id="neuronsNext" class="btn-secondary">Weiter →</button>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="synapses-tab">
+                        <div class="table-controls">
+                            <input type="text" id="synapseSearch" placeholder="Synapsen suchen...">
+                            <select id="synapseFilter">
+                                <option value="all">Alle</option>
+                                <option value="positive">Positive Gewichte</option>
+                                <option value="negative">Negative Gewichte</option>
+                            </select>
+                            <span id="synapseCount">0 Synapsen</span>
+                        </div>
+                        <div class="table-container">
+                            <table id="synapsesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Pre-Neuron ID</th>
+                                        <th>Post-Neuron ID</th>
+                                        <th>Gewicht</th>
+                                        <th>Verzögerung</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="synapsesTableBody">
+                                    <tr><td colspan="4">Lade Synapsen...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pagination">
+                            <button id="synapsesPrev" class="btn-secondary">← Zurück</button>
+                            <span id="synapsesPage">Seite 1</span>
+                            <button id="synapsesNext" class="btn-secondary">Weiter →</button>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="areas-tab">
+                        <div class="areas-grid" id="areasGrid">
+                            <p>Lade Bereiche...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Monitoring Section -->
+            <section id="monitoring-section" class="content-section">
+                <div class="section-header">
+                    <h2>📡 Echtzeit-Überwachung</h2>
+                    <button id="toggleMonitoring" class="btn-primary">▶️ Überwachung starten</button>
+                </div>
+
+                <div class="monitoring-grid">
+                    <div class="monitor-card">
+                        <h3>Spikes pro Sekunde</h3>
+                        <canvas id="spikesMonitor"></canvas>
+                    </div>
+                    <div class="monitor-card">
+                        <h3>Durchschn. Membranpotential</h3>
+                        <canvas id="membraneMonitor"></canvas>
+                    </div>
+                    <div class="monitor-card">
+                        <h3>Netzwerkgesundheit</h3>
+                        <canvas id="healthMonitor"></canvas>
+                    </div>
+                    <div class="monitor-card">
+                        <h3>Synaptische Aktivität</h3>
+                        <canvas id="synapticMonitor"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Simulation Section -->
+            <section id="simulation-section" class="content-section">
+                <div class="section-header">
+                    <h2>▶️ Simulations-Steuerung</h2>
+                </div>
+
+                <div class="simulation-controls">
+                    <div class="control-panel">
+                        <h3>🎮 Schnellsteuerung</h3>
+                        <div class="button-grid">
+                            <button id="simInit" class="btn-primary">🔄 Initialisieren</button>
+                            <button id="simStep" class="btn-success">⏭️ Einzelschritt</button>
+                            <button id="simRun" class="btn-success">▶️ Starten</button>
+                            <button id="simPause" class="btn-warning">⏸️ Pause</button>
+                            <button id="simStop" class="btn-danger">⏹️ Stoppen</button>
+                            <button id="simRecover" class="btn-secondary">♻️ Wiederherstellen</button>
+                        </div>
+                    </div>
+
+                    <div class="control-panel">
+                        <h3>⚙️ Parameter</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label>Anzahl Schritte:</label>
+                                <input type="number" id="simSteps" value="100" min="1" max="100000">
+                            </div>
+                            <div class="form-field">
+                                <label>Neuronendichte:</label>
+                                <input type="range" id="simDensity" min="0.01" max="1.0" step="0.01" value="0.1">
+                                <span id="simDensityValue">0.1</span>
+                            </div>
+                            <div class="form-field">
+                                <label>Verbindungswahrscheinlichkeit:</label>
+                                <input type="range" id="simConnProb" min="0.0001" max="0.1" step="0.0001" value="0.001">
+                                <span id="simConnProbValue">0.001</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="progress-panel">
+                        <h3>📊 Fortschritt</h3>
+                        <div class="progress-bar">
+                            <div id="simProgress" class="progress-fill"></div>
+                        </div>
+                        <div class="progress-info">
+                            <span id="simProgressText">Bereit</span>
+                            <span id="simProgressPercent">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section id="analytics-section" class="content-section">
+                <div class="section-header">
+                    <h2>📊 Statistische Analyse</h2>
+                    <button id="refreshAnalytics" class="btn-refresh">🔄 Aktualisieren</button>
+                </div>
+
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <h3>Netzwerkstatistiken</h3>
+                        <div id="networkStats" class="stats-list">
+                            <p>Lade Statistiken...</p>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>Verteilung Membranpotential</h3>
+                        <canvas id="membraneDist"></canvas>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>Gewichtsverteilung</h3>
+                        <canvas id="weightDist"></canvas>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>Altersverteilung</h3>
+                        <canvas id="ageDist"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Storage Section -->
+            <section id="storage-section" class="content-section">
+                <div class="section-header">
+                    <h2>💾 Speichern & Laden</h2>
+                </div>
+
+                <div class="storage-grid">
+                    <div class="storage-panel">
+                        <h3>💾 Modell speichern</h3>
+                        <div class="form-group">
+                            <label>Dateiname:</label>
+                            <input type="text" id="saveFilename" placeholder="brain_state" value="brain_state">
+                        </div>
+                        <div class="form-group">
+                            <label>Format:</label>
+                            <select id="saveFormat">
+                                <option value="json">JSON (Lesbar)</option>
+                                <option value="hdf5">HDF5 (Kompakt)</option>
+                            </select>
+                        </div>
+                        <button id="executeSave" class="btn-primary btn-large">💾 Jetzt speichern</button>
+                    </div>
+
+                    <div class="storage-panel">
+                        <h3>📥 Modell laden</h3>
+                        <div class="form-group">
+                            <label>Dateipfad:</label>
+                            <input type="text" id="loadFilepath" placeholder="saved_models/brain_state.json" value="saved_models/brain_state.json">
+                        </div>
+                        <button id="executeLoad" class="btn-primary btn-large">📥 Jetzt laden</button>
+                    </div>
+
+                    <div class="storage-panel">
+                        <h3>♻️ Checkpoint-Verwaltung</h3>
+                        <p>Automatische Checkpoints werden alle 1000 Schritte erstellt.</p>
+                        <button id="listCheckpoints" class="btn-secondary">📋 Checkpoints anzeigen</button>
+                        <button id="loadCheckpoint" class="btn-primary">♻️ Letzten Checkpoint laden</button>
+                        <div id="checkpointList" class="checkpoint-list">
+                            <p>Keine Checkpoints verfügbar</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Logs Section -->
+            <section id="logs-section" class="content-section">
+                <div class="section-header">
+                    <h2>📋 System-Protokolle</h2>
+                    <div class="header-actions">
+                        <button id="clearLogs" class="btn-secondary">🗑️ Löschen</button>
+                        <button id="exportLogs" class="btn-secondary">📤 Exportieren</button>
+                    </div>
+                </div>
+
+                <div class="logs-container">
+                    <div class="logs-filters">
+                        <label>
+                            <input type="checkbox" id="logInfo" checked> Info
+                        </label>
+                        <label>
+                            <input type="checkbox" id="logWarning" checked> Warnung
+                        </label>
+                        <label>
+                            <input type="checkbox" id="logError" checked> Fehler
+                        </label>
+                    </div>
+                    <div id="logsOutput" class="logs-output">
+                        <p class="log-entry info">System bereit...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Senses Section -->
+            <section id="senses-section" class="content-section">
+                <div class="section-header">
+                    <h2>👁️ Sensorische Eingaben</h2>
+                </div>
+
+                <div class="senses-grid">
+                    <div class="sense-panel">
+                        <h3>🔍 Sinnestyp auswählen</h3>
+                        <select id="senseTypeSelect" class="sense-select">
+                            <option value="vision">👁️ Vision</option>
+                            <option value="audition">👂 Audition</option>
+                            <option value="somatosensory">✋ Somatosensorisch</option>
+                            <option value="taste">👅 Geschmack</option>
+                            <option value="smell">👃 Geruch</option>
+                            <option value="vestibular">⚖️ Vestibulär</option>
+                            <option value="digital">💻 Digital</option>
+                        </select>
+                        <div id="senseInfo" class="sense-info">
+                            <p>Wähle einen Sinnestyp aus, um Details zu sehen.</p>
+                        </div>
+                    </div>
+
+                    <div class="sense-panel">
+                        <h3>📤 Eingabe senden</h3>
+                        <div class="form-group">
+                            <label>Eingabedaten:</label>
+                            <textarea id="senseInput" placeholder="Eingabedaten (JSON-Format oder Text)" rows="6"></textarea>
+                        </div>
+                        <button id="sendSenseInput" class="btn-primary btn-large">📤 Eingabe senden</button>
+                    </div>
+
+                    <div class="sense-panel">
+                        <h3>📊 Sinnes-Aktivität</h3>
+                        <canvas id="senseActivity"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Visualization Section -->
+            <section id="visualization-section" class="content-section">
+                <div class="section-header">
+                    <h2>🎨 Visualisierung</h2>
+                </div>
+
+                <div class="viz-controls">
+                    <button id="openAdvancedViz" class="btn-primary btn-large">
+                        🎮 Erweiterte 3D/4D Visualisierung öffnen
+                    </button>
+                </div>
+
+                <div class="heatmaps-container">
+                    <div class="heatmap-card">
+                        <h3>Input Layer (z=0)</h3>
+                        <canvas id="heatmapInput"></canvas>
+                    </div>
+                    <div class="heatmap-card">
+                        <h3>Hidden Layer (z=10)</h3>
+                        <canvas id="heatmapHidden"></canvas>
+                    </div>
+                    <div class="heatmap-card">
+                        <h3>Output Layer (z=19)</h3>
+                        <canvas id="heatmapOutput"></canvas>
+                    </div>
+                </div>
+                <button id="refreshHeatmaps" class="btn-primary">🔄 Heatmaps aktualisieren</button>
+            </section>
+
+            <!-- Export Section -->
+            <section id="export-section" class="content-section">
+                <div class="section-header">
+                    <h2>📤 Export & Import</h2>
+                </div>
+
+                <div class="export-grid">
+                    <div class="export-panel">
+                        <h3>📤 Konfiguration exportieren</h3>
+                        <p>Exportiere die aktuelle Konfiguration als JSON-Datei.</p>
+                        <button id="exportConfig" class="btn-primary btn-large">📤 Konfiguration exportieren</button>
+                    </div>
+
+                    <div class="export-panel">
+                        <h3>📥 Konfiguration importieren</h3>
+                        <p>Importiere eine Konfiguration aus einer JSON-Datei.</p>
+                        <input type="file" id="importConfigFile" accept=".json">
+                        <button id="importConfig" class="btn-primary btn-large">📥 Konfiguration importieren</button>
+                    </div>
+
+                    <div class="export-panel">
+                        <h3>📊 Daten exportieren</h3>
+                        <p>Exportiere Netzwerkdaten für externe Analyse.</p>
+                        <select id="exportDataType">
+                            <option value="neurons">Neuronen-Daten</option>
+                            <option value="synapses">Synapsen-Daten</option>
+                            <option value="statistics">Statistiken</option>
+                        </select>
+                        <button id="exportData" class="btn-primary btn-large">📊 Daten exportieren</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

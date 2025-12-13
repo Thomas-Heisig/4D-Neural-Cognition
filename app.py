@@ -314,6 +314,264 @@ def get_model_info():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+@app.route("/api/config/full", methods=["GET"])
+def get_full_config():
+    """Get complete model configuration."""
+    global current_model
+
+    if current_model is None:
+        return jsonify({"status": "error", "message": "No model initialized"}), 400
+
+    try:
+        config = current_model.config
+        return jsonify({"status": "success", "config": config})
+    except Exception as e:
+        logger.error(f"Failed to get configuration: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/config/update", methods=["POST"])
+@limiter.limit("30 per minute")
+def update_config():
+    """Update model configuration parameters (requires model restart)."""
+    global current_model
+
+    if current_model is None:
+        return jsonify({"status": "error", "message": "No model initialized"}), 400
+
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"status": "error", "message": "No data provided"}), 400
+
+        # Validate data types and ranges
+        allowed_config_keys = {
+            'lattice_shape', 'dimensions', 'neuron_model', 'plasticity',
+            'cell_lifecycle', 'neuromodulation', 'senses', 'areas'
+        }
+        
+        # Update configuration with validation
+        for key, value in data.items():
+            if key not in allowed_config_keys:
+                logger.warning(f"Attempted to update disallowed config key: {key}")
+                continue
+                
+            if key in current_model.config:
+                # Type and range validation
+                if key == 'dimensions':
+                    if not isinstance(value, int):
+                        return jsonify({"status": "error", "message": f"Invalid type for {key}"}), 400
+                    if value not in [3, 4]:
+                        return jsonify({"status": "error", "message": "Dimensions must be 3 or 4"}), 400
+                        
+                if key == 'lattice_shape':
+                    if not isinstance(value, list):
+                        return jsonify({"status": "error", "message": f"Invalid type for {key}"}), 400
+                    if len(value) != 4:
+                        return jsonify({"status": "error", "message": "Lattice shape must have 4 elements"}), 400
+                    if not all(isinstance(x, int) and x > 0 for x in value):
+                        return jsonify({"status": "error", "message": "Lattice shape values must be positive integers"}), 400
+                    
+                current_model.config[key] = value
+                logger.info(f"Updated config {key}")
+
+        return jsonify({"status": "success", "message": "Configuration updated. Restart simulation to apply changes."})
+    except Exception as e:
+        logger.error(f"Failed to update configuration: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/neurons/details", methods=["GET"])
+def get_neuron_details():
+    """Get detailed information about neurons."""
+    global current_model
+
+    if current_model is None:
+        return jsonify({"status": "error", "message": "No model initialized"}), 400
+
+    try:
+        limit = int(request.args.get("limit", 100))
+        offset = int(request.args.get("offset", 0))
+        
+        neurons_list = list(current_model.neurons.items())
+        total_neurons = len(neurons_list)
+        
+        neurons_data = []
+        for neuron_id, neuron in neurons_list[offset:offset+limit]:
+            neurons_data.append({
+                "id": neuron_id,
+                "position": {"x": neuron.x, "y": neuron.y, "z": neuron.z, "w": getattr(neuron, "w", 0)},
+                "v_membrane": neuron.v_membrane,
+                "v_threshold": neuron.v_threshold,
+                "v_rest": neuron.v_rest,
+                "health": neuron.health,
+                "age": neuron.age,
+                "neuron_type": neuron.neuron_type if hasattr(neuron, "neuron_type") else "excitatory",
+            })
+
+        return jsonify({
+            "status": "success",
+            "neurons": neurons_data,
+            "total": total_neurons,
+            "limit": limit,
+            "offset": offset
+        })
+    except Exception as e:
+        logger.error(f"Failed to get neuron details: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/synapses/details", methods=["GET"])
+def get_synapse_details():
+    """Get detailed information about synapses."""
+    global current_model
+
+    if current_model is None:
+        return jsonify({"status": "error", "message": "No model initialized"}), 400
+
+    try:
+        limit = int(request.args.get("limit", 100))
+        offset = int(request.args.get("offset", 0))
+        
+        synapses_list = list(current_model.synapses)
+        total_synapses = len(synapses_list)
+        
+        synapses_data = []
+        for synapse in synapses_list[offset:offset+limit]:
+            synapses_data.append({
+                "pre_id": synapse.pre_id,
+                "post_id": synapse.post_id,
+                "weight": synapse.weight,
+                "delay": synapse.delay if hasattr(synapse, "delay") else 1,
+            })
+
+        return jsonify({
+            "status": "success",
+            "synapses": synapses_data,
+            "total": total_synapses,
+            "limit": limit,
+            "offset": offset
+        })
+    except Exception as e:
+        logger.error(f"Failed to get synapse details: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/stats/network", methods=["GET"])
+def get_network_stats():
+    """Get comprehensive network statistics."""
+    global current_model
+
+    if current_model is None:
+        return jsonify({"status": "error", "message": "No model initialized"}), 400
+
+    try:
+        # Calculate statistics
+        neurons = list(current_model.neurons.values())
+        synapses = list(current_model.synapses)
+        
+        # Neuron statistics
+        avg_membrane = sum(n.v_membrane for n in neurons) / len(neurons) if neurons else 0
+        avg_health = sum(n.health for n in neurons) / len(neurons) if neurons else 0
+        avg_age = sum(n.age for n in neurons) / len(neurons) if neurons else 0
+        
+        # Count neuron types
+        excitatory_count = sum(1 for n in neurons if getattr(n, "neuron_type", "excitatory") == "excitatory")
+        inhibitory_count = len(neurons) - excitatory_count
+        
+        # Synapse statistics
+        avg_weight = sum(s.weight for s in synapses) / len(synapses) if synapses else 0
+        positive_weights = sum(1 for s in synapses if s.weight > 0)
+        negative_weights = sum(1 for s in synapses if s.weight < 0)
+        
+        return jsonify({
+            "status": "success",
+            "neurons": {
+                "total": len(neurons),
+                "excitatory": excitatory_count,
+                "inhibitory": inhibitory_count,
+                "avg_membrane_potential": avg_membrane,
+                "avg_health": avg_health,
+                "avg_age": avg_age,
+            },
+            "synapses": {
+                "total": len(synapses),
+                "positive_weights": positive_weights,
+                "negative_weights": negative_weights,
+                "avg_weight": avg_weight,
+            },
+            "current_step": current_model.current_step,
+        })
+    except Exception as e:
+        logger.error(f"Failed to get network stats: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/areas/info", methods=["GET"])
+def get_areas_info():
+    """Get detailed information about all brain areas."""
+    global current_model
+
+    if current_model is None:
+        return jsonify({"status": "error", "message": "No model initialized"}), 400
+
+    try:
+        areas = current_model.get_areas()
+        areas_info = []
+        
+        for area in areas:
+            # Count neurons in this area
+            coord_ranges = area.get("coord_ranges", {})
+            x_range = coord_ranges.get("x", [0, 0])
+            y_range = coord_ranges.get("y", [0, 0])
+            z_range = coord_ranges.get("z", [0, 0])
+            
+            neuron_count = sum(
+                1 for n in current_model.neurons.values()
+                if (x_range[0] <= n.x <= x_range[1] and
+                    y_range[0] <= n.y <= y_range[1] and
+                    z_range[0] <= n.z <= z_range[1])
+            )
+            
+            areas_info.append({
+                "name": area["name"],
+                "sense": area.get("sense", "none"),
+                "coord_ranges": coord_ranges,
+                "neuron_count": neuron_count,
+            })
+
+        return jsonify({"status": "success", "areas": areas_info})
+    except Exception as e:
+        logger.error(f"Failed to get areas info: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/senses/info", methods=["GET"])
+def get_senses_info():
+    """Get detailed information about all senses."""
+    global current_model
+
+    if current_model is None:
+        return jsonify({"status": "error", "message": "No model initialized"}), 400
+
+    try:
+        senses = current_model.get_senses()
+        senses_info = []
+        
+        for sense_name, sense_data in senses.items():
+            senses_info.append({
+                "name": sense_name,
+                "area": sense_data.get("areal", "unknown"),
+                "w_index": sense_data.get("w_index", 0),
+                "input_size": sense_data.get("input_size", [0, 0]),
+            })
+
+        return jsonify({"status": "success", "senses": senses_info})
+    except Exception as e:
+        logger.error(f"Failed to get senses info: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 @app.route("/api/neurons/init", methods=["POST"])
 def init_neurons():
     """Initialize neurons in specified areas."""
@@ -889,6 +1147,12 @@ def process_chat_command(command):
         return "Use the Train button to run multiple simulation steps"
     else:
         return f"Unknown command: {command}. Type 'help' for available commands."
+
+
+@app.route("/dashboard")
+def dashboard():
+    """Serve the comprehensive dashboard interface."""
+    return render_template("dashboard.html")
 
 
 @app.route("/advanced")
