@@ -610,7 +610,7 @@ label {
     animation: spin 1s linear infinite;
 }
 
-/* Note: @keyframes spin is defined globally in base styles */
+/* Note: @keyframes spin is defined in style.css and reused here */
 
 .status-title {
     font-size: 1.8em;

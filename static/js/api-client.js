@@ -220,8 +220,8 @@ class APIClient {
     /**
      * Load model
      */
-    async loadModel(filename) {
-        return this.post('/api/model/load', { filename });
+    async loadModel(filepath) {
+        return this.post('/api/model/load', { filepath });
     }
 
     /**
