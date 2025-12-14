@@ -40,9 +40,14 @@ This framework implements a novel **"Continuous Spatial Intelligence"** paradigm
   - **Experiment Management**: Batch parameter modification, parameter sweeps, A/B testing, and version control
   - **Collaboration**: Multi-user support, shared simulations, annotations, and version history
 - **Robust & Secure**: Input validation, path sanitization, automatic recovery, rate limiting, and comprehensive error handling
-- **Comprehensive Testing**: 811 passing tests (818 total) with CI/CD pipeline, up to 100% coverage on core modules
+- **Comprehensive Testing**: 937 passing tests with CI/CD pipeline, up to 100% coverage on core modules
 - **Advanced Memory**: Long-term memory consolidation, replay mechanisms, and sleep-like states
 - **Attention Systems**: Top-down attention, bottom-up saliency, and winner-take-all circuits
+- **Autonomous Learning Loop**: 🆕 Self-directed learning with intrinsic motivation, world models, and meta-learning
+  - Intrinsic goal generation (curiosity, exploration, competence, homeostasis)
+  - Predictive world model for mental simulation
+  - Meta-learning controller for strategy adaptation
+  - Complete autonomous cycle: Goal → Plan → Act → Learn → Adapt
 
 ---
 
@@ -61,6 +66,7 @@ Our approach bridges two historically separate fields:
 - **4D as Abstraction Axis**: The `w`-coordinate functions as a **meta-programmable dimension** for organizing cognitive hierarchy
 - **Emergent Cognitive Primitives**: Basic reasoning capabilities emerge from local rules (verified in our benchmarks)
 - **Continuous Learning**: Cell lifecycle enables **lifelong adaptation** without catastrophic forgetting
+- **Autonomous Intelligence**: 🆕 First neuromorphic system with complete autonomous learning loop - goes beyond reactive to self-directed learning
 
 ---
 
@@ -178,6 +184,7 @@ python app.py
 - **[API Reference](docs/api/API.md)** - Complete API documentation
 - **[Architecture](docs/ARCHITECTURE.md)** - Technical architecture details
 - **[Learning Systems](docs/LEARNING_SYSTEMS.md)** - Biological and machine learning framework
+- **[Autonomous Learning Guide](AUTONOMOUS_LEARNING_GUIDE.md)** 🆕 - Self-directed learning with intrinsic motivation
 - **[Tasks & Evaluation](docs/user-guide/TASKS_AND_EVALUATION.md)** - Benchmark framework guide
 - **[Developer Guide](docs/developer-guide/)** - Contributing and development
 
