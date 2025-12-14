@@ -67,6 +67,19 @@
             </div>
             
             <div class="sidebar-section">
+                <h3>🤖 Embodiment</h3>
+                <button class="sidebar-btn" data-section="digital-twin">
+                    <span class="icon">👤</span> Digital Twin
+                </button>
+                <button class="sidebar-btn" data-section="self-awareness">
+                    <span class="icon">🧠</span> Selbstwahrnehmung
+                </button>
+                <button class="sidebar-btn" data-section="motor-learning">
+                    <span class="icon">💪</span> Motorisches Lernen
+                </button>
+            </div>
+            
+            <div class="sidebar-section">
                 <h3>🔬 Analyse</h3>
                 <button class="sidebar-btn" data-section="analytics">
                     <span class="icon">📊</span> Statistiken
@@ -479,6 +492,329 @@
                 </div>
             </section>
 
+            <!-- Digital Twin Section -->
+            <section id="digital-twin-section" class="content-section">
+                <div class="section-header">
+                    <h2>👤 Digital Twin - Embodied Representation</h2>
+                    <button id="toggleDigitalTwin" class="btn-primary">▶️ Twin aktivieren</button>
+                </div>
+
+                <div class="digital-twin-grid">
+                    <!-- Body Visualization -->
+                    <div class="twin-panel large-panel">
+                        <h3>🤖 Körper-Visualisierung (Minimal Model)</h3>
+                        <div class="body-canvas-container">
+                            <canvas id="bodyCanvas" width="400" height="600"></canvas>
+                            <div class="body-controls">
+                                <button id="resetBodyPose" class="btn-secondary">↺ Pose zurücksetzen</button>
+                                <label>
+                                    Ansicht:
+                                    <select id="bodyViewAngle">
+                                        <option value="front">Vorne</option>
+                                        <option value="side">Seite</option>
+                                        <option value="top">Oben</option>
+                                    </select>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Proprioception Display -->
+                    <div class="twin-panel">
+                        <h3>📍 Propriozeption (Selbstwahrnehmung)</h3>
+                        <div class="proprio-grid">
+                            <div class="proprio-item">
+                                <strong>Position:</strong>
+                                <span id="bodyPosition">X: 0.0, Y: 0.0, Z: 0.0</span>
+                            </div>
+                            <div class="proprio-item">
+                                <strong>Geschwindigkeit:</strong>
+                                <span id="bodyVelocity">0.0 m/s</span>
+                            </div>
+                            <div class="proprio-item">
+                                <strong>Beschleunigung:</strong>
+                                <span id="bodyAcceleration">0.0 m/s²</span>
+                            </div>
+                        </div>
+                        <h4>Gelenkwinkel</h4>
+                        <div id="jointAnglesDisplay" class="joint-angles-list">
+                            <!-- Dynamically populated -->
+                        </div>
+                        <h4>Muskelspannung</h4>
+                        <div id="muscleTensionDisplay" class="muscle-tension-list">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                    <!-- Motor Commands -->
+                    <div class="twin-panel">
+                        <h3>🎯 Motor-Kommandos</h3>
+                        <div class="motor-command-panel">
+                            <div class="motor-slider">
+                                <label>Rechter Arm:</label>
+                                <input type="range" id="rightArmSlider" min="-3.14" max="3.14" step="0.1" value="0">
+                                <span id="rightArmValue">0.0</span>
+                            </div>
+                            <div class="motor-slider">
+                                <label>Linker Arm:</label>
+                                <input type="range" id="leftArmSlider" min="-3.14" max="3.14" step="0.1" value="0">
+                                <span id="leftArmValue">0.0</span>
+                            </div>
+                            <div class="motor-slider">
+                                <label>Rechtes Bein:</label>
+                                <input type="range" id="rightLegSlider" min="-3.14" max="3.14" step="0.1" value="0">
+                                <span id="rightLegValue">0.0</span>
+                            </div>
+                            <div class="motor-slider">
+                                <label>Linkes Bein:</label>
+                                <input type="range" id="leftLegSlider" min="-3.14" max="3.14" step="0.1" value="0">
+                                <span id="leftLegValue">0.0</span>
+                            </div>
+                            <button id="applyMotorCommands" class="btn-primary btn-large">🚀 Kommandos anwenden</button>
+                        </div>
+                    </div>
+
+                    <!-- Multimodal Self-Recognition -->
+                    <div class="twin-panel">
+                        <h3>🔍 Multimodale Selbst-Erkennung</h3>
+                        <div class="self-recognition-panel">
+                            <div class="modality-status">
+                                <span class="modality-label">👁️ Visuell:</span>
+                                <div class="confidence-bar">
+                                    <div id="visualConfidence" class="confidence-fill" style="width: 0%"></div>
+                                </div>
+                                <span id="visualConfidenceText">0%</span>
+                            </div>
+                            <div class="modality-status">
+                                <span class="modality-label">🎤 Auditiv:</span>
+                                <div class="confidence-bar">
+                                    <div id="audioConfidence" class="confidence-fill" style="width: 0%"></div>
+                                </div>
+                                <span id="audioConfidenceText">0%</span>
+                            </div>
+                            <div class="modality-status">
+                                <span class="modality-label">🤚 Propriozeptiv:</span>
+                                <div class="confidence-bar">
+                                    <div id="proprioConfidence" class="confidence-fill" style="width: 0%"></div>
+                                </div>
+                                <span id="proprioConfidenceText">0%</span>
+                            </div>
+                            <div class="modality-status overall">
+                                <span class="modality-label">🧠 Gesamt-Selbstmodell:</span>
+                                <div class="confidence-bar">
+                                    <div id="overallSelfConfidence" class="confidence-fill" style="width: 0%"></div>
+                                </div>
+                                <span id="overallSelfConfidenceText">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Self-Awareness Section -->
+            <section id="self-awareness-section" class="content-section">
+                <div class="section-header">
+                    <h2>🧠 Selbstwahrnehmungs-Stream</h2>
+                </div>
+
+                <div class="self-awareness-grid">
+                    <!-- Anomaly Detection -->
+                    <div class="awareness-panel">
+                        <h3>⚠️ Anomalie-Erkennung</h3>
+                        <div id="anomalyList" class="anomaly-list">
+                            <div class="no-anomalies">✅ Keine Anomalien erkannt</div>
+                        </div>
+                        <div class="anomaly-stats">
+                            <div class="stat-item">
+                                <span>Motor-Vorhersagefehler:</span>
+                                <span id="motorPredictionError">0.00</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>AV-Synchronisation:</span>
+                                <span id="avSyncScore">1.00</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>Agency Score:</span>
+                                <span id="agencyScore">0.50</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Self-Model Calibration -->
+                    <div class="awareness-panel">
+                        <h3>🔧 Selbstmodell-Kalibrierung</h3>
+                        <div class="calibration-panel">
+                            <div class="calibration-item">
+                                <label>Körpermodell-Kalibrierung:</label>
+                                <div class="progress-bar">
+                                    <div id="bodyModelCalibration" class="progress-fill" style="width: 100%"></div>
+                                </div>
+                                <span id="bodyModelCalibrationText">1.00</span>
+                            </div>
+                            <div class="calibration-item">
+                                <label>AV-Sync Verzögerung:</label>
+                                <span id="avSyncDelay">0 ms</span>
+                            </div>
+                            <div class="calibration-item">
+                                <label>Agency-Modell-Vertrauen:</label>
+                                <div class="progress-bar">
+                                    <div id="agencyModelConfidence" class="progress-fill" style="width: 100%"></div>
+                                </div>
+                                <span id="agencyModelConfidenceText">1.00</span>
+                            </div>
+                            <button id="recalibrateModel" class="btn-warning">🔧 Neukalibrierung erzwingen</button>
+                        </div>
+                    </div>
+
+                    <!-- Self-Consistency Metrics -->
+                    <div class="awareness-panel">
+                        <h3>📊 Selbst-Konsistenz Metriken</h3>
+                        <canvas id="selfConsistencyChart" width="400" height="300"></canvas>
+                        <div class="metrics-grid">
+                            <div class="metric-box">
+                                <div class="metric-value" id="temporalConsistency">0.00</div>
+                                <div class="metric-label">Zeitliche Konsistenz</div>
+                            </div>
+                            <div class="metric-box">
+                                <div class="metric-value" id="crossModalIntegration">0.00</div>
+                                <div class="metric-label">Crossmodale Integration</div>
+                            </div>
+                            <div class="metric-box">
+                                <div class="metric-value" id="agencyScoreMetric">0.00</div>
+                                <div class="metric-label">Agency Score</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Perception Stream History -->
+                    <div class="awareness-panel large-panel">
+                        <h3>📈 Wahrnehmungs-Historie</h3>
+                        <canvas id="perceptionStreamChart" width="800" height="300"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Motor Learning Section -->
+            <section id="motor-learning-section" class="content-section">
+                <div class="section-header">
+                    <h2>💪 Motorisches Lernen & STDP</h2>
+                    <button id="startMotorLearning" class="btn-success">▶️ Lernprozess starten</button>
+                </div>
+
+                <div class="motor-learning-grid">
+                    <!-- Learning Progress -->
+                    <div class="learning-panel">
+                        <h3>📈 Lernfortschritt</h3>
+                        <canvas id="learningProgressChart" width="500" height="300"></canvas>
+                        <div class="learning-stats">
+                            <div class="stat-item">
+                                <span>Episoden:</span>
+                                <span id="learningEpisodes">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>Durchschn. Belohnung:</span>
+                                <span id="avgReward">0.00</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>Lernrate:</span>
+                                <span id="learningRate">0.01</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reward System -->
+                    <div class="learning-panel">
+                        <h3>🎁 Belohnungssystem</h3>
+                        <div class="reward-display">
+                            <div class="reward-gauge">
+                                <div class="gauge-bg">
+                                    <div id="externalRewardGauge" class="gauge-fill external" style="width: 0%"></div>
+                                </div>
+                                <label>Externe Belohnung: <span id="externalRewardValue">0.00</span></label>
+                            </div>
+                            <div class="reward-gauge">
+                                <div class="gauge-bg">
+                                    <div id="intrinsicRewardGauge" class="gauge-fill intrinsic" style="width: 0%"></div>
+                                </div>
+                                <label>Intrinsische Belohnung: <span id="intrinsicRewardValue">0.00</span></label>
+                            </div>
+                            <div class="reward-gauge total">
+                                <div class="gauge-bg">
+                                    <div id="totalRewardGauge" class="gauge-fill total" style="width: 0%"></div>
+                                </div>
+                                <label>Gesamt-Belohnung: <span id="totalRewardValue">0.00</span></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STDP & Neuromodulation -->
+                    <div class="learning-panel">
+                        <h3>🧬 STDP & Neuromodulation</h3>
+                        <div class="stdp-panel">
+                            <div class="stdp-visualization">
+                                <canvas id="stdpVisualization" width="300" height="200"></canvas>
+                            </div>
+                            <div class="neuromodulation-status">
+                                <div class="status-item">
+                                    <span class="status-icon dopamine">🟢</span>
+                                    <span>Dopamin-Modulation:</span>
+                                    <span id="dopamineLevel">0.0</span>
+                                </div>
+                                <div class="status-item">
+                                    <span>Synaptische Updates:</span>
+                                    <span id="synapticUpdates">0</span>
+                                </div>
+                                <div class="status-item">
+                                    <span>Plastizitäts-Tags:</span>
+                                    <span id="plasticityTags">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VNC Cognitive Priority Heatmap -->
+                    <div class="learning-panel large-panel">
+                        <h3>🎯 VNC Kognitive Priorisierung</h3>
+                        <div class="vnc-priority-container">
+                            <canvas id="vncPriorityHeatmap" width="600" height="400"></canvas>
+                            <div class="priority-legend">
+                                <h4>Kritische Regionen:</h4>
+                                <div class="legend-item">
+                                    <span class="legend-color motor"></span>
+                                    <span>Motor Planning (w=10)</span>
+                                    <span id="motorVPUs" class="vpu-count">0 VPUs</span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-color sensory"></span>
+                                    <span>Sensor Fusion (w=6)</span>
+                                    <span id="sensoryVPUs" class="vpu-count">0 VPUs</span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-color perception"></span>
+                                    <span>Self-Perception (w=12)</span>
+                                    <span id="perceptionVPUs" class="vpu-count">0 VPUs</span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-color executive"></span>
+                                    <span>Executive Control (w=14)</span>
+                                    <span id="executiveVPUs" class="vpu-count">0 VPUs</span>
+                                </div>
+                            </div>
+                            <div class="priority-stats">
+                                <div class="stat-item">
+                                    <span>VPU Reallokationen:</span>
+                                    <span id="vpuReallocations">0</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span>Prioritätsanpassungen:</span>
+                                    <span id="priorityAdjustments">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Simulation Section -->
             <section id="simulation-section" class="content-section">
                 <div class="section-header">
@@ -844,5 +1180,6 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/digital_twin.js') }}"></script>
 </body>
 </html>
