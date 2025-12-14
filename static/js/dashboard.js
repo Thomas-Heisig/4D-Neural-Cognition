@@ -1076,3 +1076,443 @@ function clearLogs() {
         logsOutput.innerHTML = '<p class="log-entry info">Protokolle gelöscht</p>';
     }
 }
+
+// Knowledge System Functionality
+let currentKnowledgeDoc = null;
+let originalDocContent = null;
+
+// Load knowledge structure
+async function loadKnowledgeStructure() {
+    try {
+        const response = await fetch('/api/knowledge/list');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            renderKnowledgeTree(data.structure);
+        } else {
+            console.error('Failed to load knowledge structure:', data.message);
+        }
+    } catch (error) {
+        console.error('Error loading knowledge structure:', error);
+    }
+}
+
+// Render knowledge tree
+function renderKnowledgeTree(structure) {
+    const treeElement = document.getElementById('knowledgeTree');
+    if (!treeElement) return;
+    
+    treeElement.innerHTML = '';
+    
+    // Root level files
+    if (structure.root && structure.root.length > 0) {
+        const rootFolder = document.createElement('div');
+        rootFolder.className = 'tree-folder';
+        rootFolder.textContent = '📁 Root Documentation';
+        rootFolder.onclick = () => toggleFolder(rootFolder);
+        treeElement.appendChild(rootFolder);
+        
+        const rootFiles = document.createElement('div');
+        rootFiles.className = 'tree-folder-content';
+        structure.root.forEach(file => {
+            const fileElement = createFileElement(file);
+            rootFiles.appendChild(fileElement);
+        });
+        treeElement.appendChild(rootFiles);
+    }
+    
+    // Docs directory
+    if (structure.docs) {
+        const docsFolder = document.createElement('div');
+        docsFolder.className = 'tree-folder';
+        docsFolder.textContent = '📁 Docs';
+        docsFolder.onclick = () => toggleFolder(docsFolder);
+        treeElement.appendChild(docsFolder);
+        
+        const docsContent = document.createElement('div');
+        docsContent.className = 'tree-folder-content';
+        renderFolderContents(docsContent, structure.docs, 'docs/');
+        treeElement.appendChild(docsContent);
+    }
+}
+
+// Render folder contents recursively
+function renderFolderContents(container, contents, basePath) {
+    Object.keys(contents).forEach(key => {
+        if (key === 'files') {
+            contents[key].forEach(file => {
+                const fileElement = createFileElement(file);
+                container.appendChild(fileElement);
+            });
+        } else {
+            const folderElement = document.createElement('div');
+            folderElement.className = 'tree-folder';
+            folderElement.style.marginLeft = '1rem';
+            folderElement.textContent = `📁 ${key}`;
+            folderElement.onclick = (e) => {
+                e.stopPropagation();
+                toggleFolder(folderElement);
+            };
+            container.appendChild(folderElement);
+            
+            const folderContent = document.createElement('div');
+            folderContent.className = 'tree-folder-content';
+            folderContent.style.display = 'none';
+            renderFolderContents(folderContent, contents[key], basePath + key + '/');
+            container.appendChild(folderContent);
+        }
+    });
+}
+
+// Create file element
+function createFileElement(file) {
+    const fileElement = document.createElement('div');
+    fileElement.className = 'tree-file';
+    fileElement.textContent = `📄 ${file.name}`;
+    fileElement.onclick = () => loadKnowledgeDocument(file.path);
+    return fileElement;
+}
+
+// Toggle folder visibility
+function toggleFolder(folderElement) {
+    const nextSibling = folderElement.nextElementSibling;
+    if (nextSibling && nextSibling.classList.contains('tree-folder-content')) {
+        if (nextSibling.style.display === 'none') {
+            nextSibling.style.display = 'block';
+            folderElement.textContent = folderElement.textContent.replace('📁', '📂');
+        } else {
+            nextSibling.style.display = 'none';
+            folderElement.textContent = folderElement.textContent.replace('📂', '📁');
+        }
+    }
+}
+
+// Load knowledge document
+async function loadKnowledgeDocument(path) {
+    try {
+        const response = await fetch(`/api/knowledge/read?path=${encodeURIComponent(path)}`);
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            currentKnowledgeDoc = path;
+            originalDocContent = data.content;
+            displayKnowledgeDocument(data);
+            
+            // Update active file in tree
+            document.querySelectorAll('.tree-file').forEach(el => {
+                el.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        } else {
+            alert('Fehler beim Laden des Dokuments: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error loading document:', error);
+        alert('Fehler beim Laden des Dokuments');
+    }
+}
+
+// Display knowledge document
+function displayKnowledgeDocument(data) {
+    const viewer = document.getElementById('documentViewer');
+    const editor = document.getElementById('documentEditor');
+    const pathDisplay = document.getElementById('currentDocPath');
+    
+    if (!viewer || !editor || !pathDisplay) return;
+    
+    // Show viewer, hide editor
+    viewer.style.display = 'block';
+    editor.style.display = 'none';
+    
+    // Update path display
+    pathDisplay.textContent = data.path;
+    
+    // Render markdown content
+    viewer.innerHTML = renderMarkdown(data.content);
+}
+
+// Simple markdown renderer
+function renderMarkdown(markdown) {
+    let html = markdown;
+    
+    // Headers
+    html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+    html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+    html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+    
+    // Bold
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Italic
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    
+    // Code blocks
+    html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+    
+    // Inline code
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    
+    // Links
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+    
+    // Lists
+    html = html.replace(/^\* (.*$)/gim, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+    
+    // Paragraphs
+    html = html.replace(/\n\n/g, '</p><p>');
+    html = '<p>' + html + '</p>';
+    
+    return html;
+}
+
+// Switch to edit mode
+function switchToEditMode() {
+    if (!currentKnowledgeDoc) {
+        alert('Bitte wählen Sie zuerst ein Dokument aus');
+        return;
+    }
+    
+    const viewer = document.getElementById('documentViewer');
+    const editor = document.getElementById('documentEditor');
+    const editorTextarea = document.getElementById('markdownEditor');
+    const viewBtn = document.getElementById('viewMode');
+    const editBtn = document.getElementById('editMode');
+    const saveBtn = document.getElementById('saveDoc');
+    const cancelBtn = document.getElementById('cancelEdit');
+    
+    if (!viewer || !editor || !editorTextarea) return;
+    
+    viewer.style.display = 'none';
+    editor.style.display = 'flex';
+    editorTextarea.value = originalDocContent;
+    
+    viewBtn.classList.remove('active');
+    editBtn.classList.add('active');
+    saveBtn.style.display = 'inline-block';
+    cancelBtn.style.display = 'inline-block';
+}
+
+// Switch to view mode
+function switchToViewMode() {
+    const viewer = document.getElementById('documentViewer');
+    const editor = document.getElementById('documentEditor');
+    const viewBtn = document.getElementById('viewMode');
+    const editBtn = document.getElementById('editMode');
+    const saveBtn = document.getElementById('saveDoc');
+    const cancelBtn = document.getElementById('cancelEdit');
+    
+    if (!viewer || !editor) return;
+    
+    viewer.style.display = 'block';
+    editor.style.display = 'none';
+    
+    viewBtn.classList.add('active');
+    editBtn.classList.remove('active');
+    saveBtn.style.display = 'none';
+    cancelBtn.style.display = 'none';
+}
+
+// Save document
+async function saveKnowledgeDocument() {
+    if (!currentKnowledgeDoc) {
+        alert('Kein Dokument geladen');
+        return;
+    }
+    
+    const editorTextarea = document.getElementById('markdownEditor');
+    if (!editorTextarea) return;
+    
+    const content = editorTextarea.value;
+    
+    try {
+        const response = await fetch('/api/knowledge/write', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                path: currentKnowledgeDoc,
+                content: content
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            originalDocContent = content;
+            alert('Dokument erfolgreich gespeichert');
+            
+            // Reload and display
+            displayKnowledgeDocument({
+                path: currentKnowledgeDoc,
+                content: content
+            });
+            switchToViewMode();
+        } else {
+            alert('Fehler beim Speichern: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error saving document:', error);
+        alert('Fehler beim Speichern des Dokuments');
+    }
+}
+
+// Cancel edit
+function cancelEdit() {
+    if (confirm('Änderungen verwerfen?')) {
+        switchToViewMode();
+    }
+}
+
+// Search knowledge base
+async function searchKnowledge(query) {
+    if (!query || query.length < 2) {
+        document.getElementById('searchResults').style.display = 'none';
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/knowledge/search?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            displaySearchResults(data);
+        } else {
+            console.error('Search failed:', data.message);
+        }
+    } catch (error) {
+        console.error('Error searching:', error);
+    }
+}
+
+// Display search results
+function displaySearchResults(data) {
+    const resultsContainer = document.getElementById('searchResults');
+    const resultsList = document.getElementById('searchResultsList');
+    
+    if (!resultsContainer || !resultsList) return;
+    
+    if (data.results.length === 0) {
+        resultsContainer.style.display = 'block';
+        resultsList.innerHTML = '<p style="color: rgba(255,255,255,0.6);">Keine Ergebnisse gefunden</p>';
+        return;
+    }
+    
+    resultsContainer.style.display = 'block';
+    resultsList.innerHTML = '';
+    
+    data.results.forEach(result => {
+        const resultItem = document.createElement('div');
+        resultItem.className = 'search-result-item';
+        resultItem.onclick = () => loadKnowledgeDocument(result.path);
+        
+        const title = document.createElement('h4');
+        title.textContent = result.name;
+        resultItem.appendChild(title);
+        
+        result.matches.forEach(match => {
+            const context = document.createElement('div');
+            context.className = 'result-context';
+            context.textContent = match.context;
+            resultItem.appendChild(context);
+            
+            const line = document.createElement('div');
+            line.className = 'result-line';
+            line.textContent = `Zeile ${match.line}`;
+            resultItem.appendChild(line);
+        });
+        
+        resultsList.appendChild(resultItem);
+    });
+}
+
+// Create new document
+function createNewDocument() {
+    const filename = prompt('Dateiname (mit .md Endung):');
+    if (!filename) return;
+    
+    if (!filename.endsWith('.md')) {
+        alert('Dateiname muss mit .md enden');
+        return;
+    }
+    
+    const category = prompt('Kategorie (z.B. docs/user-guide):');
+    let path = filename;
+    if (category) {
+        path = category + '/' + filename;
+    }
+    
+    currentKnowledgeDoc = path;
+    originalDocContent = '# Neues Dokument\n\nSchreiben Sie hier...';
+    
+    const editorTextarea = document.getElementById('markdownEditor');
+    if (editorTextarea) {
+        editorTextarea.value = originalDocContent;
+    }
+    
+    document.getElementById('currentDocPath').textContent = path;
+    switchToEditMode();
+}
+
+// Initialize knowledge system event listeners
+function initializeKnowledgeSystem() {
+    // Load knowledge structure when section is shown
+    if (currentSection === 'knowledge') {
+        loadKnowledgeStructure();
+    }
+    
+    // Refresh button
+    const refreshBtn = document.getElementById('refreshKnowledge');
+    if (refreshBtn) {
+        refreshBtn.onclick = loadKnowledgeStructure;
+    }
+    
+    // Create new document button
+    const createBtn = document.getElementById('createNewDoc');
+    if (createBtn) {
+        createBtn.onclick = createNewDocument;
+    }
+    
+    // View/Edit mode buttons
+    const viewBtn = document.getElementById('viewMode');
+    const editBtn = document.getElementById('editMode');
+    if (viewBtn) viewBtn.onclick = switchToViewMode;
+    if (editBtn) editBtn.onclick = switchToEditMode;
+    
+    // Save/Cancel buttons
+    const saveBtn = document.getElementById('saveDoc');
+    const cancelBtn = document.getElementById('cancelEdit');
+    if (saveBtn) saveBtn.onclick = saveKnowledgeDocument;
+    if (cancelBtn) cancelBtn.onclick = cancelEdit;
+    
+    // Search input
+    const searchInput = document.getElementById('knowledgeSearch');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.oninput = (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchKnowledge(e.target.value);
+            }, 300);
+        };
+    }
+    
+    // Research links
+    document.querySelectorAll('.research-link').forEach(link => {
+        link.onclick = (e) => {
+            e.preventDefault();
+            const docPath = link.getAttribute('data-doc');
+            if (docPath) {
+                // Switch to knowledge section and load document
+                showSection('knowledge');
+                setTimeout(() => loadKnowledgeDocument(docPath), 100);
+            }
+        };
+    });
+}
+
+// Call initialization when document loads
+document.addEventListener('DOMContentLoaded', () => {
+    initializeKnowledgeSystem();
+});

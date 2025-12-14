@@ -1429,6 +1429,223 @@ def handle_create_version(data):
         logger.error(f"Error creating version: {str(e)}")
 
 
+# Knowledge System Routes
+KNOWLEDGE_BASE_DIR = Path(".")
+DOCS_DIR = Path("docs")
+
+
+def get_knowledge_structure():
+    """Build a hierarchical structure of all documentation files."""
+    structure = {
+        "root": [],
+        "docs": {}
+    }
+    
+    # Root level markdown files
+    for md_file in KNOWLEDGE_BASE_DIR.glob("*.md"):
+        if md_file.is_file():
+            structure["root"].append({
+                "name": md_file.name,
+                "path": str(md_file.relative_to(KNOWLEDGE_BASE_DIR)),
+                "size": md_file.stat().st_size,
+                "modified": md_file.stat().st_mtime
+            })
+    
+    # Docs directory structure
+    if DOCS_DIR.exists():
+        for item in DOCS_DIR.rglob("*"):
+            if item.is_file() and item.suffix == ".md":
+                rel_path = item.relative_to(KNOWLEDGE_BASE_DIR)
+                parts = rel_path.parts
+                
+                current = structure["docs"]
+                for part in parts[1:-1]:  # Skip 'docs' and filename
+                    if part not in current:
+                        current[part] = {}
+                    current = current[part]
+                
+                if "files" not in current:
+                    current["files"] = []
+                current["files"].append({
+                    "name": item.name,
+                    "path": str(rel_path),
+                    "size": item.stat().st_size,
+                    "modified": item.stat().st_mtime
+                })
+    
+    return structure
+
+
+@app.route("/api/knowledge/list", methods=["GET"])
+def list_knowledge():
+    """List all documentation files with hierarchy."""
+    try:
+        structure = get_knowledge_structure()
+        return jsonify({"status": "success", "structure": structure})
+    except Exception as e:
+        logger.error(f"Failed to list knowledge: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/knowledge/read", methods=["GET"])
+def read_knowledge():
+    """Read a specific documentation file."""
+    try:
+        file_path = request.args.get("path")
+        if not file_path:
+            return jsonify({"status": "error", "message": "No path provided"}), 400
+        
+        # Security: Validate path is within allowed directories
+        full_path = Path(file_path).resolve()
+        base_path = KNOWLEDGE_BASE_DIR.resolve()
+        
+        if not str(full_path).startswith(str(base_path)):
+            return jsonify({"status": "error", "message": "Access denied"}), 403
+        
+        if not full_path.exists():
+            return jsonify({"status": "error", "message": "File not found"}), 404
+        
+        if full_path.suffix != ".md":
+            return jsonify({"status": "error", "message": "Only markdown files allowed"}), 400
+        
+        content = full_path.read_text(encoding="utf-8")
+        
+        return jsonify({
+            "status": "success",
+            "content": content,
+            "path": file_path,
+            "name": full_path.name,
+            "size": full_path.stat().st_size,
+            "modified": full_path.stat().st_mtime
+        })
+    except Exception as e:
+        logger.error(f"Failed to read knowledge: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/knowledge/write", methods=["POST"])
+@limiter.limit("30 per hour")  # Limit write operations
+def write_knowledge():
+    """Create or update a documentation file."""
+    try:
+        data = request.json
+        file_path = data.get("path")
+        content = data.get("content")
+        
+        if not file_path or content is None:
+            return jsonify({"status": "error", "message": "Path and content required"}), 400
+        
+        # Security: Validate path is within allowed directories
+        full_path = Path(file_path).resolve()
+        base_path = KNOWLEDGE_BASE_DIR.resolve()
+        
+        if not str(full_path).startswith(str(base_path)):
+            return jsonify({"status": "error", "message": "Access denied"}), 403
+        
+        if full_path.suffix != ".md":
+            return jsonify({"status": "error", "message": "Only markdown files allowed"}), 400
+        
+        # Create parent directories if needed
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Write content
+        full_path.write_text(content, encoding="utf-8")
+        
+        logger.info(f"Knowledge file written: {file_path}")
+        
+        return jsonify({
+            "status": "success",
+            "message": "File saved successfully",
+            "path": file_path,
+            "size": full_path.stat().st_size
+        })
+    except Exception as e:
+        logger.error(f"Failed to write knowledge: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/knowledge/search", methods=["GET"])
+def search_knowledge():
+    """Search across all documentation files."""
+    try:
+        query = request.args.get("q", "").lower()
+        if not query:
+            return jsonify({"status": "error", "message": "No query provided"}), 400
+        
+        results = []
+        
+        # Search in root markdown files
+        for md_file in KNOWLEDGE_BASE_DIR.glob("*.md"):
+            if md_file.is_file():
+                try:
+                    content = md_file.read_text(encoding="utf-8")
+                    if query in content.lower() or query in md_file.name.lower():
+                        # Find context around matches
+                        lines = content.split("\n")
+                        matches = []
+                        for i, line in enumerate(lines):
+                            if query in line.lower():
+                                # Get context: 1 line before and after
+                                start = max(0, i - 1)
+                                end = min(len(lines), i + 2)
+                                context = "\n".join(lines[start:end])
+                                matches.append({
+                                    "line": i + 1,
+                                    "context": context
+                                })
+                                if len(matches) >= 3:  # Limit to 3 matches per file
+                                    break
+                        
+                        if matches:
+                            results.append({
+                                "path": str(md_file.relative_to(KNOWLEDGE_BASE_DIR)),
+                                "name": md_file.name,
+                                "matches": matches
+                            })
+                except Exception as e:
+                    logger.warning(f"Error reading {md_file}: {str(e)}")
+        
+        # Search in docs directory
+        if DOCS_DIR.exists():
+            for md_file in DOCS_DIR.rglob("*.md"):
+                if md_file.is_file():
+                    try:
+                        content = md_file.read_text(encoding="utf-8")
+                        if query in content.lower() or query in md_file.name.lower():
+                            lines = content.split("\n")
+                            matches = []
+                            for i, line in enumerate(lines):
+                                if query in line.lower():
+                                    start = max(0, i - 1)
+                                    end = min(len(lines), i + 2)
+                                    context = "\n".join(lines[start:end])
+                                    matches.append({
+                                        "line": i + 1,
+                                        "context": context
+                                    })
+                                    if len(matches) >= 3:
+                                        break
+                            
+                            if matches:
+                                results.append({
+                                    "path": str(md_file.relative_to(KNOWLEDGE_BASE_DIR)),
+                                    "name": md_file.name,
+                                    "matches": matches
+                                })
+                    except Exception as e:
+                        logger.warning(f"Error reading {md_file}: {str(e)}")
+        
+        return jsonify({
+            "status": "success",
+            "query": query,
+            "results": results,
+            "count": len(results)
+        })
+    except Exception as e:
+        logger.error(f"Failed to search knowledge: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 if __name__ == "__main__":
     logger.info("Starting 4D Neural Cognition web interface")
     socketio.run(app, host="0.0.0.0", port=5000, debug=True)
