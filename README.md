@@ -156,7 +156,14 @@ python app.py
 ## 📚 Documentation
 
 > **📑 Documentation Hub**: See [DOCUMENTATION.md](DOCUMENTATION.md) for complete overview  
-> **📖 Full Index**: See [docs/INDEX.md](docs/INDEX.md) for detailed navigation
+> **📖 Full Index**: See [docs/INDEX.md](docs/INDEX.md) for detailed navigation  
+> **🔍 Knowledge Base**: Complete searchable documentation in the [Dashboard Knowledge System](http://localhost:5000/dashboard) - Section "Wissensdatenbank"
+
+### 📚 Quick Access
+
+- **[KNOWLEDGE_BASE_INDEX.md](KNOWLEDGE_BASE_INDEX.md)** - Complete knowledge base index with all documentation organized
+- **[WORKFLOWS.md](WORKFLOWS.md)** - Standard workflows and best practices for experiments and research
+- **[RESEARCH_SUMMARY.md](RESEARCH_SUMMARY.md)** - Scientific foundations, mathematical models, and research findings
 
 ### 🚀 Getting Started
 - **[User Guide](docs/user-guide/)** - Complete user documentation
