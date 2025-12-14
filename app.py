@@ -624,8 +624,27 @@ def init_neurons():
 
     try:
         data = request.json
+        if not data:
+            return jsonify({"status": "error", "message": "No data provided"}), 400
+            
         areas = data.get("areas", ["V1_like", "Digital_sensor"])
         density = data.get("density", 0.1)
+        
+        # Validate areas parameter
+        if not isinstance(areas, list):
+            return jsonify({"status": "error", "message": "areas must be a list"}), 400
+        if len(areas) == 0:
+            return jsonify({"status": "error", "message": "areas list cannot be empty"}), 400
+        if len(areas) > 20:
+            return jsonify({"status": "error", "message": "Cannot initialize more than 20 areas at once"}), 400
+        if not all(isinstance(a, str) for a in areas):
+            return jsonify({"status": "error", "message": "All area names must be strings"}), 400
+            
+        # Validate density parameter
+        if not isinstance(density, (int, float)):
+            return jsonify({"status": "error", "message": "density must be a number"}), 400
+        if not 0 < density <= 1.0:
+            return jsonify({"status": "error", "message": "density must be between 0 and 1"}), 400
 
         logger.info(f"Initializing neurons in {areas} with density {density}")
 
@@ -649,9 +668,26 @@ def init_synapses():
 
     try:
         data = request.json
+        if not data:
+            return jsonify({"status": "error", "message": "No data provided"}), 400
+            
         probability = data.get("probability", 0.001)
         weight_mean = data.get("weight_mean", 0.1)
         weight_std = data.get("weight_std", 0.05)
+        
+        # Validate probability parameter
+        if not isinstance(probability, (int, float)):
+            return jsonify({"status": "error", "message": "probability must be a number"}), 400
+        if not 0 < probability <= 1.0:
+            return jsonify({"status": "error", "message": "probability must be between 0 and 1"}), 400
+            
+        # Validate weight parameters
+        if not isinstance(weight_mean, (int, float)):
+            return jsonify({"status": "error", "message": "weight_mean must be a number"}), 400
+        if not isinstance(weight_std, (int, float)):
+            return jsonify({"status": "error", "message": "weight_std must be a number"}), 400
+        if weight_std < 0:
+            return jsonify({"status": "error", "message": "weight_std must be non-negative"}), 400
 
         logger.info(f"Initializing synapses with probability {probability}")
 
@@ -1341,10 +1377,22 @@ def vnc_config():
         
         try:
             data = request.json
+            if not data:
+                return jsonify({"status": "error", "message": "No data provided"}), 400
+                
             vnc_enabled = data.get("vnc_enabled", False)
-            clock_frequency = float(data.get("clock_frequency", 20e6))
             
-            # Validate clock frequency
+            # Validate vnc_enabled type
+            if not isinstance(vnc_enabled, bool):
+                return jsonify({"status": "error", "message": "vnc_enabled must be a boolean"}), 400
+            
+            # Validate and convert clock_frequency
+            clock_frequency_raw = data.get("clock_frequency", 20e6)
+            if not isinstance(clock_frequency_raw, (int, float)):
+                return jsonify({"status": "error", "message": "clock_frequency must be a number"}), 400
+            clock_frequency = float(clock_frequency_raw)
+            
+            # Validate clock frequency range
             if clock_frequency <= 0 or clock_frequency > 1e9:
                 return jsonify({
                     "status": "error",
