@@ -91,6 +91,26 @@ CHECKPOINT_DIR.mkdir(exist_ok=True)
 CHECKPOINT_INTERVAL = 1000  # Save checkpoint every N steps
 
 
+def require_initialization(f):
+    """Decorator to ensure system is initialized before allowing API calls.
+    
+    This prevents 400 errors from premature API calls during system startup.
+    """
+    from functools import wraps
+    
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        global current_model, current_simulation
+        if current_model is None or current_simulation is None:
+            return jsonify({
+                "status": "error",
+                "message": "System not initialized. Please initialize the model first.",
+                "action": "Call /api/model/init to initialize the system"
+            }), 400
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 def validate_filepath(filepath: str, allowed_dir: Path, allowed_extensions: list) -> Path:
     """Validate and sanitize file paths to prevent path traversal attacks.
 
@@ -256,6 +276,46 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/.well-known/appspecific/com.chrome.devtools.json")
+def chrome_devtools():
+    """Handle Chrome DevTools probe to suppress 404 errors in logs."""
+    return jsonify({}), 200
+
+
+@app.route("/api/system/status", methods=["GET"])
+def system_status():
+    """Get system initialization status.
+    
+    This endpoint is called by frontend to check if the backend is ready
+    before making other API calls. Prevents 400 errors from premature requests.
+    
+    Returns:
+        JSON with initialization state and system information
+    """
+    global current_model, current_simulation
+    
+    status = {
+        "initialized": current_model is not None and current_simulation is not None,
+        "has_model": current_model is not None,
+        "has_simulation": current_simulation is not None,
+        "is_training": is_training
+    }
+    
+    # Add model info if available
+    if current_model is not None:
+        try:
+            status["model_info"] = {
+                "num_neurons": len(current_model.neurons),
+                "num_synapses": len(current_model.synapses),
+                "current_step": current_model.current_step,
+                "lattice_shape": list(current_model.lattice_shape)
+            }
+        except Exception as e:
+            logger.warning(f"Could not get model info for status: {str(e)}")
+    
+    return jsonify(status)
+
+
 @app.route("/api/model/init", methods=["POST"])
 @limiter.limit("20 per minute")  # Limit model initialization
 def init_model():
@@ -290,12 +350,10 @@ def init_model():
 
 
 @app.route("/api/model/info", methods=["GET"])
+@require_initialization
 def get_model_info():
     """Get current model information."""
     global current_model
-
-    if current_model is None:
-        return jsonify({"status": "error", "message": "No model initialized"}), 400
 
     try:
         return jsonify(
@@ -315,12 +373,10 @@ def get_model_info():
 
 
 @app.route("/api/config/full", methods=["GET"])
+@require_initialization
 def get_full_config():
     """Get complete model configuration."""
     global current_model
-
-    if current_model is None:
-        return jsonify({"status": "error", "message": "No model initialized"}), 400
 
     try:
         config = current_model.config
@@ -332,12 +388,10 @@ def get_full_config():
 
 @app.route("/api/config/update", methods=["POST"])
 @limiter.limit("30 per minute")
+@require_initialization
 def update_config():
     """Update model configuration parameters (requires model restart)."""
     global current_model
-
-    if current_model is None:
-        return jsonify({"status": "error", "message": "No model initialized"}), 400
 
     try:
         data = request.json
@@ -382,12 +436,10 @@ def update_config():
 
 
 @app.route("/api/neurons/details", methods=["GET"])
+@require_initialization
 def get_neuron_details():
     """Get detailed information about neurons."""
     global current_model
-
-    if current_model is None:
-        return jsonify({"status": "error", "message": "No model initialized"}), 400
 
     try:
         limit = int(request.args.get("limit", 100))
@@ -422,12 +474,10 @@ def get_neuron_details():
 
 
 @app.route("/api/synapses/details", methods=["GET"])
+@require_initialization
 def get_synapse_details():
     """Get detailed information about synapses."""
     global current_model
-
-    if current_model is None:
-        return jsonify({"status": "error", "message": "No model initialized"}), 400
 
     try:
         limit = int(request.args.get("limit", 100))
@@ -458,12 +508,10 @@ def get_synapse_details():
 
 
 @app.route("/api/stats/network", methods=["GET"])
+@require_initialization
 def get_network_stats():
     """Get comprehensive network statistics."""
     global current_model
-
-    if current_model is None:
-        return jsonify({"status": "error", "message": "No model initialized"}), 400
 
     try:
         # Calculate statistics
@@ -508,12 +556,10 @@ def get_network_stats():
 
 
 @app.route("/api/areas/info", methods=["GET"])
+@require_initialization
 def get_areas_info():
     """Get detailed information about all brain areas."""
     global current_model
-
-    if current_model is None:
-        return jsonify({"status": "error", "message": "No model initialized"}), 400
 
     try:
         areas = current_model.get_areas()
@@ -547,12 +593,10 @@ def get_areas_info():
 
 
 @app.route("/api/senses/info", methods=["GET"])
+@require_initialization
 def get_senses_info():
     """Get detailed information about all senses."""
     global current_model
-
-    if current_model is None:
-        return jsonify({"status": "error", "message": "No model initialized"}), 400
 
     try:
         senses = current_model.get_senses()
@@ -573,12 +617,10 @@ def get_senses_info():
 
 
 @app.route("/api/neurons/init", methods=["POST"])
+@require_initialization
 def init_neurons():
     """Initialize neurons in specified areas."""
     global current_simulation
-
-    if current_simulation is None:
-        return jsonify({"status": "error", "message": "No simulation initialized"}), 400
 
     try:
         data = request.json
@@ -600,12 +642,10 @@ def init_neurons():
 
 
 @app.route("/api/synapses/init", methods=["POST"])
+@require_initialization
 def init_synapses():
     """Initialize random synaptic connections."""
     global current_simulation
-
-    if current_simulation is None:
-        return jsonify({"status": "error", "message": "No simulation initialized"}), 400
 
     try:
         data = request.json
@@ -630,12 +670,10 @@ def init_synapses():
 
 
 @app.route("/api/simulation/step", methods=["POST"])
+@require_initialization
 def simulation_step():
     """Run a single simulation step."""
     global current_simulation
-
-    if current_simulation is None:
-        return jsonify({"status": "error", "message": "No simulation initialized"}), 400
 
     # Validate simulation state before running
     is_valid, error_msg = validate_simulation_state(current_simulation, current_model)
@@ -800,6 +838,7 @@ def _compute_progress_info(
 
 @app.route("/api/simulation/run", methods=["POST"])
 @limiter.limit("10 per minute")  # Limit intensive simulation runs
+@require_initialization
 def run_simulation():
     """Run simulation for multiple steps.
     
@@ -810,9 +849,6 @@ def run_simulation():
     - Progress computation (_compute_progress_info)
     """
     global is_training
-
-    if current_simulation is None:
-        return jsonify({"status": "error", "message": "No simulation initialized"}), 400
 
     # Validate simulation state before running
     is_valid, error_msg = validate_simulation_state(current_simulation, current_model)
@@ -900,12 +936,10 @@ def recover_from_checkpoint():
 
 @app.route("/api/input/feed", methods=["POST"])
 @limiter.limit("60 per minute")  # Limit input feeding
+@require_initialization
 def feed_input():
     """Feed sensory input to the model."""
     global current_model
-
-    if current_model is None:
-        return jsonify({"status": "error", "message": "No model initialized"}), 400
 
     try:
         data = request.json
@@ -1162,12 +1196,10 @@ def advanced():
 
 
 @app.route("/api/visualization/neurons", methods=["GET"])
+@require_initialization
 def get_neurons_visualization():
     """Get neuron data for 3D/4D visualization."""
     global current_model
-
-    if current_model is None:
-        return jsonify({"status": "error", "message": "No model initialized"}), 400
 
     try:
         # Configurable limit for visualization performance
@@ -1196,12 +1228,10 @@ def get_neurons_visualization():
 
 
 @app.route("/api/visualization/connections", methods=["GET"])
+@require_initialization
 def get_connections_visualization():
     """Get connection data for visualization."""
     global current_model
-
-    if current_model is None:
-        return jsonify({"status": "error", "message": "No model initialized"}), 400
 
     try:
         # Configurable limit for visualization performance

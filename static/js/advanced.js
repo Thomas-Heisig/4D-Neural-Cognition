@@ -12,11 +12,22 @@ let socket = null;
 socket = io();
 
 // Initialize all modules when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     initializeModules();
     setupTabNavigation();
     setupEventListeners();
-    loadInitialData();
+    
+    // Check system status before loading data
+    try {
+        const status = await window.apiClient.getSystemStatus();
+        if (status.initialized) {
+            loadInitialData();
+        } else {
+            console.log('System not initialized. Please initialize model first.');
+        }
+    } catch (error) {
+        console.error('Could not check system status:', error);
+    }
 });
 
 // Initialize all modules
