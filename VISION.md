@@ -295,15 +295,47 @@ Our project aims to answer several fundamental questions:
 - New applications enabled
 - Influence on AI/neuroscience fields
 
+## Strategic Framework (New - December 2025)
+
+To ensure the project transitions from a powerful simulation to a validated research platform, we have established comprehensive strategic documentation:
+
+### 🔬 Scientific Rigor & Validation
+
+- **[Scientific Hypotheses](docs/SCIENTIFIC_HYPOTHESES.md)** - 10 formalized, testable hypotheses with measurable metrics
+- **[Benchmark Suite](docs/BENCHMARK_SUITE.md)** - Standardized benchmarks for reproducible comparisons
+- **[Scientific Validation](docs/SCIENTIFIC_VALIDATION.md)** - Biological plausibility validation framework
+
+### 🏗️ Architectural & Technical Excellence
+
+- **[API Specification](docs/API_SPECIFICATION.md)** - Formal programmatic API for researchers and developers
+- **Stable Interfaces** - Well-defined APIs for embedding in research pipelines
+- **Model Versioning** - Built into API and storage systems for reproducibility
+
+### 🌐 Community & Ecosystem
+
+- **[Collaborative Research Framework](docs/COLLABORATIVE_RESEARCH.md)** - Protocols for research partnerships
+- **Clear Contribution Guidelines** - Enhanced CONTRIBUTING.md with research collaboration
+- **Packaged Releases** - Documented in API specification
+
+### 🚀 Future-Proofing & Strategic Development
+
+- **[GPU Acceleration Roadmap](docs/GPU_ACCELERATION_ROADMAP.md)** - Path to GPU-native, million-neuron simulations
+- **[Neuromorphic Hardware Strategy](docs/NEUROMORPHIC_HARDWARE_STRATEGY.md)** - Hardware deployment roadmap (Loihi, SpiNNaker, TrueNorth)
+- **[Ethical Framework](docs/ETHICAL_FRAMEWORK.md)** - Comprehensive ethical guidelines including consciousness research
+
+These documents establish the foundation for transforming this project into a validated research platform with scientific credibility, community engagement, and strategic direction.
+
 ## Ethical Considerations
 
 As we develop increasingly sophisticated brain simulations, we commit to:
 
 1. **Transparency**: Open-source code and methods
-2. **Responsible AI**: Considering implications of brain-like AI
+2. **Responsible AI**: Considering implications of brain-like AI (see [Ethical Framework](docs/ETHICAL_FRAMEWORK.md))
 3. **Education**: Promoting understanding of neural systems
-4. **Collaboration**: Working with diverse stakeholders
+4. **Collaboration**: Working with diverse stakeholders (see [Collaborative Research](docs/COLLABORATIVE_RESEARCH.md))
 5. **Safety**: Ensuring simulations are used beneficially
+
+See our comprehensive [Ethical Framework](docs/ETHICAL_FRAMEWORK.md) for detailed guidelines on consciousness research, transparency, safety, privacy, and environmental responsibility.
 
 ## Conclusion
 
