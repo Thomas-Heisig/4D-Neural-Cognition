@@ -557,14 +557,35 @@ def test_initialize_neurons_density(basic_model, density):
 - Open new issue with question tag
 - Contact maintainers
 
+## Collaborative Research
+
+Interested in research collaboration? See our [Collaborative Research Framework](docs/COLLABORATIVE_RESEARCH.md) for:
+- Research partnerships
+- Joint publications
+- Data sharing protocols
+- Authorship agreements
+- Community research projects
+
 ## Recognition
 
 Contributors are recognized in:
 - README.md contributors section
 - GitHub contributors page
 - Release notes
+- Co-authorship on relevant publications (see [Collaborative Research](docs/COLLABORATIVE_RESEARCH.md))
 
 Thank you for contributing! 🎉
+
+---
+
+## Contact
+
+**Project Maintainer**: Thomas Heisig  
+**Email**: t_heisig@gmx.de  
+**Location**: Ganderkesee, Germany  
+
+**GitHub Repository**: https://github.com/Thomas-Heisig/4D-Neural-Cognition  
+**Discussions**: https://github.com/Thomas-Heisig/4D-Neural-Cognition/discussions
 
 ---
 
