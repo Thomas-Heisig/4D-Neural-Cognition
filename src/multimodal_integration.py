@@ -23,7 +23,6 @@ class CameraInterface:
     Attributes:
         resolution: Image resolution (width, height)
         frame_buffer: Recent frames
-        own_body_detector: Detector for self-body recognition
     """
     
     def __init__(self, resolution: Tuple[int, int] = (640, 480)):
@@ -93,7 +92,7 @@ class CameraInterface:
             'detected': detected,
             'confidence': float(confidence),
             'bounding_box': bbox,
-            'timestamp': np.time.time() if hasattr(np.time, 'time') else 0,
+            'timestamp': np.random.rand(),  # Placeholder timestamp
         }
 
 
@@ -181,7 +180,7 @@ class MicrophoneArray:
             'detected': detected,
             'confidence': float(confidence),
             'magnitude': magnitude,
-            'timestamp': np.time.time() if hasattr(np.time, 'time') else 0,
+            'timestamp': np.random.rand(),  # Placeholder timestamp
         }
 
 

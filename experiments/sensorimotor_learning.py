@@ -239,10 +239,11 @@ def run_experiment(
         for step in range(task.max_steps):
             # Generate motor command (random exploration for now)
             # In a full implementation, this would come from brain
+            num_joints = len(body.skeleton['joints'])
             motor_command = {
                 'motor_neurons': {
                     i: np.random.rand() * 0.5
-                    for i in range(body.skeleton['joints'].__len__())
+                    for i in range(num_joints)
                 }
             }
             
