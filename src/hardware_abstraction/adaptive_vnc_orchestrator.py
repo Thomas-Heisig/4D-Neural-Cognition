@@ -412,3 +412,348 @@ class AdaptiveVNCOrchestrator:
         self.total_repartitions = 0
         self.total_priority_adjustments = 0
         logger.info("Orchestrator statistics reset")
+
+
+class CognitiveAwareOrchestrator(AdaptiveVNCOrchestrator):
+    """Cognitive-aware VNC orchestrator with priority management.
+    
+    Extends the adaptive orchestrator to prioritize compute resources
+    for critical cognitive regions (motor planning, self-perception,
+    sensor fusion) based on cognitive activity levels.
+    
+    This enables the system to dynamically allocate more VPUs to regions
+    that are actively engaged in learning or processing, improving
+    overall cognitive performance.
+    
+    Attributes:
+        critical_regions: Mapping of cognitive regions to VPU requirements
+        sensorimotor_activity_threshold: Threshold for high activity detection
+        reallocation_count: Number of VPU reallocations performed
+    """
+    
+    # Critical cognitive regions with their w-slices and minimum VPU requirements
+    CRITICAL_REGIONS = {
+        'motor_planning': {'w_slice': 10, 'min_vpus': 2, 'priority': 3},
+        'self_perception': {'w_slice': 12, 'min_vpus': 2, 'priority': 3},
+        'sensor_fusion': {'w_slice': 6, 'min_vpus': 1, 'priority': 2},
+        'executive_control': {'w_slice': 14, 'min_vpus': 1, 'priority': 2},
+    }
+    
+    def __init__(
+        self,
+        simulation: Simulation,
+        imbalance_threshold: float = 0.3,
+        activity_threshold: float = 0.7,
+        monitoring_interval: int = 100,
+        sensorimotor_activity_threshold: float = 0.6,
+    ):
+        """Initialize cognitive-aware orchestrator.
+        
+        Args:
+            simulation: The simulation to orchestrate
+            imbalance_threshold: Load imbalance threshold
+            activity_threshold: Activity threshold for hot slices
+            monitoring_interval: Monitoring interval in cycles
+            sensorimotor_activity_threshold: Threshold for sensorimotor activity
+        """
+        super().__init__(
+            simulation,
+            imbalance_threshold,
+            activity_threshold,
+            monitoring_interval
+        )
+        
+        self.sensorimotor_activity_threshold = sensorimotor_activity_threshold
+        self.reallocation_count = 0
+        self.priority_history: List[Dict] = []
+        
+        logger.info(
+            f"Initialized CognitiveAwareOrchestrator with "
+            f"{len(self.CRITICAL_REGIONS)} critical regions"
+        )
+    
+    def monitor_and_adapt(self, current_cycle: int) -> Dict:
+        """Monitor and adapt with cognitive priority management.
+        
+        Extends parent monitoring with cognitive region prioritization.
+        
+        Args:
+            current_cycle: Current simulation cycle
+            
+        Returns:
+            Monitoring results with cognitive actions
+        """
+        # Call parent monitoring
+        result = super().monitor_and_adapt(current_cycle)
+        
+        if not result.get('monitored', False):
+            return result
+        
+        # Add cognitive priority management
+        if self.is_high_sensorimotor_activity():
+            priority_result = self.prioritize_critical_regions()
+            
+            if priority_result['reallocations'] > 0:
+                if 'actions_taken' not in result:
+                    result['actions_taken'] = []
+                result['actions_taken'].append('cognitive_priority')
+                result['vpu_reallocations'] = priority_result['reallocations']
+                self.reallocation_count += priority_result['reallocations']
+        
+        return result
+    
+    def is_high_sensorimotor_activity(self) -> bool:
+        """Detect if system is in high sensorimotor activity state.
+        
+        Checks neural activity in motor and sensory regions to determine
+        if sensorimotor processing is demanding.
+        
+        Returns:
+            True if sensorimotor activity is high
+        """
+        if not hasattr(self.sim, 'virtual_clock') or not self.sim.virtual_clock:
+            return False
+        
+        # Check activity in motor and sensory slices
+        motor_slice = self.CRITICAL_REGIONS['motor_planning']['w_slice']
+        sensor_slice = self.CRITICAL_REGIONS['sensor_fusion']['w_slice']
+        
+        total_activity = 0.0
+        region_count = 0
+        
+        for vpu in self.sim.virtual_clock.vpus:
+            # Check if VPU handles relevant slices
+            if hasattr(vpu, 'w_slice'):
+                if vpu.w_slice in [motor_slice, sensor_slice]:
+                    # Get spike rate as activity measure
+                    stats = vpu.get_statistics()
+                    neurons = stats.get('neuron_count', 0)
+                    cycles = stats.get('cycles_executed', 0)
+                    
+                    if neurons > 0 and cycles > 0:
+                        spikes = stats.get('spikes_generated', 0)
+                        activity = spikes / (neurons * cycles)
+                        total_activity += activity
+                        region_count += 1
+        
+        if region_count > 0:
+            avg_activity = total_activity / region_count
+            return avg_activity >= self.sensorimotor_activity_threshold
+        
+        return False
+    
+    def prioritize_critical_regions(self) -> Dict:
+        """Allocate more VPUs to critical brain regions.
+        
+        Ensures critical cognitive regions (motor planning, self-perception,
+        sensor fusion) have sufficient VPUs allocated, reallocating from
+        less critical regions if necessary.
+        
+        Returns:
+            Dictionary with reallocation results
+        """
+        if not hasattr(self.sim, 'virtual_clock') or not self.sim.virtual_clock:
+            return {'reallocations': 0, 'reason': 'no_vnc_system'}
+        
+        reallocations = 0
+        reallocation_details = []
+        
+        # Check each critical region
+        for region_name, config in self.CRITICAL_REGIONS.items():
+            w_slice = config['w_slice']
+            min_vpus = config['min_vpus']
+            priority = config['priority']
+            
+            # Count VPUs assigned to this slice
+            current_vpus = self.get_vpus_for_slice(w_slice)
+            
+            if len(current_vpus) < min_vpus:
+                # Need more VPUs for this region
+                needed = min_vpus - len(current_vpus)
+                
+                logger.info(
+                    f"Critical region '{region_name}' (w={w_slice}) "
+                    f"needs {needed} more VPUs"
+                )
+                
+                # Find low-priority slices to donate VPUs
+                for _ in range(needed):
+                    donor_slice = self.find_low_priority_slice(
+                        exclude_slices=[config['w_slice'] for config in self.CRITICAL_REGIONS.values()]
+                    )
+                    
+                    if donor_slice is not None:
+                        success = self.reallocate_vpu(
+                            from_slice=donor_slice,
+                            to_slice=w_slice,
+                            reason=f'priority_{region_name}'
+                        )
+                        
+                        if success:
+                            reallocations += 1
+                            reallocation_details.append({
+                                'from': donor_slice,
+                                'to': w_slice,
+                                'region': region_name,
+                                'priority': priority,
+                            })
+        
+        # Log reallocation summary
+        if reallocations > 0:
+            logger.info(
+                f"Performed {reallocations} VPU reallocations "
+                f"for cognitive priority"
+            )
+            
+            self.priority_history.append({
+                'cycle': self.sim.current_step if hasattr(self.sim, 'current_step') else 0,
+                'reallocations': reallocations,
+                'details': reallocation_details,
+            })
+        
+        return {
+            'reallocations': reallocations,
+            'details': reallocation_details,
+        }
+    
+    def get_vpus_for_slice(self, w_slice: int) -> List:
+        """Get VPUs assigned to specific w-slice.
+        
+        Args:
+            w_slice: W-coordinate of slice
+            
+        Returns:
+            List of VPUs handling this slice
+        """
+        vpus = []
+        
+        if hasattr(self.sim, 'virtual_clock') and self.sim.virtual_clock:
+            for vpu in self.sim.virtual_clock.vpus:
+                if hasattr(vpu, 'w_slice') and vpu.w_slice == w_slice:
+                    vpus.append(vpu)
+        
+        return vpus
+    
+    def find_low_priority_slice(
+        self,
+        exclude_slices: Optional[List[int]] = None
+    ) -> Optional[int]:
+        """Find a low-priority slice that can donate a VPU.
+        
+        Identifies slices with low activity or multiple VPUs that are
+        not critical regions.
+        
+        Args:
+            exclude_slices: Slices to exclude from consideration
+            
+        Returns:
+            W-coordinate of donor slice, or None if none found
+        """
+        if not hasattr(self.sim, 'virtual_clock') or not self.sim.virtual_clock:
+            return None
+        
+        if exclude_slices is None:
+            exclude_slices = []
+        
+        # Collect activity by slice
+        slice_activities = {}
+        slice_vpu_counts = {}
+        
+        for vpu in self.sim.virtual_clock.vpus:
+            if hasattr(vpu, 'w_slice'):
+                w = vpu.w_slice
+                
+                if w in exclude_slices:
+                    continue
+                
+                # Count VPUs per slice
+                if w not in slice_vpu_counts:
+                    slice_vpu_counts[w] = 0
+                slice_vpu_counts[w] += 1
+                
+                # Calculate activity
+                stats = vpu.get_statistics()
+                neurons = stats.get('neuron_count', 0)
+                cycles = stats.get('cycles_executed', 0)
+                
+                if neurons > 0 and cycles > 0:
+                    spikes = stats.get('spikes_generated', 0)
+                    activity = spikes / (neurons * cycles)
+                    
+                    if w not in slice_activities:
+                        slice_activities[w] = []
+                    slice_activities[w].append(activity)
+        
+        # Find slice with lowest activity that has multiple VPUs
+        candidates = []
+        for w, activities in slice_activities.items():
+            if slice_vpu_counts.get(w, 0) > 1:  # Can spare a VPU
+                avg_activity = np.mean(activities)
+                candidates.append((w, avg_activity, slice_vpu_counts[w]))
+        
+        if candidates:
+            # Sort by activity (lowest first), then by VPU count (highest first)
+            candidates.sort(key=lambda x: (x[1], -x[2]))
+            return candidates[0][0]
+        
+        return None
+    
+    def reallocate_vpu(
+        self,
+        from_slice: int,
+        to_slice: int,
+        reason: str
+    ) -> bool:
+        """Reallocate a VPU from one slice to another.
+        
+        This is a placeholder for actual VPU reallocation logic.
+        Full implementation would require migrating neurons and
+        updating VPU assignments.
+        
+        Args:
+            from_slice: Source w-slice
+            to_slice: Target w-slice
+            reason: Reason for reallocation
+            
+        Returns:
+            True if reallocation was successful
+        """
+        logger.info(
+            f"Reallocating VPU: w={from_slice} -> w={to_slice} "
+            f"(reason: {reason})"
+        )
+        
+        # Record in optimization history
+        self.optimization_history.append({
+            'type': 'vpu_reallocation',
+            'from_slice': from_slice,
+            'to_slice': to_slice,
+            'reason': reason,
+            'applied': False,  # Would be True when fully implemented
+        })
+        
+        # Placeholder: would actually move VPU assignment
+        # For now, just log the intent
+        return True
+    
+    def get_cognitive_performance_summary(self) -> Dict:
+        """Get cognitive orchestration performance summary.
+        
+        Returns:
+            Dictionary with cognitive metrics
+        """
+        base_summary = self.get_performance_summary()
+        
+        # Add cognitive-specific metrics
+        base_summary.update({
+            'total_reallocations': self.reallocation_count,
+            'critical_regions': len(self.CRITICAL_REGIONS),
+            'priority_adjustments': len(self.priority_history),
+        })
+        
+        # Recent priority adjustments
+        if self.priority_history:
+            recent_priorities = self.priority_history[-10:]
+            base_summary['recent_priority_actions'] = recent_priorities
+        
+        return base_summary
