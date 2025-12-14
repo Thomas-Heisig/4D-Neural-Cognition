@@ -644,7 +644,7 @@ def init_neurons():
         if not isinstance(density, (int, float)):
             return jsonify({"status": "error", "message": "density must be a number"}), 400
         if not 0 < density <= 1.0:
-            return jsonify({"status": "error", "message": "density must be between 0 and 1"}), 400
+            return jsonify({"status": "error", "message": "density must be greater than 0 and less than or equal to 1"}), 400
 
         logger.info(f"Initializing neurons in {areas} with density {density}")
 
@@ -679,7 +679,7 @@ def init_synapses():
         if not isinstance(probability, (int, float)):
             return jsonify({"status": "error", "message": "probability must be a number"}), 400
         if not 0 < probability <= 1.0:
-            return jsonify({"status": "error", "message": "probability must be between 0 and 1"}), 400
+            return jsonify({"status": "error", "message": "probability must be greater than 0 and less than or equal to 1"}), 400
             
         # Validate weight parameters
         if not isinstance(weight_mean, (int, float)):

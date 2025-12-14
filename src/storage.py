@@ -37,8 +37,9 @@ def save_to_hdf5(model: "BrainModel", filepath: str) -> None:
         os.makedirs(directory, exist_ok=True)
 
     # Write to temporary file first for atomic operation
-    temp_fd, temp_path = tempfile.mkstemp(suffix='.h5', dir=directory or '.')
+    temp_path = None
     try:
+        temp_fd, temp_path = tempfile.mkstemp(suffix='.h5', dir=directory or '.')
         os.close(temp_fd)  # Close the file descriptor, h5py will open it
         
         with h5py.File(temp_path, "w") as hdf:
@@ -87,10 +88,11 @@ def save_to_hdf5(model: "BrainModel", filepath: str) -> None:
                 hdf.create_dataset("synapses", data=synapses_data, compression="gzip")
         
         # Atomically move temp file to target location
-        shutil.move(temp_path, filepath)
+        if temp_path:
+            shutil.move(temp_path, filepath)
     except Exception:
         # Clean up temp file if something went wrong
-        if os.path.exists(temp_path):
+        if temp_path and os.path.exists(temp_path):
             os.unlink(temp_path)
         raise
 
@@ -182,16 +184,18 @@ def save_to_json(model: "BrainModel", filepath: str) -> None:
         os.makedirs(directory, exist_ok=True)
 
     # Write to temporary file first for atomic operation
-    temp_fd, temp_path = tempfile.mkstemp(suffix='.json', dir=directory or '.')
+    temp_path = None
     try:
+        temp_fd, temp_path = tempfile.mkstemp(suffix='.json', dir=directory or '.')
         with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
             json.dump(model.to_dict(), f, ensure_ascii=False, indent=2)
         
         # Atomically move temp file to target location
-        shutil.move(temp_path, filepath)
+        if temp_path:
+            shutil.move(temp_path, filepath)
     except Exception:
         # Clean up temp file if something went wrong
-        if os.path.exists(temp_path):
+        if temp_path and os.path.exists(temp_path):
             os.unlink(temp_path)
         raise
 
