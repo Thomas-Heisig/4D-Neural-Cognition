@@ -664,14 +664,18 @@ Thomas Heisig ____________  Date: _______
 **When using 4D Neural Cognition in research, please cite**:
 
 ```bibtex
-@software{4D_Neural_Cognition,
+@misc{4D_Neural_Cognition,
   author = {Heisig, Thomas and Contributors},
   title = {4D Neural Cognition: A Neuromorphic AI Framework},
   year = {2025},
-  url = {https://github.com/Thomas-Heisig/4D-Neural-Cognition},
-  version = {1.0}
+  publisher = {GitHub},
+  howpublished = {\url{https://github.com/Thomas-Heisig/4D-Neural-Cognition}},
+  version = {1.0.0},
+  note = {Software available at GitHub repository}
 }
 ```
+
+Note: A DOI will be registered via Zenodo for future releases to ensure persistent citation.
 
 **Additional attribution**:
 - Include framework in Acknowledgments section

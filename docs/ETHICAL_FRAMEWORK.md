@@ -100,6 +100,7 @@ model without subjective experience."
 2. **Educational Outreach**: Explain difference between computation and consciousness
 3. **Responsible Messaging**: Avoid sensationalism in press releases
 4. **Philosopher Collaboration**: Engage with consciousness researchers and philosophers
+5. **Media Protocol**: All public statements about consciousness-related findings must be reviewed by at least one ethicist or philosopher of mind before release
 
 ### Long-term Considerations
 
