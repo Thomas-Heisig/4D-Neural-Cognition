@@ -120,6 +120,60 @@ Our documentation is organized according to international standards (ISO/IEC/IEE
 
 - **[LICENSE](../LICENSE)** - MIT License terms
 
+## 🔬 Scientific Research Documentation
+
+### Research Framework
+
+- **[Scientific Hypotheses](SCIENTIFIC_HYPOTHESES.md)** 🆕 - Formalized, testable hypotheses
+  - Core 4D architecture hypotheses
+  - Biological plausibility validation
+  - Cognitive performance predictions
+  - Learning efficiency claims
+  - Emergent behavior studies
+  - Cross-level predictions for wet-lab validation
+
+- **[Benchmark Suite](BENCHMARK_SUITE.md)** 🆕 - Standardized benchmark framework
+  - Cognitive performance benchmarks
+  - Biological plausibility tests
+  - Learning efficiency measurements
+  - Scalability benchmarks
+  - Standardized datasets (4D-MNIST, multimodal)
+  - Comparison with baselines
+
+- **[Scientific Validation](SCIENTIFIC_VALIDATION.md)** - Validation methodology
+  - Neuron model validation
+  - Plasticity dynamics validation
+  - Biological plausibility metrics
+  - Comparison with other simulators
+
+- **[Collaborative Research](COLLABORATIVE_RESEARCH.md)** 🆕 - Research partnership framework
+  - Types of collaboration
+  - Partnership process
+  - Data sharing protocols
+  - Authorship and credit guidelines
+  - Community research projects
+
+### Strategic Development
+
+- **[GPU Acceleration Roadmap](GPU_ACCELERATION_ROADMAP.md)** 🆕 - GPU-native strategy
+  - CUDA kernel development
+  - Multi-GPU scaling
+  - Distributed computing
+  - Performance targets
+
+- **[Neuromorphic Hardware Strategy](NEUROMORPHIC_HARDWARE_STRATEGY.md)** 🆕 - Hardware deployment
+  - Target platforms (Loihi, SpiNNaker, TrueNorth)
+  - 4D-to-hardware mapping strategies
+  - Implementation roadmap
+  - Hardware-in-the-loop testing
+
+- **[Ethical Framework](ETHICAL_FRAMEWORK.md)** 🆕 - Ethical guidelines
+  - Consciousness and self-awareness research
+  - Transparency and open science
+  - Safety and misuse prevention
+  - Data privacy and security
+  - Environmental responsibility
+
 ## 🔧 Technical Reference
 
 ### API & Usage
@@ -136,6 +190,14 @@ Our documentation is organized according to international standards (ISO/IEC/IEE
   - Knowledge Database API (KnowledgeDatabase, KnowledgeBasedTrainer)
   - Web API (REST & WebSocket)
   - Code examples for all functions
+
+- **[API Specification](API_SPECIFICATION.md)** 🆕 - Formal programmatic API
+  - Python Native API
+  - RESTful API
+  - Configuration API
+  - Plugin API
+  - Data Export API
+  - Versioning and compatibility
 
 ### Architecture & Design
 

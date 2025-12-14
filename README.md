@@ -189,11 +189,26 @@ python app.py
 ### 🔧 Technical Documentation
 
 - **[API Reference](docs/api/API.md)** - Complete API documentation
+- **[API Specification](docs/API_SPECIFICATION.md)** 🆕 - Formal programmatic API for researchers
 - **[Architecture](docs/ARCHITECTURE.md)** - Technical architecture details
 - **[Learning Systems](docs/LEARNING_SYSTEMS.md)** - Biological and machine learning framework
 - **[Autonomous Learning Guide](AUTONOMOUS_LEARNING_GUIDE.md)** 🆕 - Self-directed learning with intrinsic motivation
 - **[Tasks & Evaluation](docs/user-guide/TASKS_AND_EVALUATION.md)** - Benchmark framework guide
 - **[Developer Guide](docs/developer-guide/)** - Contributing and development
+
+### 🔬 Scientific Research
+
+- **[Scientific Hypotheses](docs/SCIENTIFIC_HYPOTHESES.md)** 🆕 - Formalized, testable hypotheses
+- **[Benchmark Suite](docs/BENCHMARK_SUITE.md)** 🆕 - Standardized benchmark framework
+- **[Scientific Validation](docs/SCIENTIFIC_VALIDATION.md)** - Validation studies and comparisons
+- **[Collaborative Research](docs/COLLABORATIVE_RESEARCH.md)** 🆕 - Framework for research partnerships
+
+### 🚀 Future Development
+
+- **[GPU Acceleration Roadmap](docs/GPU_ACCELERATION_ROADMAP.md)** 🆕 - Strategy for GPU-native implementation
+- **[Neuromorphic Hardware Strategy](docs/NEUROMORPHIC_HARDWARE_STRATEGY.md)** 🆕 - Hardware deployment roadmap
+- **[Ethical Framework](docs/ETHICAL_FRAMEWORK.md)** 🆕 - Ethical guidelines and responsible development
+- **[Roadmap](docs/ROADMAP.md)** - Development roadmap and milestones
 
 ---
 
@@ -663,9 +678,19 @@ A: It's biologically *plausible* – we implement key principles (spiking dynami
 
 ## 📞 Contact
 
-For questions, suggestions, or collaborations:
-- Open an issue on GitHub
-- Check [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines
+**Project Maintainer**: Thomas Heisig  
+**Email**: t_heisig@gmx.de  
+**Location**: Ganderkesee, Germany
+
+**For**:
+- **Research Collaborations**: See [Collaborative Research Framework](docs/COLLABORATIVE_RESEARCH.md)
+- **Questions & Support**: Open an issue on GitHub or check [SUPPORT.md](SUPPORT.md)
+- **Contributions**: See [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Security Issues**: See [SECURITY.md](SECURITY.md)
+
+**Community**:
+- **GitHub Discussions**: https://github.com/Thomas-Heisig/4D-Neural-Cognition/discussions
+- **Issues**: https://github.com/Thomas-Heisig/4D-Neural-Cognition/issues
 
 ---
 
