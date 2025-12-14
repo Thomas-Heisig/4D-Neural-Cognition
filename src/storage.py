@@ -2,6 +2,8 @@
 
 import json
 import os
+import tempfile
+import shutil
 from typing import TYPE_CHECKING
 
 import h5py
@@ -15,7 +17,10 @@ if TYPE_CHECKING:
 
 
 def save_to_hdf5(model: "BrainModel", filepath: str) -> None:
-    """Save brain model to HDF5 file.
+    """Save brain model to HDF5 file with atomic write protection.
+
+    Uses a temporary file to ensure atomic writes - if the save operation
+    is interrupted, the original file remains intact.
 
     Stores:
     - meta_json: JSON string with full configuration
@@ -31,50 +36,64 @@ def save_to_hdf5(model: "BrainModel", filepath: str) -> None:
     if directory:
         os.makedirs(directory, exist_ok=True)
 
-    with h5py.File(filepath, "w") as hdf:
-        # 1) Save meta_json (configuration as JSON string)
-        meta_dict = model.to_dict()
-        meta_str = json.dumps(meta_dict, ensure_ascii=False)
+    # Write to temporary file first for atomic operation
+    temp_path = None
+    try:
+        temp_fd, temp_path = tempfile.mkstemp(suffix='.h5', dir=directory or '.')
+        os.close(temp_fd)  # Close the file descriptor, h5py will open it
+        
+        with h5py.File(temp_path, "w") as hdf:
+            # 1) Save meta_json (configuration as JSON string)
+            meta_dict = model.to_dict()
+            meta_str = json.dumps(meta_dict, ensure_ascii=False)
 
-        # Store as string dataset
-        hdf.create_dataset("meta_json", data=meta_str, dtype=h5py.string_dtype())
+            # Store as string dataset
+            hdf.create_dataset("meta_json", data=meta_str, dtype=h5py.string_dtype())
 
-        # 2) Save neurons as structured array
-        # Columns: id, x, y, z, w, generation, parent_id, health, age, v_membrane
-        n_neurons = len(model.neurons)
-        if n_neurons > 0:
-            neurons_data = np.zeros((n_neurons, 10), dtype=np.float32)
-            for i, neuron in enumerate(model.neurons.values()):
-                neurons_data[i] = [
-                    neuron.id,
-                    neuron.x,
-                    neuron.y,
-                    neuron.z,
-                    neuron.w,
-                    neuron.generation,
-                    neuron.parent_id,
-                    neuron.health,
-                    neuron.age,
-                    neuron.v_membrane,
-                ]
+            # 2) Save neurons as structured array
+            # Columns: id, x, y, z, w, generation, parent_id, health, age, v_membrane
+            n_neurons = len(model.neurons)
+            if n_neurons > 0:
+                neurons_data = np.zeros((n_neurons, 10), dtype=np.float32)
+                for i, neuron in enumerate(model.neurons.values()):
+                    neurons_data[i] = [
+                        neuron.id,
+                        neuron.x,
+                        neuron.y,
+                        neuron.z,
+                        neuron.w,
+                        neuron.generation,
+                        neuron.parent_id,
+                        neuron.health,
+                        neuron.age,
+                        neuron.v_membrane,
+                    ]
 
-            hdf.create_dataset("neurons", data=neurons_data, compression="gzip")
+                hdf.create_dataset("neurons", data=neurons_data, compression="gzip")
 
-        # 3) Save synapses as structured array
-        # Columns: pre_id, post_id, weight, delay, plasticity_tag
-        n_synapses = len(model.synapses)
-        if n_synapses > 0:
-            synapses_data = np.zeros((n_synapses, 5), dtype=np.float32)
-            for i, synapse in enumerate(model.synapses):
-                synapses_data[i] = [
-                    synapse.pre_id,
-                    synapse.post_id,
-                    synapse.weight,
-                    synapse.delay,
-                    synapse.plasticity_tag,
-                ]
+            # 3) Save synapses as structured array
+            # Columns: pre_id, post_id, weight, delay, plasticity_tag
+            n_synapses = len(model.synapses)
+            if n_synapses > 0:
+                synapses_data = np.zeros((n_synapses, 5), dtype=np.float32)
+                for i, synapse in enumerate(model.synapses):
+                    synapses_data[i] = [
+                        synapse.pre_id,
+                        synapse.post_id,
+                        synapse.weight,
+                        synapse.delay,
+                        synapse.plasticity_tag,
+                    ]
 
-            hdf.create_dataset("synapses", data=synapses_data, compression="gzip")
+                hdf.create_dataset("synapses", data=synapses_data, compression="gzip")
+        
+        # Atomically move temp file to target location
+        shutil.move(temp_path, filepath)
+    except Exception:
+        # Clean up temp file if something went wrong
+        if temp_path and os.path.exists(temp_path):
+            os.unlink(temp_path)
+        raise
 
 
 def load_from_hdf5(filepath: str) -> "BrainModel":
@@ -149,7 +168,10 @@ def load_from_hdf5(filepath: str) -> "BrainModel":
 
 
 def save_to_json(model: "BrainModel", filepath: str) -> None:
-    """Save brain model to JSON file (alternative to HDF4).
+    """Save brain model to JSON file with atomic write protection.
+
+    Uses a temporary file to ensure atomic writes - if the save operation
+    is interrupted, the original file remains intact.
 
     Args:
         model: The brain model to save.
@@ -160,8 +182,20 @@ def save_to_json(model: "BrainModel", filepath: str) -> None:
     if directory:
         os.makedirs(directory, exist_ok=True)
 
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(model.to_dict(), f, ensure_ascii=False, indent=2)
+    # Write to temporary file first for atomic operation
+    temp_path = None
+    try:
+        temp_fd, temp_path = tempfile.mkstemp(suffix='.json', dir=directory or '.')
+        with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
+            json.dump(model.to_dict(), f, ensure_ascii=False, indent=2)
+        
+        # Atomically move temp file to target location
+        shutil.move(temp_path, filepath)
+    except Exception:
+        # Clean up temp file if something went wrong
+        if temp_path and os.path.exists(temp_path):
+            os.unlink(temp_path)
+        raise
 
 
 def load_from_json(filepath: str) -> "BrainModel":
