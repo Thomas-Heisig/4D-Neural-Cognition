@@ -104,6 +104,19 @@
                     <span class="icon">📤</span> Export/Import
                 </button>
             </div>
+
+            <div class="sidebar-section">
+                <h3>📚 Wissen</h3>
+                <button class="sidebar-btn" data-section="knowledge">
+                    <span class="icon">📖</span> Wissensdatenbank
+                </button>
+                <button class="sidebar-btn" data-section="workflows">
+                    <span class="icon">🔄</span> Workflows
+                </button>
+                <button class="sidebar-btn" data-section="research">
+                    <span class="icon">🔬</span> Forschung
+                </button>
+            </div>
         </aside>
 
         <!-- Main Content Area -->
@@ -1173,6 +1186,226 @@
                             <option value="statistics">Statistiken</option>
                         </select>
                         <button id="exportData" class="btn-primary btn-large">📊 Daten exportieren</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Knowledge System Section -->
+            <section id="knowledge-section" class="content-section">
+                <div class="section-header">
+                    <h2>📚 Wissensdatenbank</h2>
+                    <div class="header-actions">
+                        <input type="text" id="knowledgeSearch" placeholder="🔍 Suche in Dokumentation..." class="search-input">
+                        <button id="refreshKnowledge" class="btn-secondary">🔄 Aktualisieren</button>
+                        <button id="createNewDoc" class="btn-primary">➕ Neues Dokument</button>
+                    </div>
+                </div>
+
+                <div class="knowledge-container">
+                    <div class="knowledge-browser">
+                        <h3>📁 Dokumentationsstruktur</h3>
+                        <div id="knowledgeTree" class="knowledge-tree">
+                            <div class="loading">Lade Dokumentation...</div>
+                        </div>
+                    </div>
+
+                    <div class="knowledge-viewer">
+                        <div class="viewer-toolbar">
+                            <button id="viewMode" class="btn-toolbar active" data-mode="view">👁️ Ansicht</button>
+                            <button id="editMode" class="btn-toolbar" data-mode="edit">✏️ Bearbeiten</button>
+                            <button id="saveDoc" class="btn-toolbar" style="display:none;">💾 Speichern</button>
+                            <button id="cancelEdit" class="btn-toolbar" style="display:none;">❌ Abbrechen</button>
+                            <span id="currentDocPath" class="doc-path"></span>
+                        </div>
+
+                        <div id="documentViewer" class="document-viewer">
+                            <div class="welcome-message">
+                                <h3>📖 Willkommen zur Wissensdatenbank</h3>
+                                <p>Wählen Sie ein Dokument aus der linken Seitenleiste aus, um es anzuzeigen oder zu bearbeiten.</p>
+                                <p>Die Wissensdatenbank enthält alle Dokumentationen, wissenschaftliche Arbeiten, Erkenntnisse und Workflows.</p>
+                            </div>
+                        </div>
+
+                        <div id="documentEditor" class="document-editor" style="display:none;">
+                            <textarea id="markdownEditor" class="markdown-editor" placeholder="# Markdown hier schreiben..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="searchResults" class="search-results" style="display:none;">
+                    <h3>🔍 Suchergebnisse</h3>
+                    <div id="searchResultsList"></div>
+                </div>
+            </section>
+
+            <!-- Workflows Section -->
+            <section id="workflows-section" class="content-section">
+                <div class="section-header">
+                    <h2>🔄 Workflows & Prozesse</h2>
+                    <button id="refreshWorkflows" class="btn-secondary">🔄 Aktualisieren</button>
+                </div>
+
+                <div class="workflows-container">
+                    <div class="workflow-category">
+                        <h3>🧪 Experimentelle Workflows</h3>
+                        <div class="workflow-list">
+                            <div class="workflow-card">
+                                <h4>Standard Simulationsablauf</h4>
+                                <ol>
+                                    <li>Modell initialisieren (brain_base_model.json)</li>
+                                    <li>Neuronen erstellen (Dichte: 0.1)</li>
+                                    <li>Synapsen initialisieren (Wahrscheinlichkeit: 0.01)</li>
+                                    <li>Sensorische Eingabe vorbereiten</li>
+                                    <li>Simulation starten (100-1000 Schritte)</li>
+                                    <li>Ergebnisse analysieren</li>
+                                </ol>
+                            </div>
+
+                            <div class="workflow-card">
+                                <h4>Trainings-Workflow</h4>
+                                <ol>
+                                    <li>Modell laden oder neu initialisieren</li>
+                                    <li>Trainingsdaten vorbereiten</li>
+                                    <li>Plastizität-Parameter konfigurieren</li>
+                                    <li>Iteratives Training mit Checkpoints</li>
+                                    <li>Validierung und Evaluierung</li>
+                                    <li>Best Model speichern</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="workflow-category">
+                        <h3>🔬 Forschungs-Workflows</h3>
+                        <div class="workflow-list">
+                            <div class="workflow-card">
+                                <h4>Benchmark-Evaluierung</h4>
+                                <ol>
+                                    <li>Task aus Benchmark-Suite auswählen</li>
+                                    <li>Mehrere Konfigurationen testen</li>
+                                    <li>Metriken sammeln (Accuracy, Spike-Rate, etc.)</li>
+                                    <li>Statistische Analyse durchführen</li>
+                                    <li>Ergebnisse dokumentieren</li>
+                                </ol>
+                            </div>
+
+                            <div class="workflow-card">
+                                <h4>Neuromorphic Hardware Test</h4>
+                                <ol>
+                                    <li>VNC-System aktivieren</li>
+                                    <li>Clock-Frequenz konfigurieren</li>
+                                    <li>VPU-Partitionierung einstellen</li>
+                                    <li>Performance-Monitoring starten</li>
+                                    <li>Load-Balancing optimieren</li>
+                                    <li>Ergebnisse vergleichen</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Research Section -->
+            <section id="research-section" class="content-section">
+                <div class="section-header">
+                    <h2>🔬 Forschung & Erkenntnisse</h2>
+                    <button id="refreshResearch" class="btn-secondary">🔄 Aktualisieren</button>
+                </div>
+
+                <div class="research-container">
+                    <div class="research-category">
+                        <h3>📊 Wissenschaftliche Grundlagen</h3>
+                        <div class="research-links">
+                            <a href="#" class="research-link" data-doc="docs/ARCHITECTURE.md">
+                                <span class="icon">🏗️</span>
+                                <div>
+                                    <strong>Architektur</strong>
+                                    <p>Technische System-Architektur des 4D Neural Cognition Frameworks</p>
+                                </div>
+                            </a>
+                            <a href="#" class="research-link" data-doc="docs/MATHEMATICAL_MODEL.md">
+                                <span class="icon">📐</span>
+                                <div>
+                                    <strong>Mathematisches Modell</strong>
+                                    <p>Formale Beschreibung der neuronalen Dynamik und Plastizität</p>
+                                </div>
+                            </a>
+                            <a href="#" class="research-link" data-doc="docs/ALGORITHMS.md">
+                                <span class="icon">⚙️</span>
+                                <div>
+                                    <strong>Algorithmen</strong>
+                                    <p>Detaillierte Beschreibung der implementierten Algorithmen</p>
+                                </div>
+                            </a>
+                            <a href="#" class="research-link" data-doc="docs/LEARNING_SYSTEMS.md">
+                                <span class="icon">🧠</span>
+                                <div>
+                                    <strong>Lernsysteme</strong>
+                                    <p>Biologische und maschinelle Lernmechanismen</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="research-category">
+                        <h3>🚀 Implementierungen & Features</h3>
+                        <div class="research-links">
+                            <a href="#" class="research-link" data-doc="docs/PERFORMANCE_OPTIMIZATION.md">
+                                <span class="icon">⚡</span>
+                                <div>
+                                    <strong>Performance-Optimierung</strong>
+                                    <p>Strategien zur Skalierung und Beschleunigung</p>
+                                </div>
+                            </a>
+                            <a href="#" class="research-link" data-doc="docs/VNC_ENHANCEMENTS.md">
+                                <span class="icon">🖥️</span>
+                                <div>
+                                    <strong>Virtual Neuromorphic Clock</strong>
+                                    <p>Hardware-Abstraktion für neuromorphes Computing</p>
+                                </div>
+                            </a>
+                            <a href="#" class="research-link" data-doc="EMBODIMENT_GUIDE.md">
+                                <span class="icon">🤖</span>
+                                <div>
+                                    <strong>Embodiment</strong>
+                                    <p>Körperliche Verankerung und sensomotorische Integration</p>
+                                </div>
+                            </a>
+                            <a href="#" class="research-link" data-doc="AUTONOMOUS_LEARNING_GUIDE.md">
+                                <span class="icon">🎯</span>
+                                <div>
+                                    <strong>Autonomes Lernen</strong>
+                                    <p>Selbstgesteuertes Lernen mit intrinsischer Motivation</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="research-category">
+                        <h3>📚 Benutzer-Dokumentation</h3>
+                        <div class="research-links">
+                            <a href="#" class="research-link" data-doc="README.md">
+                                <span class="icon">📖</span>
+                                <div>
+                                    <strong>README</strong>
+                                    <p>Projekt-Übersicht und Schnellstart</p>
+                                </div>
+                            </a>
+                            <a href="#" class="research-link" data-doc="docs/user-guide/INSTALLATION.md">
+                                <span class="icon">⬇️</span>
+                                <div>
+                                    <strong>Installation</strong>
+                                    <p>Detaillierte Installations-Anleitung</p>
+                                </div>
+                            </a>
+                            <a href="#" class="research-link" data-doc="docs/api/API.md">
+                                <span class="icon">🔌</span>
+                                <div>
+                                    <strong>API Referenz</strong>
+                                    <p>Vollständige API-Dokumentation</p>
+                                </div>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </section>
