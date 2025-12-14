@@ -1511,15 +1511,17 @@ def read_knowledge():
         if full_path.suffix != ".md":
             return jsonify({"status": "error", "message": "Only markdown files allowed"}), 400
         
+        # Use validated full_path consistently (prevent TOCTOU)
         content = full_path.read_text(encoding="utf-8")
+        file_stat = full_path.stat()
         
         return jsonify({
             "status": "success",
             "content": content,
-            "path": file_path,
+            "path": str(full_path.relative_to(base_path)),
             "name": full_path.name,
-            "size": full_path.stat().st_size,
-            "modified": full_path.stat().st_mtime
+            "size": file_stat.st_size,
+            "modified": file_stat.st_mtime
         })
     except Exception as e:
         logger.error(f"Failed to read knowledge: {str(e)}")
@@ -1554,16 +1556,18 @@ def write_knowledge():
         # Create parent directories if needed
         full_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # Write content
+        # Write content using validated full_path (prevent TOCTOU)
         full_path.write_text(content, encoding="utf-8")
         
-        logger.info(f"Knowledge file written: {file_path}")
+        logger.info(f"Knowledge file written: {full_path.relative_to(base_path)}")
+        
+        file_stat = full_path.stat()
         
         return jsonify({
             "status": "success",
             "message": "File saved successfully",
-            "path": file_path,
-            "size": full_path.stat().st_size
+            "path": str(full_path.relative_to(base_path)),
+            "size": file_stat.st_size
         })
     except Exception as e:
         logger.error(f"Failed to write knowledge: {str(e)}")

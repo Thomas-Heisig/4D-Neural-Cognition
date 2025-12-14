@@ -1238,8 +1238,14 @@ function displayKnowledgeDocument(data) {
 function renderMarkdown(markdown) {
     // Escape HTML first
     const escapeHtml = (text) => {
-        const map = {'&': '&amp;', '<': '&lt;', '>': '&gt;'};
-        return text.replace(/[&<>]/g, m => map[m]);
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
     };
     
     let html = markdown;
@@ -1259,11 +1265,12 @@ function renderMarkdown(markdown) {
     html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
     html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
     
-    // Bold (process before italic)
+    // Bold (process before italic) - match ** pairs
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     
-    // Italic (only single asterisks not preceded/followed by asterisk)
-    html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
+    // Italic - match single * but not ** (use simpler regex for compatibility)
+    // Replace remaining single asterisks that aren't part of bold
+    html = html.replace(/\*([^\*\n]+)\*/g, '<em>$1</em>');
     
     // Links
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
