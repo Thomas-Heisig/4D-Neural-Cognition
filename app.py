@@ -90,9 +90,6 @@ CHECKPOINT_DIR.mkdir(exist_ok=True)
 # Checkpoint configuration
 CHECKPOINT_INTERVAL = 1000  # Save checkpoint every N steps
 
-# System initialization state
-system_initialized = False
-
 
 def require_initialization(f):
     """Decorator to ensure system is initialized before allowing API calls.
@@ -323,7 +320,7 @@ def system_status():
 @limiter.limit("20 per minute")  # Limit model initialization
 def init_model():
     """Initialize a new brain model."""
-    global current_model, current_simulation, system_initialized
+    global current_model, current_simulation
 
     try:
         config_path = request.json.get("config_path", "brain_base_model.json")
@@ -336,7 +333,6 @@ def init_model():
         with simulation_lock:
             current_model = BrainModel(config_path=str(validated_path))
             current_simulation = Simulation(current_model, seed=42)
-            system_initialized = True
 
         logger.info(f"Model initialized: {current_model.lattice_shape}")
 

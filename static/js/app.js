@@ -144,17 +144,14 @@ async function initializeNeurons() {
         const density = parseFloat(elements.density.value);
         showInfo(`Initialisiere Neuronen mit Dichte ${density}...`);
         
-        const result = await apiCall('/neurons/init', 'POST', {
-            areas: ['V1_like', 'Digital_sensor'],
-            density: density
-        });
+        const result = await window.apiClient.initNeurons(['V1_like', 'Digital_sensor'], density);
         
         if (result.status === 'success') {
             showSuccess(`${result.num_neurons} Neuronen erstellt!`);
             await getModelInfo();
         }
     } catch (error) {
-        // Error already handled
+        showError(`Fehler bei Neuron-Initialisierung: ${error.message}`);
     }
 }
 
@@ -162,31 +159,27 @@ async function initializeSynapses() {
     try {
         showInfo('Initialisiere Synapsen...');
         
-        const result = await apiCall('/synapses/init', 'POST', {
-            probability: 0.001,
-            weight_mean: 0.1,
-            weight_std: 0.05
-        });
+        const result = await window.apiClient.initSynapses(0.001, 0.1, 0.05);
         
         if (result.status === 'success') {
             showSuccess(`${result.num_synapses} Synapsen erstellt!`);
             await getModelInfo();
         }
     } catch (error) {
-        // Error already handled
+        showError(`Fehler bei Synapse-Initialisierung: ${error.message}`);
     }
 }
 
 // Simulation Functions
 async function runSimulationStep() {
     try {
-        const result = await apiCall('/simulation/step', 'POST');
+        const result = await window.apiClient.simulationStep();
         
         if (result.status === 'success') {
             showInfo(`Schritt ${result.step}: ${result.spikes} Spikes, ${result.num_neurons} Neuronen`);
         }
     } catch (error) {
-        // Error already handled
+        showError(`Fehler bei Simulationsschritt: ${error.message}`);
     }
 }
 
@@ -198,9 +191,7 @@ async function runSimulation() {
         showInfo(`Starte Training für ${steps} Schritte...`);
         elements.runSimulation.disabled = true;
         
-        const result = await apiCall('/simulation/run', 'POST', {
-            steps: steps
-        });
+        const result = await window.apiClient.runSimulation(steps, 10);
         
         if (result.status === 'success') {
             const res = result.results;
@@ -209,7 +200,7 @@ async function runSimulation() {
             await refreshHeatmap();
         }
     } catch (error) {
-        // Error already handled
+        showError(`Fehler bei Training: ${error.message}`);
     } finally {
         isTraining = false;
         elements.runSimulation.disabled = false;
@@ -218,11 +209,11 @@ async function runSimulation() {
 
 async function stopSimulation() {
     try {
-        await apiCall('/simulation/stop', 'POST');
+        await window.apiClient.stopSimulation();
         isTraining = false;
         showInfo('Training gestoppt');
     } catch (error) {
-        // Error already handled
+        showError(`Fehler beim Stoppen: ${error.message}`);
     }
 }
 
@@ -252,23 +243,20 @@ async function feedInput() {
             }
         }
         
-        const result = await apiCall('/input/feed', 'POST', {
-            sense_type: senseType,
-            input_data: inputData
-        });
+        const result = await window.apiClient.feedInput(senseType, inputData);
         
         if (result.status === 'success') {
             showSuccess(`${senseType} Eingabe erfolgreich gesendet`);
         }
     } catch (error) {
-        // Error already handled
+        showError(`Fehler bei Eingabe: ${error.message}`);
     }
 }
 
 // Heatmap Functions
 async function refreshHeatmap() {
     try {
-        const result = await apiCall('/heatmap/data');
+        const result = await window.apiClient.getHeatmapData(0);
         
         if (result.status === 'success' && result.heatmap) {
             drawHeatmap(elements.heatmapInput, result.heatmap.input);
@@ -277,7 +265,7 @@ async function refreshHeatmap() {
             showSuccess('Heatmap aktualisiert');
         }
     } catch (error) {
-        // Error already handled
+        showError(`Fehler bei Heatmap: ${error.message}`);
     }
 }
 
@@ -341,15 +329,14 @@ async function saveModel(format) {
     try {
         showInfo(`Speichere Modell als ${format.toUpperCase()}...`);
         
-        const result = await apiCall('/model/save', 'POST', {
-            format: format
-        });
+        const filename = `brain_state_${Date.now()}`;
+        const result = await window.apiClient.saveModel(filename, format);
         
         if (result.status === 'success') {
             showSuccess(`Modell gespeichert: ${result.filepath}`);
         }
     } catch (error) {
-        // Error already handled
+        showError(`Fehler beim Speichern: ${error.message}`);
     }
 }
 
@@ -358,9 +345,7 @@ async function loadModel() {
         const filepath = elements.loadPath.value;
         showInfo(`Lade Modell von ${filepath}...`);
         
-        const result = await apiCall('/model/load', 'POST', {
-            filepath: filepath
-        });
+        const result = await window.apiClient.loadModel(filepath);
         
         if (result.status === 'success') {
             showSuccess(`Modell geladen: ${result.num_neurons} Neuronen, ${result.num_synapses} Synapsen`);
@@ -368,7 +353,7 @@ async function loadModel() {
             await refreshHeatmap();
         }
     } catch (error) {
-        // Error already handled
+        showError(`Fehler beim Laden: ${error.message}`);
     }
 }
 
@@ -376,7 +361,7 @@ async function recoverFromCheckpoint() {
     try {
         showInfo('Stelle vom letzten Checkpoint wieder her...');
         
-        const result = await apiCall('/simulation/recover', 'POST');
+        const result = await window.apiClient.recoverCheckpoint();
         
         if (result.status === 'success') {
             showSuccess(`Checkpoint wiederhergestellt: Schritt ${result.recovered_step}, ${result.num_neurons} Neuronen, ${result.num_synapses} Synapsen`);
@@ -384,7 +369,7 @@ async function recoverFromCheckpoint() {
             await refreshHeatmap();
         }
     } catch (error) {
-        // Error already handled
+        showError(`Fehler bei Wiederherstellung: ${error.message}`);
     }
 }
 
