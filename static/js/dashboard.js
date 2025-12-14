@@ -1169,7 +1169,14 @@ function createFileElement(file) {
     const fileElement = document.createElement('div');
     fileElement.className = 'tree-file';
     fileElement.textContent = `📄 ${file.name}`;
-    fileElement.onclick = () => loadKnowledgeDocument(file.path);
+    fileElement.onclick = (e) => {
+        // Update active state
+        document.querySelectorAll('.tree-file').forEach(el => {
+            el.classList.remove('active');
+        });
+        e.target.classList.add('active');
+        loadKnowledgeDocument(file.path);
+    };
     return fileElement;
 }
 
@@ -1198,11 +1205,7 @@ async function loadKnowledgeDocument(path) {
             originalDocContent = data.content;
             displayKnowledgeDocument(data);
             
-            // Update active file in tree
-            document.querySelectorAll('.tree-file').forEach(el => {
-                el.classList.remove('active');
-            });
-            event.target.classList.add('active');
+            // Update active file in tree (removed - handled by click event)
         } else {
             alert('Fehler beim Laden des Dokuments: ' + data.message);
         }
@@ -1233,35 +1236,74 @@ function displayKnowledgeDocument(data) {
 
 // Simple markdown renderer
 function renderMarkdown(markdown) {
+    // Escape HTML first
+    const escapeHtml = (text) => {
+        const map = {'&': '&amp;', '<': '&lt;', '>': '&gt;'};
+        return text.replace(/[&<>]/g, m => map[m]);
+    };
+    
     let html = markdown;
     
-    // Headers
+    // Code blocks (process first to protect from other replacements)
+    html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
+        return '<pre><code>' + escapeHtml(code) + '</code></pre>';
+    });
+    
+    // Inline code (protect from other replacements)
+    html = html.replace(/`([^`]+)`/g, (match, code) => {
+        return '<code>' + escapeHtml(code) + '</code>';
+    });
+    
+    // Headers (must be at start of line)
     html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
     html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
     html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
     
-    // Bold
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // Bold (process before italic)
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     
-    // Italic
-    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    
-    // Code blocks
-    html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
-    
-    // Inline code
-    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Italic (only single asterisks not preceded/followed by asterisk)
+    html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
     
     // Links
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
     
-    // Lists
-    html = html.replace(/^\* (.*$)/gim, '<li>$1</li>');
-    html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+    // Split into lines for list processing
+    const lines = html.split('\n');
+    const processed = [];
+    let inList = false;
     
-    // Paragraphs
-    html = html.replace(/\n\n/g, '</p><p>');
-    html = '<p>' + html + '</p>';
+    for (let line of lines) {
+        if (line.trim().startsWith('* ') || line.trim().startsWith('- ')) {
+            if (!inList) {
+                processed.push('<ul>');
+                inList = true;
+            }
+            processed.push('<li>' + line.trim().substring(2) + '</li>');
+        } else {
+            if (inList) {
+                processed.push('</ul>');
+                inList = false;
+            }
+            processed.push(line);
+        }
+    }
+    
+    if (inList) {
+        processed.push('</ul>');
+    }
+    
+    html = processed.join('\n');
+    
+    // Paragraphs (only wrap text not in special blocks)
+    const parts = html.split(/(<(?:h[1-6]|ul|pre|code)[^>]*>[\s\S]*?<\/(?:h[1-6]|ul|pre|code)>)/);
+    html = parts.map((part, i) => {
+        if (i % 2 === 0 && part.trim()) {
+            // Not in special block
+            return '<p>' + part.trim().replace(/\n\n+/g, '</p><p>') + '</p>';
+        }
+        return part;
+    }).join('');
     
     return html;
 }

@@ -1499,7 +1499,10 @@ def read_knowledge():
         full_path = Path(file_path).resolve()
         base_path = KNOWLEDGE_BASE_DIR.resolve()
         
-        if not str(full_path).startswith(str(base_path)):
+        # Check if path is within base directory (handles symlinks and edge cases)
+        try:
+            full_path.relative_to(base_path)
+        except ValueError:
             return jsonify({"status": "error", "message": "Access denied"}), 403
         
         if not full_path.exists():
@@ -1539,7 +1542,10 @@ def write_knowledge():
         full_path = Path(file_path).resolve()
         base_path = KNOWLEDGE_BASE_DIR.resolve()
         
-        if not str(full_path).startswith(str(base_path)):
+        # Check if path is within base directory (handles symlinks and edge cases)
+        try:
+            full_path.relative_to(base_path)
+        except ValueError:
             return jsonify({"status": "error", "message": "Access denied"}), 403
         
         if full_path.suffix != ".md":
