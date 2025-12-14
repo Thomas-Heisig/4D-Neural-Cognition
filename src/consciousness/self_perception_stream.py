@@ -334,12 +334,371 @@ class SelfPerceptionStream:
         
         return trajectory
     
+    def detect_self_consistency_anomalies(self) -> List[Dict]:
+        """Detect discrepancies between self-model and reality.
+        
+        Analyzes prediction errors and cross-modal inconsistencies to
+        identify when the self-model doesn't match actual sensory feedback.
+        This is critical for maintaining an accurate body schema and
+        detecting external perturbations.
+        
+        Returns:
+            List of detected anomalies with type and severity
+        """
+        anomalies = []
+        
+        if len(self.stream) < 2:
+            return anomalies
+        
+        # 1. Predictive self-perception: Expectation vs. Reality
+        predicted_feedback = self.predict_next_proprioception()
+        actual_feedback = self.integrated_self_model.get('body_state', {})
+        
+        if predicted_feedback and actual_feedback:
+            discrepancy = self.discrepancy(predicted_feedback, actual_feedback)
+            
+            if discrepancy > 0.2:
+                anomalies.append({
+                    'type': 'motor_prediction_error',
+                    'severity': 'high' if discrepancy > 0.5 else 'medium',
+                    'value': discrepancy,
+                    'implication': 'Body model inaccurate or external force',
+                    'timestamp': time.time(),
+                })
+        
+        # 2. Audiovisual self-consistency: Own voice + lip movement
+        audio_self = self.integrated_self_model.get('own_voice', {})
+        visual_self = self.integrated_self_model.get('self_image', {})
+        
+        if audio_self and visual_self:
+            # Check for self-vocalization
+            last_vocalization = audio_self.get('last_self_vocalization')
+            mouth_movement = visual_self.get('self_mouth_movement')
+            
+            if last_vocalization and mouth_movement:
+                sync_score = self.check_audio_visual_synchronization(
+                    last_vocalization, mouth_movement
+                )
+                
+                if sync_score < 0.7:
+                    anomalies.append({
+                        'type': 'av_sync_error',
+                        'severity': 'medium',
+                        'value': sync_score,
+                        'implication': 'Self-voice recognition issue',
+                        'timestamp': time.time(),
+                    })
+        
+        # 3. Agency detection: Intentions vs. Outcomes
+        intentions = self.integrated_self_model.get('intentions', {})
+        executed = self.integrated_self_model.get('executed_actions', {})
+        body_state = self.integrated_self_model.get('body_state', {})
+        
+        if intentions and executed and body_state:
+            agency_score = self._calculate_agency_match(
+                intentions, executed, body_state
+            )
+            
+            if agency_score < 0.5:
+                anomalies.append({
+                    'type': 'agency_error',
+                    'severity': 'high' if agency_score < 0.3 else 'medium',
+                    'value': agency_score,
+                    'implication': 'Loss of control or external manipulation',
+                    'timestamp': time.time(),
+                })
+        
+        return anomalies
+    
+    def predict_next_proprioception(self) -> Dict:
+        """Predict next proprioceptive state based on motor intentions.
+        
+        Uses recent history and motor commands to predict expected
+        sensory feedback (forward model).
+        
+        Returns:
+            Predicted proprioceptive state
+        """
+        if len(self.stream) < 5:
+            return {}
+        
+        # Get recent history
+        recent = list(self.stream)[-5:]
+        
+        # Extract velocity/trend from body state
+        predicted = {}
+        
+        # Simple linear extrapolation (placeholder for learned model)
+        if recent[-1].get('body_state'):
+            current_state = recent[-1]['body_state']
+            
+            # Predict based on motor intentions
+            intentions = self.integrated_self_model.get('intentions', {})
+            
+            if intentions:
+                # Apply intended changes to current state
+                predicted = current_state.copy()
+                
+                # Modify based on intentions (simplified)
+                for key, value in intentions.items():
+                    if key in predicted:
+                        predicted[key] = predicted[key] + value * 0.1
+            else:
+                # No intentions: maintain current state
+                predicted = current_state.copy()
+        
+        return predicted
+    
+    def discrepancy(self, predicted: Dict, actual: Dict) -> float:
+        """Calculate discrepancy between predicted and actual state.
+        
+        Args:
+            predicted: Predicted state
+            actual: Actual state
+            
+        Returns:
+            Discrepancy score (0-1, higher = more discrepant)
+        """
+        if not predicted or not actual:
+            return 0.0
+        
+        # Compare all matching keys
+        errors = []
+        
+        for key in predicted:
+            if key in actual:
+                pred_val = predicted[key]
+                actual_val = actual[key]
+                
+                # Handle nested dicts (like joint_angles)
+                if isinstance(pred_val, dict) and isinstance(actual_val, dict):
+                    for subkey in pred_val:
+                        if subkey in actual_val:
+                            error = abs(pred_val[subkey] - actual_val[subkey])
+                            errors.append(error)
+                elif isinstance(pred_val, (int, float)) and isinstance(actual_val, (int, float)):
+                    error = abs(pred_val - actual_val)
+                    errors.append(error)
+        
+        if errors:
+            return float(np.mean(errors))
+        return 0.0
+    
+    def check_audio_visual_synchronization(
+        self,
+        audio_data: Dict,
+        visual_data: Dict
+    ) -> float:
+        """Check synchronization between audio and visual self-signals.
+        
+        Args:
+            audio_data: Audio self-signal data
+            visual_data: Visual self-signal data
+            
+        Returns:
+            Synchronization score (0-1, higher = better sync)
+        """
+        # Extract timestamps
+        audio_time = audio_data.get('timestamp', 0)
+        visual_time = visual_data.get('timestamp', 0)
+        
+        # Calculate temporal offset
+        offset_ms = abs(audio_time - visual_time) * 1000
+        
+        # Good sync within 50ms, degraded up to 200ms
+        if offset_ms < 50:
+            sync_score = 1.0
+        elif offset_ms < 200:
+            sync_score = 1.0 - (offset_ms - 50) / 150
+        else:
+            sync_score = 0.0
+        
+        # Also check magnitude correlation if available
+        audio_magnitude = audio_data.get('magnitude', 0)
+        visual_magnitude = visual_data.get('magnitude', 0)
+        
+        if audio_magnitude > 0 and visual_magnitude > 0:
+            magnitude_correlation = min(audio_magnitude, visual_magnitude) / max(audio_magnitude, visual_magnitude)
+            sync_score = (sync_score + magnitude_correlation) / 2.0
+        
+        return sync_score
+    
+    def _calculate_agency_match(
+        self,
+        intentions: Dict,
+        executed: Dict,
+        outcomes: Dict
+    ) -> float:
+        """Calculate how well intentions match outcomes (sense of agency).
+        
+        Args:
+            intentions: Intended actions
+            executed: Executed actions
+            outcomes: Resulting sensory feedback
+            
+        Returns:
+            Agency score (0-1, higher = stronger sense of agency)
+        """
+        if not intentions or not outcomes:
+            return 0.5  # Neutral
+        
+        # Check if executed actions match intentions
+        execution_match = 0.0
+        if executed:
+            matches = sum(
+                1 for key in intentions
+                if key in executed and abs(intentions[key] - executed.get(key, 0)) < 0.1
+            )
+            if intentions:
+                execution_match = matches / len(intentions)
+        
+        # Check if outcomes are consistent with intentions
+        # (simplified: would use learned forward model)
+        outcome_match = 0.5  # Placeholder
+        
+        # Combined agency score
+        agency_score = (execution_match + outcome_match) / 2.0
+        
+        return agency_score
+    
+    def update_self_model_based_on_anomalies(
+        self,
+        anomalies: List[Dict]
+    ) -> Dict:
+        """Adapt self-model when inconsistencies are detected.
+        
+        Recalibrates internal models based on prediction errors and
+        inconsistencies. This maintains an accurate self-representation
+        even as the body changes or external forces are applied.
+        
+        Args:
+            anomalies: List of detected anomalies
+            
+        Returns:
+            Dictionary with recalibration results
+        """
+        recalibration_results = {
+            'anomalies_processed': len(anomalies),
+            'recalibrations': [],
+        }
+        
+        for anomaly in anomalies:
+            anomaly_type = anomaly['type']
+            severity = anomaly['severity']
+            
+            # Determine learning rate based on severity
+            if severity == 'high':
+                learning_rate = 0.05
+            elif severity == 'medium':
+                learning_rate = 0.02
+            else:
+                learning_rate = 0.01
+            
+            if anomaly_type == 'motor_prediction_error':
+                # Recalibrate proprioceptive model
+                result = self._recalibrate_body_model(learning_rate)
+                recalibration_results['recalibrations'].append({
+                    'type': 'body_model',
+                    'learning_rate': learning_rate,
+                    'result': result,
+                })
+            
+            elif anomaly_type == 'av_sync_error':
+                # Adjust audio-visual delay compensation
+                result = self._adjust_av_sync_delay(learning_rate)
+                recalibration_results['recalibrations'].append({
+                    'type': 'av_sync_delay',
+                    'adjustment': result,
+                })
+            
+            elif anomaly_type == 'agency_error':
+                # Update motor-sensory mapping
+                result = self._update_agency_model(learning_rate)
+                recalibration_results['recalibrations'].append({
+                    'type': 'agency_model',
+                    'learning_rate': learning_rate,
+                    'result': result,
+                })
+        
+        return recalibration_results
+    
+    def _recalibrate_body_model(self, learning_rate: float) -> Dict:
+        """Recalibrate proprioceptive body model.
+        
+        Args:
+            learning_rate: Rate of adaptation
+            
+        Returns:
+            Recalibration result
+        """
+        # Placeholder: would update internal forward model
+        # For now, track that recalibration occurred
+        if not hasattr(self, 'body_model_calibration'):
+            self.body_model_calibration = 1.0
+        
+        # Adjust calibration factor
+        self.body_model_calibration *= (1.0 - learning_rate * 0.1)
+        
+        return {
+            'calibration_factor': self.body_model_calibration,
+            'updated': True,
+        }
+    
+    def _adjust_av_sync_delay(self, learning_rate: float) -> Dict:
+        """Adjust audio-visual synchronization delay.
+        
+        Args:
+            learning_rate: Rate of adjustment
+            
+        Returns:
+            Adjustment result
+        """
+        if not hasattr(self, 'av_sync_delay'):
+            self.av_sync_delay = 0  # ms
+        
+        # Adjust delay (simplified)
+        self.av_sync_delay += 5 * learning_rate  # Add 5ms per adjustment
+        
+        return {
+            'new_delay_ms': self.av_sync_delay,
+            'updated': True,
+        }
+    
+    def _update_agency_model(self, learning_rate: float) -> Dict:
+        """Update motor-sensory agency model.
+        
+        Args:
+            learning_rate: Rate of update
+            
+        Returns:
+            Update result
+        """
+        # Placeholder: would update agency forward model
+        if not hasattr(self, 'agency_model_confidence'):
+            self.agency_model_confidence = 1.0
+        
+        # Reduce confidence when agency errors occur
+        self.agency_model_confidence *= (1.0 - learning_rate)
+        
+        return {
+            'confidence': self.agency_model_confidence,
+            'updated': True,
+        }
+    
     def reset(self) -> None:
         """Reset self-perception stream."""
         self.stream.clear()
         self.integrated_self_model = {}
         self.update_count = 0
         self.start_time = time.time()
+        
+        # Reset calibration state
+        if hasattr(self, 'body_model_calibration'):
+            self.body_model_calibration = 1.0
+        if hasattr(self, 'av_sync_delay'):
+            self.av_sync_delay = 0
+        if hasattr(self, 'agency_model_confidence'):
+            self.agency_model_confidence = 1.0
         
         logger.info("Self-perception stream reset")
     
@@ -349,7 +708,7 @@ class SelfPerceptionStream:
         Returns:
             Dictionary with stream metrics
         """
-        return {
+        stats = {
             "buffer_size": self.buffer_size,
             "current_size": len(self.stream),
             "update_count": self.update_count,
@@ -357,3 +716,13 @@ class SelfPerceptionStream:
             "actual_frequency_hz": self._calculate_actual_frequency(),
             "uptime_seconds": time.time() - self.start_time,
         }
+        
+        # Add calibration state if available
+        if hasattr(self, 'body_model_calibration'):
+            stats['body_model_calibration'] = self.body_model_calibration
+        if hasattr(self, 'av_sync_delay'):
+            stats['av_sync_delay_ms'] = self.av_sync_delay
+        if hasattr(self, 'agency_model_confidence'):
+            stats['agency_confidence'] = self.agency_model_confidence
+        
+        return stats
