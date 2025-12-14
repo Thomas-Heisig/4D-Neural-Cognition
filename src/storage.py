@@ -88,8 +88,7 @@ def save_to_hdf5(model: "BrainModel", filepath: str) -> None:
                 hdf.create_dataset("synapses", data=synapses_data, compression="gzip")
         
         # Atomically move temp file to target location
-        if temp_path:
-            shutil.move(temp_path, filepath)
+        shutil.move(temp_path, filepath)
     except Exception:
         # Clean up temp file if something went wrong
         if temp_path and os.path.exists(temp_path):
@@ -191,8 +190,7 @@ def save_to_json(model: "BrainModel", filepath: str) -> None:
             json.dump(model.to_dict(), f, ensure_ascii=False, indent=2)
         
         # Atomically move temp file to target location
-        if temp_path:
-            shutil.move(temp_path, filepath)
+        shutil.move(temp_path, filepath)
     except Exception:
         # Clean up temp file if something went wrong
         if temp_path and os.path.exists(temp_path):
