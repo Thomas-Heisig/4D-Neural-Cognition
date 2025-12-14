@@ -281,7 +281,8 @@ def run_autonomous_exploration(
         cycle_result = agent.run_autonomous_cycle(environment_context)
         
         # Extract movement from cycle result
-        # (In real implementation, this would come from motor output)
+        # TODO: In full implementation, decode actual motor output from brain/body
+        # For now, use simplified random movement for exploration
         movement = np.random.randn(3) * 0.1  # Small random movement
         
         # Update environment

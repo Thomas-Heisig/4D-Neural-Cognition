@@ -187,6 +187,9 @@ class IntrinsicMotivationEngine:
         
         return urgencies
     
+    # Selection randomness for exploration
+    SELECTION_NOISE_SCALE = 0.1
+    
     def _select_goal_type(self, urgencies: Dict[GoalType, float]) -> GoalType:
         """Select goal type based on urgencies.
         
@@ -198,7 +201,7 @@ class IntrinsicMotivationEngine:
         """
         # Add some randomness for exploration
         urgency_values = np.array(list(urgencies.values()))
-        urgency_values += np.random.rand(len(urgency_values)) * 0.1
+        urgency_values += np.random.rand(len(urgency_values)) * self.SELECTION_NOISE_SCALE
         
         goal_types = list(urgencies.keys())
         selected_idx = np.argmax(urgency_values)
@@ -299,22 +302,41 @@ class PredictiveWorldModel:
     The agent can mentally simulate actions before executing them.
     
     Attributes:
-        transition_model: Learned state transition dynamics
+        transition_matrix: Learned state transition dynamics matrix
+        transition_bias: Bias term for state transitions
         accuracy_history: History of prediction accuracy
+        state_dim: Dimension of state space
+        action_dim: Dimension of action space
     """
     
-    def __init__(self, state_dim: int = 10, action_dim: int = 6):
+    # Model initialization parameters
+    INIT_WEIGHT_SCALE = 0.1
+    PREDICTION_NOISE_SCALE = 0.05
+    
+    def __init__(
+        self,
+        state_dim: int = 10,
+        action_dim: int = 6,
+        init_scale: float = None,
+        noise_scale: float = None,
+    ):
         """Initialize predictive world model.
         
         Args:
             state_dim: Dimension of state space
             action_dim: Dimension of action space
+            init_scale: Scale for initial weight initialization (default: 0.1)
+            noise_scale: Scale for prediction noise (default: 0.05)
         """
         self.state_dim = state_dim
         self.action_dim = action_dim
         
+        # Model parameters
+        self.init_scale = init_scale if init_scale is not None else self.INIT_WEIGHT_SCALE
+        self.noise_scale = noise_scale if noise_scale is not None else self.PREDICTION_NOISE_SCALE
+        
         # Simple linear transition model (can be made more sophisticated)
-        self.transition_matrix = np.random.randn(state_dim, state_dim + action_dim) * 0.1
+        self.transition_matrix = np.random.randn(state_dim, state_dim + action_dim) * self.init_scale
         self.transition_bias = np.zeros(state_dim)
         
         self.accuracy_history: List[float] = []
@@ -347,7 +369,7 @@ class PredictiveWorldModel:
             next_state = self.transition_matrix @ state_action + self.transition_bias
             
             # Add some noise for uncertainty
-            next_state += np.random.randn(self.state_dim) * 0.05
+            next_state += np.random.randn(self.state_dim) * self.noise_scale
             
             predicted_states.append(next_state)
             current_state = next_state

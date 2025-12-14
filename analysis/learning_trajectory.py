@@ -157,6 +157,22 @@ class LearningTrajectoryAnalyzer:
             'dominant_strategy': max(strategy_counts.items(), key=lambda x: x[1])[0],
         }
     
+    @staticmethod
+    def _calculate_trend(values: List[float]) -> float:
+        """Calculate linear trend (slope) from values.
+        
+        Args:
+            values: List of values
+            
+        Returns:
+            Slope of linear fit
+        """
+        if len(values) < 2:
+            return 0.0
+        x = np.arange(len(values))
+        coeffs = np.polyfit(x, values, 1)
+        return coeffs[0]  # Slope
+    
     def _measure_learning_progress(self) -> Dict:
         """Measure overall learning progress.
         
@@ -171,20 +187,12 @@ class LearningTrajectoryAnalyzer:
         world_model_accuracies = [c.get('world_model_accuracy', 0.0) for c in self.cycle_results]
         discoveries = [c.get('total_discovered', 0) for c in self.cycle_results]
         
-        # Calculate trends
-        def calculate_trend(values):
-            if len(values) < 2:
-                return 0.0
-            x = np.arange(len(values))
-            coeffs = np.polyfit(x, values, 1)
-            return coeffs[0]  # Slope
-        
         return {
             'initial_prediction_error': pred_errors[0] if pred_errors else 0.0,
             'final_prediction_error': pred_errors[-1] if pred_errors else 0.0,
             'error_reduction': pred_errors[0] - pred_errors[-1] if len(pred_errors) > 1 else 0.0,
-            'error_trend': calculate_trend(pred_errors),
-            'world_model_accuracy_trend': calculate_trend(world_model_accuracies),
+            'error_trend': self._calculate_trend(pred_errors),
+            'world_model_accuracy_trend': self._calculate_trend(world_model_accuracies),
             'discovery_rate': discoveries[-1] / len(self.cycle_results) if self.cycle_results else 0.0,
             'total_discoveries': discoveries[-1] if discoveries else 0,
         }
@@ -266,23 +274,24 @@ class LearningTrajectoryAnalyzer:
         return stages
     
     def plot_phase_transitions(self, output_file: Optional[str] = None) -> None:
-        """Plot phase transitions (placeholder).
+        """Print phase transitions summary.
+        
+        Note: Plotting requires matplotlib. This method provides text output.
+        For actual plotting, extend with matplotlib visualization.
         
         Args:
-            output_file: Optional file to save plot
+            output_file: Optional file path (currently unused, for future plotting)
         """
-        logger.info("Plotting phase transitions...")
+        logger.info("Phase Transitions Summary:")
         
-        # In a real implementation, this would use matplotlib
-        # For now, just log the transitions
         transitions = self.metrics.get('phase_transitions', [])
         
-        logger.info(f"Phase Transitions ({len(transitions)} total):")
+        logger.info(f"Total phase transitions detected: {len(transitions)}")
         for t in transitions:
             logger.info(f"  Cycle {t['cycle']}: {t['type']}")
         
         if output_file:
-            logger.info(f"Would save plot to {output_file}")
+            logger.info(f"Note: Plotting to {output_file} requires matplotlib (not yet implemented)")
     
     def generate_report(self, output_file: str) -> None:
         """Generate analysis report.
