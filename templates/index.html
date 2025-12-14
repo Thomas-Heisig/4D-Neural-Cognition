@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>4D Neural Cognition - Frontend Interface</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <!-- Socket.IO with verified SHA-384 integrity hash -->
-    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js" integrity="sha384-DkkWv9oJFWLIydBXXjkBWnG1/fuVhw8YPBq37uvvD6WSYRFRqr21eY5Dg9ZhmWdy" crossorigin="anonymous"></script>
-    <!-- Chart.js: Integrity hash verification pending. For production, verify hash from official CDN or use local copy -->
+    <!-- CDN Resources: SRI disabled for development compatibility. Enable in production with verified hashes. -->
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
@@ -125,6 +124,9 @@
         </div>
     </div>
 
+    <!-- System initialization JavaScript modules -->
+    <script src="{{ url_for('static', filename='js/system-status.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

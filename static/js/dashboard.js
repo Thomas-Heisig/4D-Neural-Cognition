@@ -18,12 +18,25 @@ let monitoringInterval = null;
 let isMonitoring = false;
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initializeSocket();
     initializeSidebar();
     initializeTabs();
-    loadOverview();
     setupEventListeners();
+    
+    // Check system status but don't block the UI
+    // Dashboard allows manual initialization
+    try {
+        const status = await window.apiClient.getSystemStatus();
+        if (status.initialized) {
+            loadOverview();
+        } else {
+            addLog('info', 'System nicht initialisiert. Bitte Modell initialisieren.');
+        }
+    } catch (error) {
+        console.error('Could not check system status:', error);
+        addLog('warning', 'Systemstatus konnte nicht überprüft werden.');
+    }
 });
 
 // Cleanup on page unload

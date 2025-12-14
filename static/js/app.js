@@ -3,6 +3,11 @@
 // Initialize Socket.IO
 const socket = io();
 
+// Wait for DOM and system status to be ready
+document.addEventListener('DOMContentLoaded', async () => {
+    initializeApp();
+});
+
 // DOM Elements
 const elements = {
     // Buttons
@@ -89,61 +94,37 @@ function showInfo(message) {
     addLogEntry('INFO', message);
 }
 
-// API Functions
-async function apiCall(endpoint, method = 'GET', data = null) {
-    try {
-        const options = {
-            method,
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        };
-        
-        if (data && method !== 'GET') {
-            options.body = JSON.stringify(data);
-        }
-        
-        const response = await fetch(`/api${endpoint}`, options);
-        const result = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(result.message || 'API request failed');
-        }
-        
-        return result;
-    } catch (error) {
-        showError(`API Error: ${error.message}`);
-        throw error;
-    }
-}
+// API Functions - Using global apiClient from api-client.js
 
 // Model Functions
 async function initializeModel() {
     try {
         showInfo('Initialisiere Modell...');
-        const result = await apiCall('/model/init', 'POST', {
-            config_path: 'brain_base_model.json'
-        });
+        const result = await window.apiClient.initModel('brain_base_model.json');
         
         if (result.status === 'success') {
             showSuccess('Modell erfolgreich initialisiert!');
             updateModelInfo(result);
+            // Mark system as initialized in status manager
+            if (window.systemStatus) {
+                window.systemStatus.markInitialized();
+            }
         }
     } catch (error) {
-        // Error already handled in apiCall
+        showError(`Fehler bei Initialisierung: ${error.message}`);
     }
 }
 
 async function getModelInfo() {
     try {
-        const result = await apiCall('/model/info');
+        const result = await window.apiClient.getModelInfo();
         
         if (result.status === 'success') {
             updateModelInfo(result);
             showSuccess('Modell-Information aktualisiert');
         }
     } catch (error) {
-        // Error already handled
+        showError(`Fehler beim Abrufen der Info: ${error.message}`);
     }
 }
 
@@ -468,46 +449,53 @@ socket.on('training_progress', (data) => {
     showInfo(message);
 });
 
-// Event Listeners
-elements.initModel.addEventListener('click', initializeModel);
-elements.getInfo.addEventListener('click', getModelInfo);
-elements.initNeurons.addEventListener('click', initializeNeurons);
-elements.initSynapses.addEventListener('click', initializeSynapses);
-elements.runStep.addEventListener('click', runSimulationStep);
-elements.runSimulation.addEventListener('click', runSimulation);
-elements.stopSimulation.addEventListener('click', stopSimulation);
-elements.saveJSON.addEventListener('click', () => saveModel('json'));
-elements.saveHDF5.addEventListener('click', () => saveModel('hdf5'));
-elements.loadModel.addEventListener('click', loadModel);
-elements.recoverCheckpoint.addEventListener('click', recoverFromCheckpoint);
-elements.refreshHeatmap.addEventListener('click', refreshHeatmap);
-elements.feedInput.addEventListener('click', feedInput);
-elements.sendChat.addEventListener('click', sendChatMessage);
-elements.clearLogs.addEventListener('click', () => {
-    elements.logOutput.innerHTML = '';
-});
+// Initialize App - Called after DOM is ready
+function initializeApp() {
+    // Setup event listeners
+    elements.initModel.addEventListener('click', initializeModel);
+    elements.getInfo.addEventListener('click', getModelInfo);
+    elements.initNeurons.addEventListener('click', initializeNeurons);
+    elements.initSynapses.addEventListener('click', initializeSynapses);
+    elements.runStep.addEventListener('click', runSimulationStep);
+    elements.runSimulation.addEventListener('click', runSimulation);
+    elements.stopSimulation.addEventListener('click', stopSimulation);
+    elements.saveJSON.addEventListener('click', () => saveModel('json'));
+    elements.saveHDF5.addEventListener('click', () => saveModel('hdf5'));
+    elements.loadModel.addEventListener('click', loadModel);
+    elements.recoverCheckpoint.addEventListener('click', recoverFromCheckpoint);
+    elements.refreshHeatmap.addEventListener('click', refreshHeatmap);
+    elements.feedInput.addEventListener('click', feedInput);
+    elements.sendChat.addEventListener('click', sendChatMessage);
+    elements.clearLogs.addEventListener('click', () => {
+        elements.logOutput.innerHTML = '';
+    });
 
-// Density slider update
-elements.density.addEventListener('input', (e) => {
-    elements.densityValue.textContent = e.target.value;
-});
+    // Density slider update
+    elements.density.addEventListener('input', (e) => {
+        elements.densityValue.textContent = e.target.value;
+    });
 
-// Chat input enter key
-elements.chatInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        sendChatMessage();
-    }
-});
+    // Chat input enter key
+    elements.chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendChatMessage();
+        }
+    });
 
-// Initialize canvases
-elements.heatmapInput.width = 300;
-elements.heatmapInput.height = 300;
-elements.heatmapHidden.width = 300;
-elements.heatmapHidden.height = 300;
-elements.heatmapOutput.width = 300;
-elements.heatmapOutput.height = 300;
+    // Initialize canvases
+    elements.heatmapInput.width = 300;
+    elements.heatmapInput.height = 300;
+    elements.heatmapHidden.width = 300;
+    elements.heatmapHidden.height = 300;
+    elements.heatmapOutput.width = 300;
+    elements.heatmapOutput.height = 300;
 
-// Initial message
-addLogEntry('INFO', 'Frontend Interface gestartet');
-addTerminalLine('4D Neural Cognition Terminal bereit');
-addChatMessage('Willkommen! Geben Sie "help" ein für verfügbare Befehle.', false);
+    // Initial messages
+    addLogEntry('INFO', 'Frontend Interface gestartet');
+    addTerminalLine('4D Neural Cognition Terminal bereit');
+    addChatMessage('Willkommen! Geben Sie "help" ein für verfügbare Befehle.', false);
+    
+    // Note: We don't automatically check for system initialization here
+    // The user needs to initialize the model explicitly
+    showInfo('Bitte initialisieren Sie das Modell, um zu beginnen.');
+}
