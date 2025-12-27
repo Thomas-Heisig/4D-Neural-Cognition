@@ -155,15 +155,38 @@ python app.py
 
 ## 📚 Documentation
 
-> **📑 Documentation Hub**: See [DOCUMENTATION.md](DOCUMENTATION.md) for complete overview  
-> **📖 Full Index**: See [docs/INDEX.md](docs/INDEX.md) for detailed navigation  
-> **🔍 Knowledge Base**: Complete searchable documentation in the [Dashboard Knowledge System](http://localhost:5000/dashboard) - Section "Wissensdatenbank"
+> **🆕 NEW: Research-Oriented Documentation Structure**  
+> **📑 [DOCUMENTATION NAVIGATOR](docs/00-DOCUMENTATION-NAVIGATOR.md)** ← **START HERE** for complete guide to new documentation  
+>  
+> **Quick Links:**  
+> - **[Project Overview](docs/01-overview/index.md)** - What is this project?  
+> - **[Research Scope](docs/00-meta/research-scope.md)** - What is/isn't investigated?  
+> - **[Assumptions](docs/01-overview/assumptions.md)** - Model assumptions (critical for researchers)  
+> - **[Limitations](docs/02-theoretical-foundation/limitations.md)** - Conscious simplifications  
+> - **[Open Questions](docs/99-appendix/open-questions.md)** - Explicitly unsolved problems  
 
-### 📚 Quick Access
+### 🎯 Documentation for Different Users
 
-- **[KNOWLEDGE_BASE_INDEX.md](KNOWLEDGE_BASE_INDEX.md)** - Complete knowledge base index with all documentation organized
-- **[WORKFLOWS.md](WORKFLOWS.md)** - Standard workflows and best practices for experiments and research
-- **[RESEARCH_SUMMARY.md](RESEARCH_SUMMARY.md)** - Scientific foundations, mathematical models, and research findings
+**For Researchers:**
+- [`docs/00-meta/vision.md`](docs/00-meta/vision.md) - Research goals, no marketing
+- [`docs/01-overview/prior-art.md`](docs/01-overview/prior-art.md) - Comparison with Deep Learning, SNNs, etc.
+- [`docs/04-dynamics-and-learning/emergence.md`](docs/04-dynamics-and-learning/emergence.md) - Operationalized emergence criteria
+- [`docs/SCIENTIFIC_HYPOTHESES.md`](docs/SCIENTIFIC_HYPOTHESES.md) - 10 testable hypotheses
+
+**For Developers:**
+- [`docs/00-meta/status.md`](docs/00-meta/status.md) - Component maturity (stable/experimental)
+- [`docs/07-decisions/`](docs/07-decisions/) - Architecture Decision Records (ADRs)
+- [API Reference](docs/api/API.md) - Complete API documentation
+
+**For Users:**
+- [User Guide](docs/user-guide/) - Installation, tutorials, FAQ
+- [Quick Start Tutorial](docs/tutorials/QUICK_START_EVALUATION.md) - Get started in 5 minutes
+
+### 📚 Legacy Documentation (Being Migrated)
+
+- **[KNOWLEDGE_BASE_INDEX.md](KNOWLEDGE_BASE_INDEX.md)** - Complete knowledge base index
+- **[WORKFLOWS.md](WORKFLOWS.md)** - Standard workflows and best practices
+- **[RESEARCH_SUMMARY.md](RESEARCH_SUMMARY.md)** - Scientific foundations
 
 ### 🚀 Getting Started
 - **[User Guide](docs/user-guide/)** - Complete user documentation
